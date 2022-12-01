@@ -1,0 +1,42 @@
+@import "functions";
+
+// 3. Include remainder of required Bootstrap stylesheets
+@import "variables";
+@import "mixins";
+
+@import "reboot";
+
+
+$changes_chart_min_width: 480px;
+$changes_chart_min_height: 400px;
+
+$hide_chart_min_width: $changes_chart_min_width * (1 + 0.1);
+
+
+$table-bg-scale: -95%;
+
+/* .body-content { */
+    /* padding-left: 15px; */
+    /* padding-right: 15px; */
+/* } */
+
+/* main { */
+    /* @extend .container; */
+    /* @extend .body-content; */
+/* } */
+
+a {
+    text-decoration: none;
+    font-weight: bolder;
+    &:hover {
+        text-decoration: underline;
+    }
+    &.dead {
+        color: #dcdcdc;
+    }
+}
+
+@import "custom_search_page";
+@import "custom_construction_page";
+
+@import "bootstrap"

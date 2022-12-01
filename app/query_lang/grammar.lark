@@ -1,0 +1,32 @@
+one_pair: SIMPLE_KEY OPERATOR value
+        | STRING_KEY OPERATOR pattern_value
+        | STAGE_LIT STAGE_ID OPERATOR pattern_value
+        | STAGE_LIT STAGE_ID "-" STAGE_KEY OPERATOR value
+
+SIMPLE_KEY: "meaning" | "rus_num" | "synt_function_of_anchor"
+STRING_KEY: "formula" | "anchor_schema" | "anchor_ru" | "anchor_en"
+
+STAGE_LIT: "stage" "_"
+STAGE_ID:   "f" | "l" | NUMBER
+STAGE_KEY:  "level" | "type_of_change" | "first_attested" | "first_example" | "last_attested"
+
+OPERATOR: "=" | "!=" | ">=" | "<="
+
+value: NUMBER | string
+pattern_value: string
+
+string: _SINGLE_ESC_STRING | _DOUBLE_ESC_STRING
+_SINGLE_ESC_STRING: "'" STRING "'"
+_DOUBLE_ESC_STRING: "\"" STRING "\""
+//BASE_STRING: /[^'"]+?/
+//BASE_STRING: _STRING
+
+
+query : one_pair+
+
+%import common.WS
+%ignore WS
+
+%import common._STRING_ESC_INNER -> STRING
+
+%import common.SIGNED_NUMBER -> NUMBER

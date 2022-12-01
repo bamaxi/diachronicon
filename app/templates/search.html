@@ -1,0 +1,206 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+{% macro fill_if_queried(param, query) -%}
+    {%- if query is defined and param in query and query[param] %}
+        value="{{ query[param] }}"
+    {% endif -%}
+{%- endmacro %}
+
+<form class="row" id="search-form" action="#" method="get">
+    <div class="form-text" id="formulaHelp">
+        В полях со знаком
+            <span class="symbol symbol-form symbol-logic"></span>
+        можно использовать логические операторы, а в полях со знаком
+            <span class="symbol symbol-form symbol-regex"></span>
+        &ndash; логические выражения.
+        <a href="#" aria-disabled="true">Подробнее</a>
+    </div>
+
+    <fieldset name="construction-general" class="col-md-4">
+        <legend>Общая информация</legend>
+
+        <div class="form-field-text">
+            <input type="text" class="form-control" id="constructionId"
+                   placeholder="id" name="c-id"
+                   {{ fill_if_queried('c-id', query) }}
+            >
+            <label for="constructionId">id</label>
+            <div class="error feedback-invalid">Укажите положительное целое число</div>
+        </div>
+
+        <div class="form-field-text">
+            <input type="text" class="form-control" id="formula"
+                   placeholder="formula" aria-describedby="formulaHelp"
+                   name="c-formula"
+                   {{ fill_if_queried('c-formula', query) }}
+            >
+            <label for="formula">Формула</label>
+<!--                <div class="form-text" id="formulaHelp">-->
+<!--                    Формула может быть регулярным выражением.-->
+<!--                    <a href="#" aria-disabled="true">Подробнее</a>-->
+<!--                </div>-->
+            <div class="error feedback-invalid"></div>
+        </div>
+
+        <div class="form-field-text">
+            <input type="text" class="form-control" id="meaning"
+                   list="meaning_values"
+                   placeholder="meaning" aria-describedby="meaningHelp"
+                   name="c-meaning"
+                   {{ fill_if_queried('c-meaning', query) }}
+            >
+            <label for="formula">
+                Значение
+<!--                <span class="symbol symbol-form symbol-logic"></span>-->
+            </label>
+            <datalist id="meaning_values">
+            {% for meaning_ in meaning_values %}
+                <option value="{{ meaning_ }}"></option>
+            {% endfor %}
+            </datalist>
+<!--                <div class="form-text" id="meaningHelp">-->
+<!--                    Значение может быть регулярным выражением.-->
+<!--                    <a href="#" aria-disabled="true">Подробнее</a>-->
+<!--                </div>-->
+            <div class="error feedback-invalid"></div>
+        </div>
+
+<!--            <div class="row">-->
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="in_rus_construction"
+                   name="c-in_rus_construction"
+                   {{ fill_if_queried('c-in_rus_construction', query) }}
+            >
+            <label class="form-check-label" for="in_rus_construction">
+              Есть в конструктиконе
+            </label>
+            <div class="error feedback-invalid"></div>
+        </div>
+
+        <div class="form-field-text">
+            <input type="text" class="form-control" id="rus_constructicon_id"
+               placeholder="rus_constructicon_id" name="c-rus_constructicon_id"
+                   {{ fill_if_queried('c-rus_constructicon_id', query) }}
+            >
+            <label for="rus_constructicon_id">id (Конструктикон)</label>
+            <div class="error feedback-invalid"></div>
+        </div>
+<!--            </div>-->
+    </fieldset>
+
+    <fieldset name="construction-anchor" class="col-md-4">
+        <legend>Якорь</legend>
+
+        <div class="form-field-text">
+            <input type="text" class="form-control" id="synt_function_of_anchor"
+                   list="synt_function_of_anchor_values" placeholder="synt_function_of_anchor"
+                   name="c-synt_function_of_anchor"
+                  {{ fill_if_queried('c-synt_function_of_anchor', query) }}
+            >
+            <label for="synt_function_of_anchor">Синт. функция якоря</label>
+            <datalist id="synt_function_of_anchor_values">
+                {%- for func_ in synt_functions_anchor %}
+                    <option value="{{ func_ }}"></option>
+                {% endfor -%}
+            </datalist>
+            <div class="error feedback-invalid"></div>
+        </div>
+
+        <div class="form-field-text">
+            <input type="text" class="form-control" id="c-anchor_schema"
+                   placeholder="c-anchor_schema" name="c-anchor_schema"
+                   {{ fill_if_queried('c-anchor_schema', query) }}
+            >
+            <label for="c-anchor_schema">Схема якоря</label>
+            <div class="error feedback-invalid"></div>
+        </div>
+
+        <div class="form-field-text">
+            <input type="text" class="form-control" id="c-anchor_ru"
+                   placeholder="c-anchor_ru" name="c-anchor_ru"
+                   {{ fill_if_queried('c-anchor_ru', query) }}
+            >
+            <label for="c-anchor_ru">Якорь (рус.)</label>
+            <div class="error feedback-invalid"></div>
+        </div>
+
+        <div class="form-field-text">
+            <input type="text" class="form-control" id="c-anchor_en"
+                   placeholder="c-anchor_en" name=""
+                   {{ fill_if_queried('c-anchor_en', query) }}
+            >
+            <label for="c-anchor_en">Якорь (англ.)</label>
+            <div class="error feedback-invalid"></div>
+        </div>
+    </fieldset>
+
+    <fieldset name="constraint-1-construction" class="col-md-4">
+        <legend>Ограничения</legend>
+
+<!--        <div class="row no-pad-children">-->
+            <div class="form-field-text" >
+                <input type="text" class="form-control" id="constraint-1-element"
+                       placeholder="constraint-1-element" name="constraint-1-element">
+                <label for="constraint-1-element">Элемент</label>
+                <div class="error feedback-invalid"></div>
+            </div>
+
+            <select class="form-select" aria-label="Default select example"
+                    name="constraint-1-type">
+                  <option selected value="">Выберите тип ограничения</option>
+                  <option value="synt">Синтаксическое</option>
+                  <option value="sem">Семантическое</option>
+                  <option value="">Любое</option>
+            </select>
+
+            <div class="form-field-text col-md-4">
+<!--                <input type="" class="form-control" id=""-->
+<!--                       placeholder="">-->
+<!--                <label for=""></label>-->
+                <div class="error feedback-invalid"></div>
+            </div>
+
+            <div class="form-field-text col-12">
+                <input type="text" class="form-control" id="constraint-1-value"
+                       placeholder="constraint-1-value">
+                <label for="constraint-1-value">Ограничение</label>
+                <div class="error feedback-invalid"></div>
+            </div>
+<!--        </div>-->
+    </fieldset>
+
+    <div class="col-12">
+        <button class="btn btn-primary" type="submit">Искать</button>
+        <div id="form-error feedback-invalid"></div>
+    </div>
+</form>
+<!--</div>-->
+
+{%- if query -%}
+    <h3>Результаты</h3>
+    {%- if not results -%}
+    <p>Ничего не найдено</p>
+    {%- endif -%}
+    {%- if results -%}
+        <div class="col-12">
+        {%- for result in results -%}
+            <div class="row result">
+                <span>{{ loop.index1 }}</span>
+                <div>
+                    <a href="{{ url_for('search.construction', index=result.id) }}">
+                        {{ result.formula }}
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+{%- endif -%}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/scripts/search_form_parse.js"></script>
+{% endblock %}

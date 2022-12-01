@@ -1,0 +1,9 @@
+.sh
+.xlsx
+.db
+.sqbpro
+.zip
+
+__pycache__
+
+/logs

@@ -1,0 +1,30 @@
+grammar LogicListQuery
+
+query <- id (" "* BinOp " "* id)*
+
+id <- NEG? ID
+NEG <- "-"
+BinOp <- "|" / "&"
+
+ID <- contemporary_meaning / synt_function_of_anchor
+
+
+contemporary_meaning <- `large quantity`
+                        / `negative assessment`
+                        / `booster`
+
+synt_function_of_anchor <- `Argument`
+                           / `Coordinator`
+                           / `Discourse Particle`
+                           / `Government`
+                           / `Matrix Predicate`
+                           / `Modifier`
+                           / `Nominal Quantifier`
+                           / `Object`
+                           / `Parenthetical`
+                           / `Praedicative Expression`
+                           / `Subject`
+                           / `Subordinator`
+                           / `Verb Predicate`
+                           / `Word-Formation`
+

@@ -1,0 +1,91 @@
+﻿{% extends "layout.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+   <section class="single-result col-10">
+
+       <div class="row">
+           <div class="construction-name col-6 align-self-start text-center">
+                <h3>{{ construction.general_info.name }}</h3>
+           </div>
+           <div class="author-data col-6 text-center">
+                <span>Author:</span><br>
+                <span class="author">{{ construction.general_info.author_name + " "
+                       + construction.general_info.author_surname}}</span>
+           </div>
+       </div>
+
+       <div class="row">
+           <div class="col-4"></div>
+       </div>
+
+       <div class="row">
+            <div class="changes-wrapper">
+                <div class="row">
+                    <p>
+<!--                        <button class="changes-toggle"-->
+<!--                      data-toggle="collapse" href="#changes-{{ res_id }}"-->
+<!--                      role="button" aria-expanded="false" aria-controls="changes-{{ res_id }}">-->
+<!--                            Show history data-->
+<!--                        </button>-->
+                        <button class="changes-toggle" data-target="#changes-{{ res_id }}"
+                          role="button" aria-expanded="false" aria-controls="changes-{{ res_id }}">
+                                Show history data
+                        </button>
+                    </p>
+                </div>
+                <div class="row">
+                    <div class="changes collapse col-12" id="changes-{{ res_id }}">
+                        <div class="changes-chart" id="changes-chart-{{ res_id }}"
+                             style="width: 480px; height: 400px;">
+                            {# Should add noscript option here. What would be the url?
+                            Should it expose id? (Yeah, why not?)
+                            <noscript>
+                                <p>An interactive chart can't be displayed.</p>
+                                <p>You can download
+                                    <a href="">static image here</a>.
+                                </p>
+                            </noscript>
+                            #}
+                        </div>
+                        <div>
+                            <table class="table table-sm">
+                              <thead class="thead-light">
+                                <tr>
+                                  {% for _name, _field in construction.changes[0]._names.items() %}
+                                    <th scope="col" {{ 'class="sticky-col"' if _field in ('stage', 'level') else '' }}">
+                                        {{ _name }}</th>
+                                  {% endfor %}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {% for change in construction.changes %}
+                                    <tr>
+    <!--                                  <th scope="row">1</th>-->
+                                      {% for _field in change._names.values() %}
+                                        <td {{ 'class="sticky-col"' if _field in ('stage', 'level') else '' }}>
+                                        {{ change[_field] }}</td>
+                                      {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                              </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+   </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+<script src="/static/scripts/plots_extra.js"></script>
+<script type='text/javascript'>
+  var changes_graph_{{ res_id }} = {{graphJSON | safe}};
+  Plotly.plot('changes-chart-{{ res_id }}',changes_graph_{{ res_id }},{});
+</script>
+{% endblock %}

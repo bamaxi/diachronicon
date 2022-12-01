@@ -1,0 +1,130 @@
+/* Construction page */
+
+.construction-name {
+    @extend .col-5;
+    /* @include make-col(5); */
+    @extend .align-self-start;
+    /* @extend .text-center; */
+}
+
+.author-data {
+    @extend .col-5;
+    /* @include make-col(5); */
+    @extend .text-center;
+}
+
+.data-links {
+    @extend .col-2;
+    /* @include make-col(2); */
+}
+
+.construction-title,
+.description,
+.anchors,
+.data-links {
+    @extend .row;
+    /* @include make-row(); */
+}
+
+.description > {
+    @extend .pt-3;
+    /* padding-top: 1.5rem; */
+}
+
+.label-author,
+.label-formula,
+.label-meaning,
+.label-synt,
+.label-anchors,
+.data-sources-label {
+    font-weight: bold;
+    &:after { content:":"; }
+}
+
+/* .anchor-ru, */
+/* .anchor-en, */
+/* .anchor-schema { */
+    /* @extend .col-4; */
+/* } */
+
+.anchors {
+    display: block;
+    padding-left: 1.5rem;
+}
+
+.anchors > label {
+    float: left;
+    width: 30%;
+    @extend .text-secondary;
+}
+
+.anchors > span {
+    width: 70%;
+}
+
+
+.changes-chart {
+    width: $changes_chart_min_width;
+    height: $changes_chart_min_height;
+    
+    @media screen and (max-width: $hide_chart_min_width) {
+        display: none;
+        /* content: "Your device is too small"; */
+        &::before {
+            content: "Your device is too small";
+        }
+    }
+    
+    @media screen and (min-width: $changes_chart_min_width * (1.5 + 0.1)) {
+        width: $changes_chart_min_width * 1.25;
+        height: $changes_chart_min_height * 1.25;
+    }
+    
+    @media screen and (min-width: $changes_chart_min_width * (2 + 0.1)) {
+        width: $changes_chart_min_width * 1.5;
+        height: $changes_chart_min_height * 1.5;
+    }
+    
+    @media screen and (min-width: $changes_chart_min_width * (2 + 0.1 + 0.01)) {
+        width: $changes_chart_min_width * 2;
+        height: $changes_chart_min_height * 2;
+    }
+}
+
+.changes-chart-was-hidden-message {
+    @media (min-width: $hide_chart_min_width) {
+        display: none;
+    }
+}
+
+.changes-chart-no-js {
+    display: none;
+    
+    .no-js & {
+        display: block;
+    }
+}
+
+/* Table with data on changes of construction */
+
+/* .table-container { */
+    /* height: 300px; */
+    /* overflow: hidden; */
+/* } */
+
+.table-container {
+    @extend .table-responsive;
+}
+
+/* .table { */
+    /* position: sticky; */
+    /* top: 0; */
+    /* width: 100%; */
+/* } */
+
+/* Section about author and data */
+
+
+.about-thesis {
+    display: block;
+}

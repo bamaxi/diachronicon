@@ -1,0 +1,23 @@
+<div class="changes-data table-container">
+    <table class="changes-table table table-sm">
+      <thead class="thead-light">
+        <tr>
+          {% for _name, _field in construction.changes[0]._names.items() %}
+            <th scope="col" {{ 'class="sticky-col"' if _field in ('stage', 'level') else '' }}">
+                {{ _name }}
+            </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for change in construction.changes %}
+            <tr class="{{ 'table-primary' if change.level == 'synt' else 'table-secondary' }}">
+              {% for _field in change._names.values() %}
+                <td {{ 'class="sticky-col"' if _field in ('stage', 'level') else '' }}>
+                {{ change[_field] or '' }}</td>
+              {% endfor %}
+            </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+</div>

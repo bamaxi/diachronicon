@@ -1,0 +1,20 @@
+﻿from datetime import datetime
+from flask import render_template
+
+from . import bp
+
+
+@bp.app_errorhandler(404)
+def not_found_error(error,):
+    return render_template(
+        'errors/404.html', title='Не найдено :(',
+        year=datetime.now().year,
+    ), 404
+
+
+@bp.app_errorhandler(500)
+def internal_error(error):
+    return render_template(
+        'errors/500.html', title='Ошибка :(',
+        year=datetime.now().year,
+    ), 500

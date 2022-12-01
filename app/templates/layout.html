@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Диахроникон</title>
+    <link rel="stylesheet" type="text/css" href="/static/content/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="/static/content/site.css" />
+    <script src="/static/scripts/modernizr-2.6.2.js"></script>
+    <style>
+        .no-js .collapse { display: block }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar sticky-top navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="/">Диахроникон</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse"
+                    data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav mr-auto">
+                    <!--<li class="nav-item active">
+                        <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
+                    </li>-->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.main') }}">Главная</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('search.simple_search') }}">
+                            Простой поиск</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('search.search') }}">
+                            Продвинутый поиск</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container body-content">
+            {% block content %}{% endblock %}
+            <hr />
+            <footer class="pb-3">
+                <p>
+                    <span class="float-left">&copy; {{ year }} &mdash; Диахроникон</span>
+                </p>
+            </footer>
+        </div>
+    </main>
+
+<!--    <script src="/static/scripts/jquery-1.10.2.js"></script>-->
+<!--    <script src="/static/scripts/bootstrap.js"></script>-->
+    <script src="/static/scripts/bootstrap.min.js"></script>
+    <script src="/static/scripts/respond.js"></script>
+    {% block scripts %}{% endblock %}
+
+</body>
+</html>

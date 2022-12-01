@@ -1,0 +1,113 @@
+﻿{% extends "layout.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+   <article class="single-result col-10">
+       <section class="construction-title">
+           <div class="construction-name">
+                <h3>{{ construction.general_info.name }}</h3>
+           </div>
+           <div class="author-data">
+                <label class="label-author">Автор</label><br>
+                <span class="author">{{ construction.general_info.author_name + " "
+                       + construction.general_info.author_surname}}</span>
+           </div>
+           <div class="data-links">
+               <a href="#data-sources-{{ res_id }}">О&nbsp;данных</a>
+           </div>
+       </section>
+
+       <section class="description">
+           <div class="formula-data">
+<!--               <label class="label-formula">Формула</label>-->
+               <span class="formula">{{ construction.formula }}</span>
+           </div>
+           <div class="meaning-data">
+               <label class="label-meaning">Значение</label>
+               <span class="meaning">{{ construction.contemporary_meaning }}</span>
+           </div>
+           <div class="syntax-data">
+               <label class="label-synt">Синтаксическая функция</label>
+               <span class="synt">{{ construction.synt_function_of_anchor }}</span>
+           </div>
+           <div class="anchors-container">
+               <label class="label-anchors">Якори</label>
+               <div class="anchors">
+                   <label class="label-anchor-ru">рус.</label>
+                        <span class="anchor-ru">{{ construction.anchor_ru }}</span>
+                   <label class="label-anchor-eng">англ.</label>
+                        <span class="anchor-eng">{{ construction.anchor_eng }}</span>
+                   <label class="label-anchor-schema">общая схема</label>
+                        <span class="anchor-schema">{{ construction.anchor_schema }}</span>
+           </div>
+       </div>
+       </section>
+
+       {% if construction.changes %}
+       <section class="changes-container">
+            <div class="changes-wrapper">
+                <div class="row">
+                    <p>
+                        <a class="changes-toggle" href="#changes-{{ res_id }}"
+                          role="button" aria-expanded="false" aria-controls="changes-{{ res_id }}">
+                                Show history data
+                        </a>
+                    </p>
+                </div>
+                <div class="row">
+                    <div class="changes collapse-show col-12" id="changes-{{ res_id }}">
+                        <p class="changes-chart-was-hidden-message">
+                            Здесь мог быть отображён график, но он не уместился на экране Вашего устройства.
+                            Вы можете скачать его <a href="#">по ссылке</a>.
+                        </p>
+
+                        <div class="changes-chart" id="changes-chart-{{ res_id }}">
+                            <p class="changes-chart-no-js">
+                                JavaScript недоступен, график отображён как картинка.
+                                Включение JavaScript сделает график интерактивным.
+                            </p>
+                            <img src="#" class="changes-chart-no-js" width="100%">
+                        </div>
+                            {% include '_changes_table.html' %}
+                    </div>
+                </div>
+            </div>
+       </section>
+       {% endif %}
+
+       <section class="data-sources" id="data-sources-{{ res_id }}">
+           <label class="data-sources-label">Источники данных</label>
+           <span class="about-thesis">
+               Конструкция была описана автором
+               {% with paper = construction.general_info.term_paper,
+                       paper = none if paper == 'link' else paper %}
+                   {% if paper is none %}
+                       <a href="#" class="dead">
+                   {% else %}
+                       <a href="{{ paper }}">
+                   {% endif %}
+               {% endwith %}
+                    в курсовой работе
+               </a>
+               .
+           </span>
+           <span class="about-sample">
+               Аннотированные данные <a href="{{ construction.general_info.annotated_sample }}">доступны по ссылке</a>.
+           </span>
+       </section>
+   </article>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+<script src="/static/scripts/plots_extra.js"></script>
+<script type='text/javascript'>
+  var changes_graph_{{ res_id }} = {{graphJSON | safe}};
+  if (changes_graph_{{ res_id }}){
+      var config = {responsive: true}
+      Plotly.plot('changes-chart-{{ res_id }}',changes_graph_{{ res_id }},{}, config);
+  }
+</script>
+{% endblock %}
+
