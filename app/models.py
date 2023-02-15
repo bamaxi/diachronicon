@@ -1,26 +1,36 @@
+from datetime import datetime
+
 from sqlalchemy import (
     Column,
     Integer,
     String,
     Enum,
     Boolean,
-    ForeignKey
+    ForeignKey,
 )
 from sqlalchemy import event
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import (
+    relationship,
+    declarative_mixin
+)
 
 from app.database import (
     Base,
     db_session
 )
 from app.utils import read_lines
+from app.constants import NO_DATE
 
+
+MAX_FORMULA_LEN = 200
+
+REPR_CHAR_LIM = 25
 
 # SYNT_FUNCTION_OF_ANCHOR_VALUES = read_lines(
 #     'app/database-meta/synt_function_of_anchor_values.txt'
 # )
 
-# these are known in advance and equal to RUssian Constructicon
+# these are known in advance and equal to Russian Constructicon
 SYNT_FUNCTION_OF_ANCHOR_VALUES = (
     "Argument",
     "Coordinator",
@@ -37,8 +47,6 @@ SYNT_FUNCTION_OF_ANCHOR_VALUES = (
     "Verb Predicate",
     "Word-Formation",
 )
-
-REPR_CHAR_LIM = 25
 
 
 class GeneralInfo(Base):
@@ -68,17 +76,34 @@ class GeneralInfo(Base):
                 f'{self.annotated_sample!r}, {self.term_paper!r}, {self.status!r})')
 
 
-class Construction(Base):
-    __tablename__ = 'construction'
-
+@declarative_mixin
+class ConstructionMixin:
     id = Column(Integer, primary_key=True)
 
     # TODO: do we want to search by parts of formula or anchors?
     #   if we do, and have a query language, with * or +, sql may not be enough
     #   postgreSQL with regex may work
-    formula = Column(String(200))
+    formula = Column(String(MAX_FORMULA_LEN))
+
+    def __repr__(self):
+        return (f'{self.__class__.__name__}({self.id!r}, {self.formula!r}, '
+                f'{self.contemporary_meaning!r}, {self.variation!r}, '
+                f'{self.in_rus_constructicon!r}, {self.rus_constructicon_id!r}, '
+                f'{self.synt_function_of_anchor!r}, {self.anchor_schema!r}, '
+                f'{self.anchor_ru!r}, {self.anchor_eng!r})')
+
+
+class Construction(ConstructionMixin, Base):
+    __tablename__ = 'construction'
+
+    # id = Column(Integer, primary_key=True)
+    #
+    # # TODO: do we want to search by parts of formula or anchors?
+    # #   if we do, and have a query language, with * or +, sql may not be enough
+    # #   postgreSQL with regex may work
+    # formula = Column(String(200))
     contemporary_meaning = Column(String(200))
-    variation = Column(String(200))
+    variation = Column(String(400))
 
     # TODO: the first is reducible to the latter (NULL => not in constructicon)
     in_rus_constructicon = Column(Boolean)
@@ -109,9 +134,11 @@ class Construction(Base):
     )
 
     # Uni-directional one-to-many
-    constraints = relationship(
-        "Constraint", order_by="Constraint.id"
-    )
+    constraints = relationship("Constraint", order_by="Constraint.id")
+
+    variants = relationship(
+        "ConstructionVariant", back_populates="construction",
+        order_by="ConstructionVariant.id")
 
     def exist_constraints(self):
         return bool(self.constraints)
@@ -119,12 +146,28 @@ class Construction(Base):
     def exist_changes_constraints(self):
         return any(change.exist_constraints() for change in self.changes)
 
-    def __repr__(self):
-        return (f'Construction({self.id!r}, {self.formula!r}, '
-                f'{self.contemporary_meaning!r}, {self.variation!r}, '
-                f'{self.in_rus_constructicon!r}, {self.rus_constructicon_id!r}, '
-                f'{self.synt_function_of_anchor!r}, {self.anchor_schema!r}, '
-                f'{self.anchor_ru!r}, {self.anchor_eng!r})')
+    # def __repr__(self):
+    #     return (f'Construction({self.id!r}, {self.formula!r}, '
+    #             f'{self.contemporary_meaning!r}, {self.variation!r}, '
+    #             f'{self.in_rus_constructicon!r}, {self.rus_constructicon_id!r}, '
+    #             f'{self.synt_function_of_anchor!r}, {self.anchor_schema!r}, '
+    #             f'{self.anchor_ru!r}, {self.anchor_eng!r})')
+
+
+class ConstructionVariant(ConstructionMixin, Base):
+    __tablename__ = 'construction_variant'
+
+    construction_id = Column(Integer, ForeignKey(Construction.id))
+    construction = relationship("Construction", back_populates="variants")
+                                # uselist=False)  # One-to-one
+    is_main = Column(Boolean)
+
+    # formula = Column(String(200))
+
+    formula_elements = relationship(
+        "FormulaElement", back_populates="construction_variant",
+        cascade="all, delete-orphan"  # TODO: check if setting is proper
+    )
 
 
 class FormulaElement(Base):
@@ -132,15 +175,22 @@ class FormulaElement(Base):
     __tablename__ = 'formula_element'
 
     id = Column(Integer, primary_key=True)
+    formula_id = Column(Integer, unique=True)
     construction_id = Column(Integer, ForeignKey(Construction.id))
+    construction_variant_id = Column(Integer, ForeignKey(ConstructionVariant.id))
 
     value = Column(String(100))
     order = Column(Integer)
-    is_optional = Column(Boolean)
+    depth = Column(Integer)
+
+    is_optional = Column(Boolean, default=False)
     has_variants = Column(Boolean, nullable=True)
 
     construction = relationship(
         "Construction", back_populates="formula_elements",
+    )
+    construction_variant = relationship(
+        "ConstructionVariant", back_populates="formula_elements",
     )
 
     def __repr__(self):
@@ -192,6 +242,16 @@ class Change(Base):
     def exist_constraints(self):
         return bool(self.constraints)
 
+    def dates_to_dict(self):
+        dates = {}
+
+        for field in ('first_attested', 'last_attested'):
+            year = parse_year(getattr(self, field))
+            value = datetime(year, 1, 1) if year else NO_DATE
+
+            # dates.setdefault(field, []).append(value)
+            dates[field] = value
+
     def __repr__(self):
         return (f'Change({self.id!r}, {self.construction_id!r}, '
                 f'{self.stage!r}, {self.level!r}, {self.type_of_change!r} '
@@ -229,5 +289,3 @@ class Constraint(Base):
 #
 #     if change_id:
 #         db_session.execute(select())
-
-
