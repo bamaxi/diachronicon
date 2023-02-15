@@ -1,26 +1,25 @@
-﻿from typing import Literal, Union
+﻿from typing import Dict, Union, Type
 
-import logging
 from datetime import datetime
+import logging
+from operator import (
+    le,
+    ge,
+    eq
+)
 
+import pandas as pd
+import sqlalchemy.sql.expression
 from sqlalchemy import (
     select,
     or_,
     and_
 )
 from sqlalchemy.orm import aliased
-
-from numpy import array
-import pandas as pd
-
-import plotly
-import plotly_express as px
-import plotly.graph_objects as go
-
 from flask import current_app
 from flask import render_template, abort, request, redirect
 
-from . import bp
+from app.search import bp
 from app.models import (
     Construction,
     Change,
@@ -28,8 +27,12 @@ from app.models import (
     Constraint,
     FormulaElement
 )
-
-from config import Config
+from app.search.plotting import (
+    NO_DATE,
+    new_plot_single_const_changes,
+    super_new_plot_single_const_changes,
+    ConstructionChangesPlot
+)
 
 
 # from app.utils import pretty_log
@@ -37,269 +40,23 @@ from config import Config
 
 logger = logging.getLogger()
 
+_OPERATORS = {'le': le, 'ge': ge, 'eq': eq}
 CHANGE_COLUMNS = [str(col).removeprefix('change.')
                   for col in Change.__table__.columns]
+
+MEANING_VALUES = Construction.contemporary_meaning.unique()
+SYNT_FUNCTIONS_ANCHOR = Construction.synt_function_of_anchor.type.enums
 
 pd_na = pd.NA
 
 
-COLORS = {
-    'synt': "#636efa",
-    'sem':  "#EF553B"
-}
-
-
-class NoDate:
-    def __lt__(self, other):
-        return True
-
-    def __gt__(self, other):
-        return False
-
-
-NO_DATE = NoDate()
-
-
-def new_plot_single_const_changes(
-        data: dict[str, [dict[str, list[datetime]]]],
-        no_last_date_option: Literal['current' or 'largest'] = 'largest'
-):
-    assert 1 <= len(data) <= 2 and ('synt' in data or 'sem' in data)
-
-    # make a filler to be used instead of unmarked last-attested dates
-    if no_last_date_option == 'largest':
-        LAST_DATE = max(_date for level in data
-                        for _date in data[level]['last_attested'])
-    elif no_last_date_option == 'current':
-        LAST_DATE = datetime(datetime.now().year, 1, 1)
-    else:
-        raise ValueError
-
-    for level, level_data in data.items():
-        last_dates = level_data['last_attested']
-        first_dates = level_data['first_attested']
-
-        corrected_last_dates = []
-
-        for i, last_date_ in enumerate(last_dates):
-            if last_date_ is NO_DATE and first_dates[i] is NO_DATE:
-                # remove first_date and don't add last_date
-                first_dates.pop(i)
-                continue
-            elif last_date_ is NO_DATE:
-                last_date_ = LAST_DATE
-
-            corrected_last_dates.append(last_date_)
-
-        data[level]['last_attested'] = corrected_last_dates
-
-    print(LAST_DATE, data, last_dates, corrected_last_dates, sep='\n')
-
-    fig = go.Figure(
-        layout={
-            'barmode': 'overlay',
-            'legend': {'title': {'text': 'level'}, 'tracegroupgap': 0},
-            'margin': {'t': 60},
-            # 'template': '...',
-            'xaxis': {'anchor': 'y', 'domain': [0.0, 1.0], 'type': 'date', 'title': {'text': 'year'}},
-            'yaxis': {'anchor': 'x', 'domain': [0.0, 1.0], }  # 'title': {'text': 'construction_id'}}
-        }
-    )
-
-    for i, (level, level_data) in enumerate(data.items()):
-        first_dates = level_data['first_attested']
-
-        x = []
-        for j, last_date_ in enumerate(level_data['last_attested']):
-            first_date_ = first_dates[j]
-            if last_date_ is NO_DATE and first_date_ is NO_DATE:
-                continue
-
-            x.append((last_date_ - first_date_).total_seconds() * 1000)
-
-        fig.add_bar(**{
-            'alignmentgroup': 'True',
-            'base': array(first_dates, dtype=object),
-            # 'customdata': level,
-            'hovertemplate': (
-                'level=%{name}<br>first_attested=%{base}<br>'
-                'last_attested=%{x}<br>construction_id=%{y}'
-                '<extra></extra>'
-            ),
-            'legendgroup': level,
-            'marker': {'color': COLORS[level], 'opacity': 0.6},
-            'name': level,
-            'offset': 0.0 - i * 0.05,
-            'width': 0.05,
-            'offsetgroup': level,
-            'orientation': 'h',
-            'showlegend': True,
-            'textposition': 'auto',
-            'x': array(x),
-            'xaxis': 'x',
-            'y': array([1, 1, 1, 1], dtype='int64'),
-            'yaxis': 'y'
-        })
-
-    graphJSON = str(fig.to_json())
-
-    return graphJSON
-
-
-def plot_single_const_changes(
-        df: pd.DataFrame,
-        no_last_date_option: Literal['current' or 'largest'] = 'largest'
-):
-    fig = go.Figure(
-        layout={
-            'barmode': 'overlay',
-            'legend': {'title': {'text': 'level'}, 'tracegroupgap': 0},
-            'margin': {'t': 60},
-            # 'template': '...',
-            'xaxis': {'anchor': 'y', 'domain': [0.0, 1.0], 'type': 'date', 'title': {'text': 'year'}},
-            'yaxis': {'anchor': 'x', 'domain': [0.0, 1.0], }#'title': {'text': 'construction_id'}}
-        }
-    )
-
-    fig.add_bar(**{
-        'alignmentgroup': 'True',
-        'base': array(['1850', '1831', '1857', '1873'], dtype=object),
-        'hovertemplate': ('level=%{name}<br>first_attested=%{base}<br>'
-                          'last_attested=%{x}<br>construction_id=%{y}'
-                          '<extra></extra>'),
-        'legendgroup': 'synt',
-        'marker': {'color': '#636efa', 'opacity': 0.6},
-        'name': 'synt',
-        'offset': 0.0,
-        'width': 0.1,
-        'offsetgroup': 'synt',
-        'orientation': 'h',
-        'showlegend': True,
-        'textposition': 'auto',
-        'x': array([1.1360736e+12, 4.8282048e+12, 3.1553280e+11, 4.4810496e+12]),
-        'xaxis': 'x',
-        'y': array([1, 1, 1, 1], dtype='int64'),
-        'yaxis': 'y'
-    })
-
-    fig.add_bar(**{
-        'alignmentgroup': 'True',
-        'base': array(['1850', '1831'], dtype=object),
-        'hovertemplate': ('level=%{name}<br>first_attested=%{base}<br>'
-                          'last_attested=%{x}<br>construction_id=%{y}'
-                          '<extra></extra>'),
-        'legendgroup': 'sem',
-        'marker': {'color': '#EF553B', 'opacity': 0.6},
-        'name': 'sem',
-        'offset': -0.1,
-        'width': 0.1,
-        'offsetgroup': 'sem',
-        'orientation': 'h',
-        'showlegend': True,
-        'textposition': 'auto',
-        'x': array([1.1360736e+12, 3.1561920e+11]),
-        'xaxis': 'x',
-        'y': array([1, 1], dtype='int64'),
-        'yaxis': 'y'
-    })
-
-    # fig = px.timeline(
-    #     df, x_start="first_attested", x_end="last_attested",
-    #     y="construction_id", color='level',
-    #     opacity=.6,
-    #                   # , hover_name="hoverName"
-    #                   # # , color_discrete_sequence=px.colors.qualitative.Prism
-    #                   # , opacity=.6
-    #                   # , template='plotly_white'
-    #                   # , color='level'
-    #                   # , hover_data=['first_attested', 'last_attested']
-    # )
-
-    # print(vars(fig))
-    # print(fig.data)
-
-    # print(list(fig.data))
-    # for obj in fig.data:
-    #     # stage, level = obj.hovertext[0].split("|")
-    #     # print(stage, level)
-    #     print(obj)
-    #     level = obj.name
-    #     if (level == 'synt'):
-    #         obj.width = 0.1
-    #         obj.offset = 0.0
-    #     elif (level == 'sem'):
-    #         obj.width = 0.1
-    #         obj.offset = -0.1
-    #     print(obj)
-    #     print(obj.hovertemplate)
-    #
-    # fig.add_bar(**{
-    #     'alignmentgroup': 'True',
-    #     'base': array([1850, 1831], dtype=object),
-    #     'hovertemplate': ('<b>%{hovertext}</b><br>'),
-    #     'hovertext': array(['3|sem', '0|sem'], dtype=object),
-    #     'legendgroup': 'sem2',
-    #     'marker': {'color': '#EF553B', 'opacity': 0.6},
-    #     'name': 'sem2',
-    #     'offsetgroup': 'sem2',
-    #     'orientation': 'h',
-    #     'showlegend': True,
-    #     'textposition': 'auto',
-    #     'x': array([1860, 2015]),
-    #     'xaxis': 'x',
-    #     'y': array([3, 3], dtype=object),
-    #     'yaxis': 'y'
-    # })
-
-    # data = [dict(Task="Job A", Start='2007', Finish='2010'),
-    #         dict(Task="Job A", Start='2008', Finish='2010'),
-    #         dict(Task="Job B", Start='2004', Finish='2010'),
-    #         dict(Task="Job C", Start='2009', Finish='2010')]
-    #
-    # df = pd.DataFrame(data)
-    #
-    # df['JobNum'] = ""
-    # df.loc[0, 'JobNum'] = 1
-    # for idx in range(1, df.shape[0]):
-    #     if df.loc[idx - 1, 'Task'] == df.loc[idx, 'Task']:
-    #         df.loc[idx, 'JobNum'] = df.loc[idx - 1, 'JobNum'] + 1
-    #     else:
-    #         df.loc[idx, 'JobNum'] = 1
-    #
-    # df['hoverName'] = df.apply(lambda x: x['Task'] + "|" + str(x['JobNum']), axis=1)
-    #
-    # print(df.info())
-    # print(df['Start'])
-    # print(df['Finish'])
-
-    # fig = px.timeline(df
-    #                   , x_start="Start"
-    #                   , x_end="Finish"
-    #                   , y="Task"
-    #                   , hover_name="hoverName"
-    #                   # , color_discrete_sequence=px.colors.qualitative.Prism
-    #                   , opacity=.7
-    #                   , template='plotly_white'
-    #                   , color='JobNum'
-    #                   , hover_data=['Start', 'Finish']
-    #                   )
-    #
-    # for obj in fig.data:
-    #     Task, JobNum = obj.hovertext[0].split("|")
-    #     if (int(JobNum) == 1):
-    #         obj.width = 0.1
-    #         obj.offset = 0.05
-    #     elif (int(JobNum) == 2):
-    #         obj.width = 0.1
-    #         obj.offset = -0.05
-
-    # graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-    graphJSON = str(fig.to_json())
-
-    return graphJSON
-
-
 def parse_year(year: Union[str, int, None], left_bias=0.0):
+    """Parse year string into datetime
+
+    :param year:
+    :param left_bias:
+    :return:
+    """
     if not year or year == '-':
         return None
     if isinstance(year, int) or year.isnumeric():
@@ -316,6 +73,11 @@ def parse_year(year: Union[str, int, None], left_bias=0.0):
 
 
 def prepare_graph_data(changes):
+    """Update dates and
+
+    :param changes:
+    :return:
+    """
     changes_data = {}
 
     for change in changes:
@@ -347,7 +109,9 @@ def construction(index: int):
     logger.debug(f"{changes_data}")
 
     if changes_data:
-        graphJSON = new_plot_single_const_changes(changes_data)
+        graphJSON = str(ConstructionChangesPlot.from_elements(changes_data).to_plotly_json())
+        # graphJSON = new_plot_single_const_changes(changes_data)
+        # graphJSON = super_new_plot_single_const_changes(changes_data)
     else:
         graphJSON = None
 
@@ -360,19 +124,11 @@ def construction(index: int):
         graphJSON=graphJSON
     )
 
-    # return render_template(
-    #     'index.html',
-    #     title='Главная',
-    #     year=datetime.now().year,
-    #     res_id=res.id,
-    #     construction=res,
-    #     graphJSON=graphJSON
-    # )
 
-MAPPING = {
+HTML_NAME2MODEL = {
     'c': Construction,
     'constraint': Constraint,
-    # '': Change,
+    'change': Change,
     # '': GeneralInfo,
 }
 
@@ -381,11 +137,32 @@ html_name2table_name = {
 }
 
 
-def make_basic_formula_query(stmt, model, value):
+def make_basic_formula_query(stmt: sqlalchemy.sql.expression.Select,
+                             model: Construction, value: str,
+                             *args, **kwargs):
     return stmt.where(getattr(model, 'formula').like(f"%{value}%"))
 
 
-def make_byelem_formula_query(stmt, model, value):
+def _make_skip_optional_subquery(cur_elem, distance, model=FormulaElement):
+    return select(model.id).where(
+        FormulaElement.construction_id == cur_elem.construction_id,
+        FormulaElement.is_optional == True,
+        cur_elem.order == FormulaElement.order + distance,
+    )
+
+
+def make_byelem_formula_query(
+    stmt: sqlalchemy.sql.expression.Select,
+    model: Type[FormulaElement], value: str,
+    params_values
+):
+    """Update stmt to filter by formula elementwise, allowing simple regex/logic
+
+    :param stmt:
+    :param model:
+    :param value:
+    :return:
+    """
     elements = value.split(' ')
     print(elements)
 
@@ -398,15 +175,18 @@ def make_byelem_formula_query(stmt, model, value):
     for i, element_value in enumerate(elements):
         cur_elem_table = element_tables[i]
 
+        # TODO: опционально пропускать при поиске по элементам те, что в скобках
         # TODO: asterisk instead of element
         if i != 0:
             stmt = stmt.where(
                 cur_elem_table.construction_id == element_tables[0].construction_id,
-                cur_elem_table.order == element_tables[i - 1].order + 1,
-                # or_(cur_elem_table.order == element_tables[i-1].order + 1,
-                #     and_(cur_elem_table.is_optional,
-                #          cur_elem_table.order == element_tables[i-1].order + 2)
-                # )
+                or_(
+                    cur_elem_table.order == element_tables[i-1].order + 1,
+                    and_(
+                        cur_elem_table.order == element_tables[i-1].order + 2,
+                        _make_skip_optional_subquery(cur_elem_table, 1).exists()
+                    )
+                )
             )
 
         # params[f'gloss{i}'] = value  # or text(value)
@@ -416,58 +196,73 @@ def make_byelem_formula_query(stmt, model, value):
     return stmt
 
 
-def make_formula_query(stmt, model, value):
+def make_formula_query(stmt, model, value, params_values):
     if '*' in value:
         return make_byelem_formula_query(stmt, model, value)
     return make_basic_formula_query(stmt, model, value)
 
 
+def make_duration_query(stmt, model, duration_value, params_values):
+    duration_sign = params_values.get('duration_sign')
+    print(f"in duration: {duration_sign}, {duration_value}")
+    if not duration_sign:
+        logger.warning(f"no argument in form: `duration-sign`")
+        return stmt
+
+    op = _OPERATORS[duration_sign]
+    logger.info(f"op and value are: {op} {duration_value}")
+    print(f"op and value are: {op} {duration_value}")
+    return stmt.where(
+        # op(model.last_attested - model.first_attested, duration_value)
+        op(getattr(model, "last_attested") - getattr(model, "first_attested"),
+           duration_value)
+    )
+
+
 param2query_maker = {
     # 'formula': make_formula_query,
     'formula': make_formula_query,
-    'element': make_basic_formula_query
+    'element': make_basic_formula_query,
+    'duration': make_duration_query
 }
 
-# TODO: опционально пропускать при поиске по элементам те, что в скобках
 
-def build_query(items, parts_sep='-', ready_only=False):
-    """
-    Collects html params into database query
-    :param items:
-    :param parts_sep:
-    :param ready_only:
-    :return:
-    """
-    # stmt = None
-    # if ready_only:
-    #     stmt = select()
-
+def build_query(
+    items: Dict[str, str], parts_sep='-', ready_only=False,
+    # i_to_zero_base=True
+) -> sqlalchemy.sql.expression.Select:
+    """Collect html params into database query"""
     items_by_model = {}
 
     for key, value in items:
         if not value:
             continue
 
-        logger.debug(key, value)
+        logger.debug(f"{key} -- {value}")
+
         key_model_part, key_param_part = key.split(parts_sep, maxsplit=1)
-        # new
         key_param_part = html_name2table_name.get(key_param_part) or key_param_part
 
         # there could be multiple constraints or changes coded
         #   in html as `constraint-3-element` for example
         if parts_sep not in key_param_part:
-            items_by_model.setdefault(MAPPING[key_model_part], {}
-                                      )[key_param_part] = value
+            items_by_model.setdefault(
+                    HTML_NAME2MODEL[key_model_part], {}
+            )[key_param_part] = value
             continue
 
+        # the key is of the type `change-1-first_attested`
         i, key_param = key_param_part.split(parts_sep, maxsplit=1)
-        model_list = items_by_model.setdefault(MAPPING[key_model_part], [])
+        model_list = items_by_model.setdefault(HTML_NAME2MODEL[key_model_part], [])
 
         i = int(i)
+
+        print(i, key_param, model_list, len(model_list) < i)
+
         if len(model_list) < i:
             model_list.append({key_param: value})
         else:
-            model_list[i][key_param] = value
+            model_list[i-1][key_param] = value
 
     if ready_only:
         items_by_model[Construction]['status'] = 'ready'
@@ -480,30 +275,40 @@ def build_query(items, parts_sep='-', ready_only=False):
     stmt = select(*[model for model in items_by_model])
     for model, params_values in items_by_model.items():
         if not isinstance(params_values, list):
-            for param, val in params_values.items():
-                print(model, param, val)
-                if param in param2query_maker:
-                    stmt = param2query_maker[param](stmt, model, val)
-                else:
-                    # a simple equality testing
-                    stmt = stmt.where(getattr(model, param) == val)
+            pass
         else:
             # code for aliases? How should multiple constraints or multiple
             #   changes be connected?
-            pass
+            params_values = params_values[0]
+
+        for param, val in params_values.items():
+            print("model, param, val:", model, param, val)
+            if '_' in param:  # a helper parameter
+                continue
+            if param in param2query_maker:
+                # special processing of certain search fields
+                print(param)
+                stmt = param2query_maker[param](stmt, model, val, params_values)
+            else:
+                # a simple equality testing
+                stmt = stmt.where(getattr(model, param) == val)
 
     print(stmt)
 
     return stmt
 
 
+# TODO: add wtforms instead of manual handling
 @bp.route('/search/', methods=['GET', 'POST'])
 def search():
-    meaning_values = current_app.db_session.execute(
-        select(Construction.contemporary_meaning)
-    ).scalars().all()
+    # print('handlers', logger.handlers)
 
-    synt_functions_anchor = Construction.synt_function_of_anchor.type.enums
+    meaning_values = MEANING_VALUES
+    # current_app.db_session.execute(
+    #     select(Construction.contemporary_meaning)
+    # ).scalars().all()
+
+    synt_functions_anchor = SYNT_FUNCTIONS_ANCHOR
 
     query_args = list(request.args.items())
     print(*query_args, sep='\n')
@@ -511,9 +316,10 @@ def search():
 
     # a GET request with no parameters or unfilled parameters
     if (request.method != 'POST'
-        and not (request.args and any(val for key, val in query_args))
-    ):
-        logger.debug(f"no query, returning clear form")
+            and (not (request.args and any(val for key, val in query_args))
+                 or request.args.get('no-search') == '1')
+   ):
+        # logger.debug(f"no query, returning clear form")
 
         return render_template(
             'search.html',
@@ -521,9 +327,9 @@ def search():
             year=datetime.now().year,
             meaning_values=meaning_values,
             synt_functions_anchor=synt_functions_anchor,
+            query=request.args,
         )
 
-    # if request.method == 'POST' or request.method == 'GET' and request.args:
     print(f'in conditional')
     # print(*vars(request).items(), sep='\n')
     # print(*query_args, sep='\n')
@@ -539,6 +345,10 @@ def search():
 
     # print(results, results.scalars().all())
 
+    all_results = results.scalars().all()
+
+    print(f"len results: {len(all_results)}")
+
     return render_template(
         'search.html',
         title='Поиск: результаты',
@@ -546,7 +356,8 @@ def search():
         meaning_values=meaning_values,
         synt_functions_anchor=synt_functions_anchor,
         form_input=request.form,
-        results=results.scalars().all(),
+        results=all_results,
+        n_param_results=len(all_results),
         query=request.args
     )
 
@@ -554,6 +365,7 @@ def search():
 @bp.route('/simple-search/')
 def simple_search():
     return render_template(
-        '/errors/404.html',
-        message="Page under construction"
+        'search_simple.html',
+        # '/errors/404.html',
+        # message="Page under construction"
     ), 404

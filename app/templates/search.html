@@ -2,11 +2,19 @@
 
 {% block content %}
 
-{% macro fill_if_queried(param, query) -%}
+{% macro fill_if_queried(param, query, default="") -%}
     {%- if query is defined and param in query and query[param] %}
         value="{{ query[param] }}"
     {% endif -%}
 {%- endmacro %}
+
+{% macro fill_select_if_queried(param, query, val, is_default) -%}
+    {%- if (query is defined and param in query and query[param] == val)
+           or is_default %}
+        selected
+    {% endif -%}
+{%- endmacro %}
+
 
 <form class="row" id="search-form" action="#" method="get">
     <div class="form-text" id="formulaHelp">
@@ -18,13 +26,13 @@
         <a href="#" aria-disabled="true">Подробнее</a>
     </div>
 
-    <fieldset name="construction-general" class="col-md-4">
+    <fieldset name="construction-general" class="col-md-3">
         <legend>Общая информация</legend>
 
         <div class="form-field-text">
             <input type="text" class="form-control" id="constructionId"
                    placeholder="id" name="c-id"
-                   {{ fill_if_queried('c-id', query) }}
+                   {{ fill_if_queried("c-id", query) }}
             >
             <label for="constructionId">id</label>
             <div class="error feedback-invalid">Укажите положительное целое число</div>
@@ -34,7 +42,7 @@
             <input type="text" class="form-control" id="formula"
                    placeholder="formula" aria-describedby="formulaHelp"
                    name="c-formula"
-                   {{ fill_if_queried('c-formula', query) }}
+                   {{ fill_if_queried("c-formula", query) }}
             >
             <label for="formula">Формула</label>
 <!--                <div class="form-text" id="formulaHelp">-->
@@ -49,7 +57,7 @@
                    list="meaning_values"
                    placeholder="meaning" aria-describedby="meaningHelp"
                    name="c-meaning"
-                   {{ fill_if_queried('c-meaning', query) }}
+                   {{ fill_if_queried("c-meaning", query) }}
             >
             <label for="formula">
                 Значение
@@ -71,7 +79,7 @@
         <div class="form-check">
             <input class="form-check-input" type="checkbox" id="in_rus_construction"
                    name="c-in_rus_construction"
-                   {{ fill_if_queried('c-in_rus_construction', query) }}
+                   {{ fill_if_queried("c-in_rus_construction", query) }}
             >
             <label class="form-check-label" for="in_rus_construction">
               Есть в конструктиконе
@@ -82,7 +90,7 @@
         <div class="form-field-text">
             <input type="text" class="form-control" id="rus_constructicon_id"
                placeholder="rus_constructicon_id" name="c-rus_constructicon_id"
-                   {{ fill_if_queried('c-rus_constructicon_id', query) }}
+                   {{ fill_if_queried("c-rus_constructicon_id", query) }}
             >
             <label for="rus_constructicon_id">id (Конструктикон)</label>
             <div class="error feedback-invalid"></div>
@@ -97,7 +105,7 @@
             <input type="text" class="form-control" id="synt_function_of_anchor"
                    list="synt_function_of_anchor_values" placeholder="synt_function_of_anchor"
                    name="c-synt_function_of_anchor"
-                  {{ fill_if_queried('c-synt_function_of_anchor', query) }}
+                  {{ fill_if_queried("c-synt_function_of_anchor", query) }}
             >
             <label for="synt_function_of_anchor">Синт. функция якоря</label>
             <datalist id="synt_function_of_anchor_values">
@@ -111,7 +119,7 @@
         <div class="form-field-text">
             <input type="text" class="form-control" id="c-anchor_schema"
                    placeholder="c-anchor_schema" name="c-anchor_schema"
-                   {{ fill_if_queried('c-anchor_schema', query) }}
+                   {{ fill_if_queried("c-anchor_schema", query) }}
             >
             <label for="c-anchor_schema">Схема якоря</label>
             <div class="error feedback-invalid"></div>
@@ -120,7 +128,7 @@
         <div class="form-field-text">
             <input type="text" class="form-control" id="c-anchor_ru"
                    placeholder="c-anchor_ru" name="c-anchor_ru"
-                   {{ fill_if_queried('c-anchor_ru', query) }}
+                   {{ fill_if_queried("c-anchor_ru", query) }}
             >
             <label for="c-anchor_ru">Якорь (рус.)</label>
             <div class="error feedback-invalid"></div>
@@ -129,11 +137,96 @@
         <div class="form-field-text">
             <input type="text" class="form-control" id="c-anchor_en"
                    placeholder="c-anchor_en" name=""
-                   {{ fill_if_queried('c-anchor_en', query) }}
+                   {{ fill_if_queried("c-anchor_en", query) }}
             >
             <label for="c-anchor_en">Якорь (англ.)</label>
             <div class="error feedback-invalid"></div>
         </div>
+    </fieldset>
+
+    <fieldset name="changes" class="col-md-4">
+        <legend>Изменения конструкции</legend>
+
+        <div class="form-field-text" >
+            <input type="text" class="form-control" id="change-1-formula"
+                   placeholder="change-1-formula" name="change-1-formula"
+                   {{ fill_if_queried("c-id", query) }}
+            >
+            <label for="change-1-formula">Формула в этот период</label>
+            <div class="error feedback-invalid"></div>
+        </div>
+
+        <div class="form-field-text" >
+            <input type="number" class="form-control" id="change-1-stage-abs"
+                   placeholder="change-1-stage-abs" name="change-1-stage-abs"
+                   {{ fill_if_queried("c-id", query) }}
+            >
+            <label for="change-1-stage-abs">Этап в истории конструкции</label>
+            <div class="error feedback-invalid"></div>
+            <datalist>
+                <option label="первый" value="1"></option>
+                <option selected label="предпоследний" value="-2"></option>
+                <option label="последний" value="-1"></option>
+            </datalist>
+        </div>
+
+<!--            relative to other changes e.g. generated by JS   -->
+<!--            <div class="form-field-text" >-->
+<!--                <input type="number" class="form-control" id="change-1-stage-rel"-->
+<!--                       placeholder="change-1-formula" name="change-1-formula">-->
+<!--                <label for="constraint-1-element">-->
+<!--                    Этап в истории конструкции (относительный)</label>-->
+<!--                <div class="error feedback-invalid"></div>-->
+<!--            </div>-->
+
+        <select class="form-select" aria-label="Выбрать, что значит длительность"
+                name="change-1-type">
+            <option selected value="">Выберите тип изменения</option>
+            <option value="synt">Синтаксическое</option>
+            <option value="sem">Семантическое</option>
+            <option value="any">Любое</option>
+        </select>
+
+<!--        <div class="row no-pad-children">-->
+        <select class="form-select col-2" aria-label="Выбрать длительность изменения"
+                name="change-1-duration_sign">
+            <option value="">Длительность это</option>
+            <option value="le"
+                {{ fill_select_if_queried("change-1-duration_sign", query, "le", True) }}
+            >Максимум (&leqq;)</option>
+            <option value="ge"
+                {{ fill_select_if_queried("change-1-duration_sign", query, "ge") }}
+            >Минимум (&geqq;)</option>
+            <option value="eq"
+                {{ fill_select_if_queried("change-1-duration_sign", query, "eq") }}
+            >Ровно (&equals;)</option>
+        </select>
+
+        <div class="form-field-text">
+            <input type="text" class="form-control col-10" id="change-1-duration"
+                   placeholder="change-1-duration" name="change-1-duration"
+                   {{ fill_if_queried("change-1-duration", query) }}
+            >
+            <label for="change-1-duration">Длительность периода</label>
+            <div class="error feedback-invalid"></div>
+        </div>
+<!--        </div>-->
+
+    <div class="form-field-text">
+        <input type="text" class="form-control" id="change-1-first_attested"
+               placeholder="change-1-first_attested" name="change-1-first_attested">
+        <label for="change-1-first_attested">Первое вхождение в таком виде</label>
+        <div class="error feedback-invalid"></div>
+    </div>
+    <div class="form-field-text">
+        <input type="number" class="form-control" id="change-1-last_attested"
+               placeholder="2020" name="change-1-last_attested"
+               value=""
+        >
+        <label for="change-1-last_attested">Последнее вхождение в таком виде</label>
+        <div class="error feedback-invalid"></div>
+    </div>
+    <button onclick="add_another_change()">Добавить изменение</button>
     </fieldset>
 
     <fieldset name="constraint-1-construction" class="col-md-4">
@@ -155,12 +248,12 @@
                   <option value="">Любое</option>
             </select>
 
-            <div class="form-field-text col-md-4">
-<!--                <input type="" class="form-control" id=""-->
-<!--                       placeholder="">-->
-<!--                <label for=""></label>-->
-                <div class="error feedback-invalid"></div>
-            </div>
+<!--            <div class="form-field-text col-md-4">-->
+<!--&lt;!&ndash;                <input type="" class="form-control" id=""&ndash;&gt;-->
+<!--&lt;!&ndash;                       placeholder="">&ndash;&gt;-->
+<!--&lt;!&ndash;                <label for=""></label>&ndash;&gt;-->
+<!--                <div class="error feedback-invalid"></div>-->
+<!--            </div>-->
 
             <div class="form-field-text col-12">
                 <input type="text" class="form-control" id="constraint-1-value"
@@ -178,29 +271,12 @@
 </form>
 <!--</div>-->
 
-{%- if query -%}
-    <h3>Результаты</h3>
-    {%- if not results -%}
-    <p>Ничего не найдено</p>
-    {%- endif -%}
-    {%- if results -%}
-        <div class="col-12">
-        {%- for result in results -%}
-            <div class="row result">
-                <span>{{ loop.index1 }}</span>
-                <div>
-                    <a href="{{ url_for('search.construction', index=result.id) }}">
-                        {{ result.formula }}
-                    </a>
-                </div>
-            </div>
-        {% endfor %}
-        </div>
-    {% endif %}
-{%- endif -%}
+{% include "_search_result.html" %}
+
 
 {% endblock %}
 
 {% block scripts %}
 <script src="/static/scripts/search_form_parse.js"></script>
+<script src="/static/scripts/add_search_form.js"></script>
 {% endblock %}

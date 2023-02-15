@@ -1,0 +1,23 @@
+{%- if query and not query.get('no-search') -%}
+    <h3>Результаты</h3>
+    {%- if not results -%}
+    <p>Ничего не найдено</p>
+    {%- endif -%}
+    {%- if results -%}
+        <span>Результатов по искомому параметру: {{ n_param_results }}</span>
+        <div class="col-12">
+        {%- for result in results -%}
+            <div class="row result">
+                <div class="short">
+                    <span>{{ loop.index }}</span>
+                    <span>
+                        <a href="{{ url_for('search.construction', index=result.id) }}">
+                            {{ result.formula or result.stage or result }}
+                        </a>
+                    </span>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+{%- endif -%}

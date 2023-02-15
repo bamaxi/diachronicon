@@ -1,0 +1,10 @@
+{% extends "layout.html" %}
+
+{% macro fill_if_queried(param, query) -%}
+    {%- if query is defined and param in query and query[param] %}
+        value="{{ query[param] }}"
+    {% endif -%}
+{%- endmacro %}
+
+{% block content %}{% endblock %}
+
