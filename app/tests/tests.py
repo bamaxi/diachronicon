@@ -1,6 +1,8 @@
 import unittest
 
+from config import TestConfig
 from app import create_app
+
 
 SEARCH_PARAM2RESULTS = {
     'c-id': [
@@ -36,6 +38,8 @@ SEARCH_PARAM2RESULTS = {
 
         ("pst", "на кой NP-Nom (NP-Dat) сдаться-Pst"),
         ("pst", "V-Pst"),
+
+        # ("")
     ],
     'c-meaning': [
         ("Causation", "V-Pst"),
@@ -79,15 +83,26 @@ SEARCH_PARAM2RESULTS = {
 }
 
 
+class DBSearchTestCase(unittest.TestCase):
+    def test_duration_like(self): ...
+        # TODO:
+        # session.execute(select(Change).where(
+        #    Change.last_attested - Change.first_attested >= 100)
+        # ).scalars().all()
+
+
 class AppFactoryTestCase(unittest.TestCase):
     def test_factory(self):
         assert not create_app().testing
-        assert create_app({'TESTING': True}).testing
+
+        test_config = TestConfig()
+        test_config.TESTING = True
+        assert create_app(test_config).testing
 
 
 class AppTestCase(unittest.TestCase):
     def setUp(self):
-        app = create_app({'TESTING': True})
+        app = create_app(test_config_obj=TestConfig)#, remove_wsgi_logger=True)
         self.app = app
         self.ctx = app.app_context()
         self.ctx.push()

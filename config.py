@@ -11,6 +11,8 @@ class Config(object):
     # DATABASE = os.path.join(app.instance_path, 'app.sqlite')
     SQLALCHEMY_DATABASE_URI_TEMPLATE = 'sqlite:///' + basedir + '{}'
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'diachronicon.db')
+    # sqlalchemy_echo = os.environ.get('SQLA_ECHO')
+    # SQLALCHEMY_ECHO = bool(int(os.environ.get('SQLA_ECHO') or 0)) or 'debug'
     SQLALCHEMY_ECHO = 'debug'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
@@ -23,15 +25,23 @@ class Config(object):
     LOGGING_FILE = os.environ.get('FLASK_LOGGING_FILE') or 'logs/base.log'
 
 
+class TestConfig(Config):
+    SQLALCHEMY_ECHO = False
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    LOGGING_FILE = os.environ.get('FLASK_LOGGING_FILE') or 'logs/test.log'
+
+
 loggingConfig = {
     'version': 1,
     'formatters': {'default': {
         'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
     }},
-    'handlers': {'wsgi': {
-        'class': 'logging.StreamHandler',
-        'stream': 'ext://flask.logging.wsgi_errors_stream',
-        'formatter': 'default',
+    'handlers': {
+        'wsgi': {
+            'class': 'logging.StreamHandler',
+            'stream': 'ext://flask.logging.wsgi_errors_stream',
+            'formatter': 'default',
         },
         'file': {
          'class': 'logging.handlers.RotatingFileHandler',

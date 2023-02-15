@@ -1,4 +1,5 @@
 ﻿import os
+from operator import attrgetter, itemgetter
 
 from werkzeug.debug import DebuggedApplication
 from flask import Flask, render_template, send_from_directory
@@ -10,25 +11,28 @@ from flask import Flask, render_template, send_from_directory
 from config import Config, loggingConfig
 import app.logging_utils
 
-logging_utils.init_logger(Config.LOGGING_FILE, loggingConfig)
+logger = logging_utils.init_logger(Config.LOGGING_FILE, loggingConfig)
 
 from app.database import db_session
+# from app.database_utils import make_database
 
 
 # db = SQLAlchemy()
 # migrate = Migrate()
 
 
-def create_app(test_config=None):
+def create_app(test_config_obj=None, remove_wsgi_logger=False):
     app = Flask(__name__, instance_relative_config=True)
-    if test_config is None:
+    if test_config_obj is None:
         # load the instance config, if it exists, when not testing
         # app.config.from_pyfile('config.py', silent=True)
         # or from CLass (needs to be imported from module)
         app.config.from_object(Config)
+        config = Config
     else:
         # load the test config if passed in
-        app.config.from_mapping(test_config)
+        app.config.from_object(test_config_obj)
+        config = test_config_obj
 
     # ensure the instance folder exists
     try:
@@ -36,7 +40,13 @@ def create_app(test_config=None):
     except OSError:
         pass
 
+    if remove_wsgi_logger:
+        logger.removeHandler('wsgi')
+        print(logger.handlers)
+
     # managing db sessions
+    # engine, db_session, Base = make_database(
+    #     config.SQLALCHEMY_DATABASE_URI, sqlalchemy_echo=config.SQLALCHEMY_ECHO)
     app.db_session = db_session
 
     @app.teardown_appcontext
