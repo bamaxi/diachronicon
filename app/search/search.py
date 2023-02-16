@@ -44,8 +44,8 @@ _OPERATORS = {'le': le, 'ge': ge, 'eq': eq}
 CHANGE_COLUMNS = [str(col).removeprefix('change.')
                   for col in Change.__table__.columns]
 
-MEANING_VALUES = Construction.contemporary_meaning.unique()
-SYNT_FUNCTIONS_ANCHOR = Construction.synt_function_of_anchor.type.enums
+MEANING_VALUES = []  # Construction.contemporary_meaning.unique()
+SYNT_FUNCTIONS_ANCHOR = []  # Construction.synt_function_of_anchor.type.enums
 
 pd_na = pd.NA
 
@@ -204,7 +204,7 @@ def make_formula_query(stmt, model, value, params_values):
 
 def make_duration_query(stmt, model, duration_value, params_values):
     duration_sign = params_values.get('duration_sign')
-    print(f"in duration: {duration_sign}, {duration_value}")
+    logger.debug(f"in duration: {duration_sign}, {duration_value}")
     if not duration_sign:
         logger.warning(f"no argument in form: `duration-sign`")
         return stmt
@@ -301,14 +301,19 @@ def build_query(
 # TODO: add wtforms instead of manual handling
 @bp.route('/search/', methods=['GET', 'POST'])
 def search():
-    # print('handlers', logger.handlers)
 
-    meaning_values = MEANING_VALUES
+    # TODO: implement as singletons?
+    try:
+        meaning_values = Construction.contemporary_meaning.unique()
+    except (ValueError, TypeError):
+        meaning_values = MEANING_VALUES
     # current_app.db_session.execute(
     #     select(Construction.contemporary_meaning)
     # ).scalars().all()
-
-    synt_functions_anchor = SYNT_FUNCTIONS_ANCHOR
+    try:
+        synt_functions_anchor = Construction.synt_function_of_anchor.type.enums
+    except (ValueError, TypeError):
+        synt_functions_anchor = SYNT_FUNCTIONS_ANCHOR
 
     query_args = list(request.args.items())
     print(*query_args, sep='\n')
@@ -331,19 +336,13 @@ def search():
         )
 
     print(f'in conditional')
-    # print(*vars(request).items(), sep='\n')
-    # print(*query_args, sep='\n')
 
     print(request.form)
     print(request.data)
 
-    # logger.debug(f"{request.args}")
-
     stmt = build_query(query_args)
 
     results = current_app.db_session.execute(stmt)
-
-    # print(results, results.scalars().all())
 
     all_results = results.scalars().all()
 

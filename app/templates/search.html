@@ -63,11 +63,13 @@
                 Значение
 <!--                <span class="symbol symbol-form symbol-logic"></span>-->
             </label>
+            {%- if meaning_values -%}
             <datalist id="meaning_values">
             {% for meaning_ in meaning_values %}
                 <option value="{{ meaning_ }}"></option>
             {% endfor %}
             </datalist>
+            {%- endif -%}
 <!--                <div class="form-text" id="meaningHelp">-->
 <!--                    Значение может быть регулярным выражением.-->
 <!--                    <a href="#" aria-disabled="true">Подробнее</a>-->
@@ -108,11 +110,13 @@
                   {{ fill_if_queried("c-synt_function_of_anchor", query) }}
             >
             <label for="synt_function_of_anchor">Синт. функция якоря</label>
+            {%- if synt_functions_anchor -%}
             <datalist id="synt_function_of_anchor_values">
                 {%- for func_ in synt_functions_anchor %}
                     <option value="{{ func_ }}"></option>
                 {% endfor -%}
             </datalist>
+            {%- endif -%}
             <div class="error feedback-invalid"></div>
         </div>
 
