@@ -1,4 +1,4 @@
-from typing import List, Literal, Dict, Union, Tuple, Any
+from typing import List, Literal, Dict, Union, Tuple, Type, Any
 from operator import itemgetter
 from datetime import datetime
 
@@ -199,7 +199,7 @@ class ConstructionComparisonChangesPlot(BaseChangesPlot):
 
 
 def new_plot_single_const_changes(
-        data: dict[str, [dict[str, list[datetime]]]],
+        data: Dict[str, Dict[str, List[datetime]]],
         no_last_date_option: Literal['current' or 'largest'] = 'largest'
 ):
     assert 1 <= len(data) <= 2 and ('synt' in data or 'sem' in data)
@@ -460,7 +460,7 @@ def plot_single_const_changes(
 
 
 def super_new_plot_single_const_changes(
-        data: dict[str, [dict[str, list[datetime]]]],
+        data: Dict[str, Dict[str, List[datetime]]],
         no_last_date_option: Literal['current', 'largest'] = 'largest'
 ):
     assert 1 <= len(data) <= 2 and ('synt' in data or 'sem' in data)
