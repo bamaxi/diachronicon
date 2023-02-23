@@ -15,7 +15,11 @@ from sqlalchemy import (
     or_,
     and_
 )
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import (
+    aliased,
+    joinedload,
+    selectinload
+)
 from flask import current_app
 from flask import render_template, abort, request, redirect
 
@@ -101,7 +105,10 @@ def construction(index: int):
     index = int(index)
 
     session = current_app.db_session
-    res_ = session.execute(select(Construction).where(Construction.id == index))
+    stmt = select(Construction).where(Construction.id == index).options(
+        selectinload("*"))
+    res_ = session.execute(stmt)
+
     construction = res_.first() or abort(404)
     construction = construction[0]
 

@@ -1,5 +1,13 @@
 /* Construction page */
 
+.single-result {
+    @extend .pt-4;
+}
+
+.search-like {
+    font-size: small;
+}
+
 .construction-name {
     @extend .col-5;
     /* @include make-col(5); */
@@ -62,6 +70,12 @@
     width: 70%;
 }
 
+/* an alternative is {display: flex; flex-wrap: wrap} on parent  */
+.variant {
+    display: inline-block;
+    margin-right: 0.75rem;
+}
+
 
 .changes-chart {
     width: $changes_chart_min_width;
@@ -81,13 +95,13 @@
     }
     
     @media screen and (min-width: $changes_chart_min_width * (2 + 0.1)) {
-        width: $changes_chart_min_width * 1.5;
-        height: $changes_chart_min_height * 1.5;
+        width: $changes_chart_min_width * 1.4;
+        height: $changes_chart_min_height * 1.4;
     }
     
     @media screen and (min-width: $changes_chart_min_width * (2 + 0.1 + 0.01)) {
-        width: $changes_chart_min_width * 2;
-        height: $changes_chart_min_height * 2;
+        width: $changes_chart_min_width * 1.7;
+        height: $changes_chart_min_height * 1.7;
     }
 }
 

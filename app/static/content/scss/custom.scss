@@ -25,6 +25,11 @@ $table-bg-scale: -95%;
     /* @extend .body-content; */
 /* } */
 
+@import "custom_search_page";
+@import "custom_construction_page";
+
+@import "bootstrap"
+
 a {
     text-decoration: none;
     font-weight: bolder;
@@ -35,8 +40,3 @@ a {
         color: #dcdcdc;
     }
 }
-
-@import "custom_search_page";
-@import "custom_construction_page";
-
-@import "bootstrap"

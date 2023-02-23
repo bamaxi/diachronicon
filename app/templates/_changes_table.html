@@ -11,8 +11,9 @@
       </thead>
       <tbody>
         {% for change in construction.changes %}
-            <tr class="{{ 'table-primary' if change.level == 'synt' else 'table-secondary' }}">
-              {% for _field in change._names.values() %}
+<!--            <tr class="{{ 'table-primary' if change.level == 'synt' else 'table-secondary' }}">-->
+            <tr>
+            {% for _field in change._names.values() %}
                 <td {{ 'class="sticky-col"' if _field in ('stage', 'level') else '' }}>
                 {{ change[_field] or '' }}</td>
               {% endfor %}

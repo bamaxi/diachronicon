@@ -85,13 +85,6 @@ class ConstructionMixin:
     #   postgreSQL with regex may work
     formula = Column(String(MAX_FORMULA_LEN))
 
-    def __repr__(self):
-        return (f'{self.__class__.__name__}({self.id!r}, {self.formula!r}, '
-                f'{self.contemporary_meaning!r}, {self.variation!r}, '
-                f'{self.in_rus_constructicon!r}, {self.rus_constructicon_id!r}, '
-                f'{self.synt_function_of_anchor!r}, {self.anchor_schema!r}, '
-                f'{self.anchor_ru!r}, {self.anchor_eng!r})')
-
 
 class Construction(ConstructionMixin, Base):
     __tablename__ = 'construction'
@@ -138,7 +131,12 @@ class Construction(ConstructionMixin, Base):
 
     variants = relationship(
         "ConstructionVariant", back_populates="construction",
-        order_by="ConstructionVariant.id")
+        order_by="ConstructionVariant.id",
+    )
+
+    def get_alternate_formulas(self):
+        return [variant.formula for variant in self.variants
+                if variant.is_main != 1]
 
     def exist_constraints(self):
         return bool(self.constraints)
@@ -146,12 +144,12 @@ class Construction(ConstructionMixin, Base):
     def exist_changes_constraints(self):
         return any(change.exist_constraints() for change in self.changes)
 
-    # def __repr__(self):
-    #     return (f'Construction({self.id!r}, {self.formula!r}, '
-    #             f'{self.contemporary_meaning!r}, {self.variation!r}, '
-    #             f'{self.in_rus_constructicon!r}, {self.rus_constructicon_id!r}, '
-    #             f'{self.synt_function_of_anchor!r}, {self.anchor_schema!r}, '
-    #             f'{self.anchor_ru!r}, {self.anchor_eng!r})')
+    def __repr__(self):
+        return (f'Construction({self.id!r}, {self.formula!r}, '
+                f'{self.contemporary_meaning!r}, {self.variation!r}, '
+                f'{self.in_rus_constructicon!r}, {self.rus_constructicon_id!r}, '
+                f'{self.synt_function_of_anchor!r}, {self.anchor_schema!r}, '
+                f'{self.anchor_ru!r}, {self.anchor_eng!r})')
 
 
 class ConstructionVariant(ConstructionMixin, Base):
@@ -168,6 +166,11 @@ class ConstructionVariant(ConstructionMixin, Base):
         "FormulaElement", back_populates="construction_variant",
         cascade="all, delete-orphan"  # TODO: check if setting is proper
     )
+
+    def __repr__(self):
+        return (f'{self.__class__.__name__}({self.id!r}, {self.formula!r}, '
+                f'{self.construction_id!r}, {self.construction!r}, '
+                f'{self.is_main!r})')
 
 
 class FormulaElement(Base):

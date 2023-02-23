@@ -67,15 +67,17 @@ class ConstructionChangesPlot(BaseChangesPlot):
             # 'paper_bgcolor': 'rgba(0,0,0,0)',
             # 'plot_bgcolor': 'rgba(190,80,120,.03)',
             'legend': {'title': {'text': 'Уровень'}, 'tracegroupgap': 0},
-            'margin': {'t': 60},
-            # 'template': '...',
-            'xaxis': {'anchor': 'y', 'domain': [0.0, 1.0],
-                      'type': 'date', 'title': {'text': 'Год'},
-                      'showgrid': True, 'zeroline': False,
-                      },
-            'yaxis': {'anchor': 'x', 'domain': [0.0, 1.0],
-                      'showgrid': False, 'zeroline': False, 'visible': False,
-                      }  # 'title': {'text': 'construction_id'}}
+            'margin': {'t': 15, 'b': 0, 'l': 0, 'r': 0},
+            'autosize': False,
+            'xaxis': {
+                # 'anchor': 'y', 'domain': [0.0, 1.0],
+                'type': 'date', 'title': {'text': 'Год'},
+                'showgrid': True, 'zeroline': False,
+            },
+            'yaxis': {
+                'anchor': 'x', 'domain': [0.0, 1.0],
+                'showgrid': False, 'zeroline': False, 'visible': False,
+            }
         }
 
     def get_largest_date(self):
@@ -119,13 +121,6 @@ class ConstructionChangesPlot(BaseChangesPlot):
                 # 'base': array(first_date_, ),
                 # 'customdata': level,
                 'name': level,
-                'hovertemplate': (
-                    'level=%{name}<br>'
-                    'first_attested=%{base}<br>'
-                    'last_attested=%{x}<br>'
-                    'construction_id=%{y}'
-                    '<extra></extra>'
-                ),
                 # 'text': (
                 #     f'{first_date_}-{last_date_}'
                 # ),
@@ -142,7 +137,18 @@ class ConstructionChangesPlot(BaseChangesPlot):
                 'xaxis': 'x',
                 # 'y': array([1, 1, 1, 1], dtype='int64'),
                 'y': array(1),
-                'yaxis': 'y'
+                'yaxis': 'y',
+                # some attributes have `data.` prepended as per:
+                #   https://stackoverflow.com/questions/66119369/custom-data-in-plotly-tooltip-not-showing
+                #   https://plotly.com/python/reference/bar/#bar-hovertemplate
+                #   https://plotly.com/javascript/plotlyjs-events/#event-data
+                'hovertemplate': (
+                    'Тип: %{data.name}<br>'
+                    'Первое вхождение: %{data.base|%Y}<br>'
+                    'Последнее вхождение: %{x|%Y}<br>'
+                    'Номер конструкции: %{y}'
+                    '<extra></extra>'
+                ),
             }
         )
 
@@ -175,9 +181,18 @@ class ConstructionChangesPlot(BaseChangesPlot):
     def to_plotly_obj(self, layout: Dict[str, Union[str, int]] = None) -> go.Figure:
         figure = go.Figure(layout=layout or self.layout)
 
+        # max_offset = float("-inf")
+        # min_offset = float("inf")
         for bar in self.bars:
             print(bar)
             figure.add_bar(**bar)
+
+            # offset = bar["offset"]
+            # max_offset = offset if offset > max_offset else max_offset
+            # min_offset = offset if offset < min_offset else min_offset
+
+        # figure.update_layout({"yaxis": {"domain": [0.5 + min_offset - 0.1,
+        #                                            0.5 + max_offset + 0.1]}})
 
         return figure
 
