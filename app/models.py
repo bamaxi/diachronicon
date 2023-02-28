@@ -11,24 +11,16 @@ from sqlalchemy import (
 from sqlalchemy import event
 from sqlalchemy.orm import (
     relationship,
+    declarative_base,
     declarative_mixin
 )
 
-from app.database import (
-    Base,
-    db_session
-)
-from app.utils import read_lines
 from app.constants import NO_DATE
 
 
 MAX_FORMULA_LEN = 200
-
 REPR_CHAR_LIM = 25
 
-# SYNT_FUNCTION_OF_ANCHOR_VALUES = read_lines(
-#     'app/database-meta/synt_function_of_anchor_values.txt'
-# )
 
 # these are known in advance and equal to Russian Constructicon
 SYNT_FUNCTION_OF_ANCHOR_VALUES = (
@@ -47,6 +39,9 @@ SYNT_FUNCTION_OF_ANCHOR_VALUES = (
     "Verb Predicate",
     "Word-Formation",
 )
+
+
+Base = declarative_base()
 
 
 class GeneralInfo(Base):

@@ -1,7 +1,4 @@
-# from sqlalchemy.orm import aliased
-# from sqlalchemy import text, select
-
-from app import create_app, db_session
+from app import create_app
 
 app = create_app()
 
@@ -9,17 +6,33 @@ app = create_app()
 # flask shell
 @app.shell_context_processor
 def make_shell_context():
-    from sqlalchemy.orm import aliased
     from sqlalchemy import (
         text,
         select,
+        func,
         or_,
         and_
     )
+    from sqlalchemy.orm import aliased
 
-    from app.models import Construction, Change, Constraint, GeneralInfo
+    from app.models import (
+        Construction,
+        Change,
+        Constraint,
+        GeneralInfo,
+        ConstructionVariant,
+        FormulaElement
+    )
 
-    return {'Construction': Construction, 'Change': Change,
-            'Constraint': Constraint, 'GeneralInfo': GeneralInfo,
-            'session': db_session, 'aliased': aliased, 'text': text,
-            'select': select}
+    db_session = app.db_session
+    engine = app.engine
+
+    return {
+        'Construction': Construction, 'Change': Change,
+        'Constraint': Constraint, 'GeneralInfo': GeneralInfo,
+        'ConstructionVariant': ConstructionVariant,
+        'FormulaElement': FormulaElement,
+        'session': db_session, 'engine': engine,
+        'aliased': aliased, 'text': text,
+        'select': select, 'func': func
+    }

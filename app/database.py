@@ -1,7 +1,3 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.orm import declarative_base
-
 from app.database_utils import make_database
 from config import Config
 

@@ -1,8 +1,8 @@
 ﻿import os
-from operator import attrgetter, itemgetter
 
-from werkzeug.debug import DebuggedApplication
+from werkzeug.datastructures import ImmutableOrderedMultiDict
 from flask import Flask, render_template, send_from_directory
+from flask.wrappers import Request
 
 # база данных
 # from flask_migrate import Migrate, current
@@ -13,16 +13,21 @@ import app.logging_utils
 
 logger = logging_utils.init_logger(Config.LOGGING_FILE, loggingConfig)
 
-from app.database import db_session
+# from app.database import db_session
 # from app.database_utils import make_database
 
 
 # db = SQLAlchemy()
 # migrate = Migrate()
 
+class RequestWithOrderedFormData(Request):
+    parameter_storage_class = ImmutableOrderedMultiDict
+
 
 def create_app(test_config_obj=None, remove_wsgi_logger=False):
     app = Flask(__name__, instance_relative_config=True)
+    app.request_class = RequestWithOrderedFormData
+
     if test_config_obj is None:
         # load the instance config, if it exists, when not testing
         # app.config.from_pyfile('config.py', silent=True)
@@ -47,6 +52,8 @@ def create_app(test_config_obj=None, remove_wsgi_logger=False):
     # managing db sessions
     # engine, db_session, Base = make_database(
     #     config.SQLALCHEMY_DATABASE_URI, sqlalchemy_echo=config.SQLALCHEMY_ECHO)
+    from app.database import engine, db_session
+    app.engine = engine
     app.db_session = db_session
 
     @app.teardown_appcontext
@@ -70,6 +77,7 @@ def create_app(test_config_obj=None, remove_wsgi_logger=False):
     app.register_blueprint(errors_bp)
 
     if app.debug:
+        from werkzeug.debug import DebuggedApplication
         app.wsgi_app = DebuggedApplication(app.wsgi_app, evalex=True)
 
     @app.route('/favicon.ico')
