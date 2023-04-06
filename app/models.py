@@ -108,6 +108,10 @@ class Construction(ConstructionMixin, Base):
     anchor_ru = Column(String(200))
     anchor_eng = Column(String(200))
 
+    # TODO: normalize these into another table
+    morphosyntags = Column(String(200))
+    semantags = Column(String(200))
+
     general_info = relationship("GeneralInfo", back_populates="construction",
                                 uselist=False)  # One-to-one
 
@@ -214,8 +218,16 @@ class Change(Base):
 
     # TODO: see in Construction, do we want to search by parts of stage?
     stage = Column(String(200))
+    former_change = Column(String(50))
+
     level = Column(String(10))
     type_of_change = Column(String(50))
+    subtype_of_change = Column(String(100))
+
+    # TODO: normalize these into another table with Construction tags
+    morphosyntags = Column(String(200))
+    semantags = Column(String(200))
+
     # TODO: datetime or int?
     first_attested = Column(Integer)
     last_attested = Column(Integer)
@@ -224,6 +236,8 @@ class Change(Base):
     last_example = Column(String(500))
 
     comment = Column(String(700))
+
+
 
     construction = relationship(
         "Construction", back_populates="changes",

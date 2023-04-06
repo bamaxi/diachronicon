@@ -1,3 +1,4 @@
+import logging
 from typing import Tuple, Dict, Any, Optional
 
 import sqlalchemy
@@ -25,8 +26,11 @@ def make_database(
     if session_maker_options is None:
         session_maker_options = dict(autocommit=False, autoflush=False)
 
-    engine = create_engine(sqlalchemy_uri, echo=sqlalchemy_echo,
-                           future=future)
+    engine = create_engine(
+        sqlalchemy_uri, echo=sqlalchemy_echo, future=future)
+
+    if not sqlalchemy_echo:
+        logging.getLogger("sqlalchemy").setLevel(logging.ERROR)
 
     db_session = scoped_session(
         sessionmaker(bind=engine, **session_maker_options)
@@ -38,6 +42,7 @@ def make_database(
     # Base.query = db_session.query_property()
     import app.models
     from app.models import Base
+    Base.query = db_session.query_property()
 
     if do_init:
         init_db(Base, engine)

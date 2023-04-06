@@ -4,19 +4,52 @@
     <p>Ничего не найдено</p>
     {%- endif -%}
     {%- if results -%}
-        <span>Результатов по искомому параметру: {{ n_param_results }}</span>
+        <span>Результатов по искомым параметрам: {{ n_param_results }}</span>
+        <span>(конструкций &mdash; {{ results|length }})</span>
         <div class="col-12">
-        {%- for result in results -%}
+        {% set ns = namespace(param_i=0) %}
+        {%- for id_, results_ in results.items() -%}
+            {% with main_result = results_[0], construction_i = loop.index %}
             <div class="row result">
-                <div class="short">
-                    <span>{{ loop.index }}</span>
-                    <span>
-                        <a href="{{ url_for('search.construction', index=result.id) }}">
-                            {{ result.formula or result.stage or result }}
-                        </a>
-                    </span>
-                </div>
+            <div class="short">
+                <span class="text-primary">{{ loop.index }}</span>
+                <span>
+                    <a href="{{ url_for('search.construction', index=main_result.id) }}">
+                        {{ main_result.formula }}
+                    </a>
+                </span>
             </div>
+            <div class="verbose" style>
+                {% with n_construction_results = results_ | length %}
+                {%- for result in results_ -%}
+                <div>
+                    {% set ns.param_i = ns.param_i + 1  %}
+                    {% if results_ | length > 0 %}
+                    <span class="text-secondary"> {{ ns.param_i }} </span>
+                        {% if "formula" in query %}
+                        <span><i>{{ result.formula }}</i></span>
+                        {% endif %}
+                    {% endif %}
+
+                        {# {% if loop.changed(result.formula) %}
+                            <span><i>{{ result.formula }}</i></span>
+                        {% endif %} #}
+
+                    {% if "stage" in result %}
+                    <span><i>{{ result.stage }}</i></span>
+                    {% endif %}
+                    {% if ("first_attested" in result and "last_attested" in result) %}
+                        <span> {{ result.first_attested }} &mdash; {{ result.last_attested }} </span>
+                    {% endif %}
+                    {% if "level" in result %}
+                        | <b>{{ result.level }}</b>
+                    {% endif %}
+                </div>
+                {%- endfor %}
+                {% endwith %}
+            </div>
+            </div>
+            {% endwith %}
         {% endfor %}
         </div>
     {% endif %}

@@ -13,7 +13,7 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'diachronicon.db')
     # sqlalchemy_echo = os.environ.get('SQLA_ECHO')
     # SQLALCHEMY_ECHO = bool(int(os.environ.get('SQLA_ECHO') or 0)) or 'debug'
-    SQLALCHEMY_ECHO = 'debug'
+    SQLALCHEMY_ECHO = os.environ.get('SQLALCHEMY_ECHO') == 'debug' or False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     JINJA_OPTIONS = {
@@ -21,7 +21,6 @@ class Config(object):
         # 'line_statement_prefix': '%',
         'trim_blocks': True, 'lstrip_blocks': True
     }
-
     LOGGING_FILE = os.environ.get('FLASK_LOGGING_FILE') or 'logs/base.log'
 
 

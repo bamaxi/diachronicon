@@ -1,15 +1,16 @@
 /* Search page */
 
 #search-form {
-    padding: 4px
+    padding: 4px;
 }
 
-.form-field-text, {
+.form-field-text {
     @extend .form-floating;
+}
 
-    &, .form-check {
-        @extend .mb-3;
-    }
+/* doesn't seem possible to include this in nesting  */
+.form-field-text, .form-check, .form-select {
+    @extend .mb-3;
 }
 
 .no-pad-children > * {

@@ -73,6 +73,15 @@
                }}</span>
                {% endfor %}
            </div>
+           {%- if construction.in_rus_constructicon -%}
+           <div class="constructicon-relation">
+               <label class="label-formula">Конструкция представлена в Русском конструктиконе</label>
+               {% if construction.rus_constructicon_id %}
+               <span class="constructicon-id">{{ construction.rus_constructicon_id }}</span>
+               <a  class="sup" href="https://constructicon.github.io/russian/">Constructicon</a>
+               {% endif %}
+           </div>
+           {% endif %}
        </div>
        </section>
 

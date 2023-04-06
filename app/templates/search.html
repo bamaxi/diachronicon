@@ -17,14 +17,14 @@
 
 
 <form class="row" id="search-form" action="#" method="get">
-    <div class="form-text" id="formulaHelp">
-        В полях со знаком
-            <span class="symbol symbol-form symbol-logic"></span>
-        можно использовать логические операторы, а в полях со знаком
-            <span class="symbol symbol-form symbol-regex"></span>
-        &ndash; логические выражения.
-        <a href="#" aria-disabled="true">Подробнее</a>
-    </div>
+<!--    <div class="form-text" id="formulaHelp">-->
+<!--        В полях со знаком-->
+<!--            <span class="symbol symbol-form symbol-logic"></span>-->
+<!--        можно использовать логические операторы, а в полях со знаком-->
+<!--            <span class="symbol symbol-form symbol-regex"></span>-->
+<!--        &ndash; логические выражения.-->
+<!--        <a href="#" aria-disabled="true">Подробнее</a>-->
+<!--    </div>-->
 
     <fieldset name="construction-general" class="col-md-3">
         <legend>Общая информация</legend>
@@ -35,7 +35,7 @@
                    {{ fill_if_queried("c-id", query) }}
             >
             <label for="constructionId">id</label>
-            <div class="error feedback-invalid">Укажите положительное целое число</div>
+<!--            <div class="error feedback-invalid">Укажите положительное целое число</div>-->
         </div>
 
         <div class="form-field-text">
@@ -79,11 +79,11 @@
 
 <!--            <div class="row">-->
         <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="in_rus_construction"
-                   name="c-in_rus_construction"
-                   {{ fill_if_queried("c-in_rus_construction", query) }}
+            <input class="form-check-input" type="checkbox" id="in_rus_constructicon"
+                   name="c-in_rus_constructicon"
+                   {{ fill_if_queried("c-in_rus_constructicon", query) }}
             >
-            <label class="form-check-label" for="in_rus_construction">
+            <label class="form-check-label" for="in_rus_constructicon">
               Есть в конструктиконе
             </label>
             <div class="error feedback-invalid"></div>
@@ -100,7 +100,7 @@
 <!--            </div>-->
     </fieldset>
 
-    <fieldset name="construction-anchor" class="col-md-4">
+    <fieldset name="construction-anchor" class="col-md-3">
         <legend>Якорь</legend>
 
         <div class="form-field-text">
@@ -139,31 +139,31 @@
         </div>
 
         <div class="form-field-text">
-            <input type="text" class="form-control" id="c-anchor_en"
-                   placeholder="c-anchor_en" name=""
-                   {{ fill_if_queried("c-anchor_en", query) }}
+            <input type="text" class="form-control" id="c-anchor_eng"
+                   placeholder="c-anchor_eng" name="c-anchor_eng"
+                   {{ fill_if_queried("c-anchor_eng", query) }}
             >
-            <label for="c-anchor_en">Якорь (англ.)</label>
+            <label for="c-anchor_eng">Якорь (англ.)</label>
             <div class="error feedback-invalid"></div>
         </div>
     </fieldset>
 
-    <fieldset name="changes" class="col-md-4">
+    <fieldset name="changes" class="col-md-3">
         <legend>Изменения конструкции</legend>
 
         <div class="form-field-text" >
-            <input type="text" class="form-control" id="change-1-formula"
-                   placeholder="change-1-formula" name="change-1-formula"
-                   {{ fill_if_queried("c-id", query) }}
+            <input type="text" class="form-control" id="change-1-stage"
+                   placeholder="change-1-stage" name="change-1-stage"
+                   {{ fill_if_queried("change-1-stage", query) }}
             >
-            <label for="change-1-formula">Формула в этот период</label>
+            <label for="change-1-stage">Формула в этот период</label>
             <div class="error feedback-invalid"></div>
         </div>
 
         <div class="form-field-text" >
             <input type="number" class="form-control" id="change-1-stage-abs"
                    placeholder="change-1-stage-abs" name="change-1-stage-abs"
-                   {{ fill_if_queried("c-id", query) }}
+                   {{ fill_if_queried("change-1-stage-abs", query) }}
             >
             <label for="change-1-stage-abs">Этап в истории конструкции</label>
             <div class="error feedback-invalid"></div>
@@ -184,19 +184,23 @@
 <!--            </div>-->
 
         <select class="form-select" aria-label="Выбрать, что значит длительность"
-                name="change-1-type">
-            <option selected value="">Выберите тип изменения</option>
-            <option value="synt">Синтаксическое</option>
-            <option value="sem">Семантическое</option>
-            <option value="any">Любое</option>
+                name="change-1-level">
+            <option value="" selected>Выберите тип изменения</option>
+            <option value="synt"
+                {{ fill_select_if_queried("change-1-level", query, "synt") }}
+            >Синтаксическое</option>
+            <option value="sem"
+                {{ fill_select_if_queried("change-1-level", query, "sem") }}
+            >Семантическое</option>
+<!--            <option value="any">Любое</option>-->
         </select>
 
 <!--        <div class="row no-pad-children">-->
         <select class="form-select col-2" aria-label="Выбрать длительность изменения"
                 name="change-1-duration_sign">
-            <option value="">Длительность это</option>
+            <option value="" selected>Длительность это (&leqq;, &geqq; или &equals;)</option>
             <option value="le"
-                {{ fill_select_if_queried("change-1-duration_sign", query, "le", True) }}
+                {{ fill_select_if_queried("change-1-duration_sign", query, "le") }}
             >Максимум (&leqq;)</option>
             <option value="ge"
                 {{ fill_select_if_queried("change-1-duration_sign", query, "ge") }}
@@ -218,22 +222,24 @@
 
     <div class="form-field-text">
         <input type="text" class="form-control" id="change-1-first_attested"
-               placeholder="change-1-first_attested" name="change-1-first_attested">
+               placeholder="change-1-first_attested" name="change-1-first_attested"
+               {{ fill_if_queried("change-1-first_attested", query) }}
+        >
         <label for="change-1-first_attested">Первое вхождение в таком виде</label>
         <div class="error feedback-invalid"></div>
     </div>
     <div class="form-field-text">
-        <input type="number" class="form-control" id="change-1-last_attested"
+        <input type="text" class="form-control" id="change-1-last_attested"
                placeholder="2020" name="change-1-last_attested"
-               value=""
+               {{ fill_if_queried("change-1-last_attested", query) }}
         >
         <label for="change-1-last_attested">Последнее вхождение в таком виде</label>
         <div class="error feedback-invalid"></div>
     </div>
-    <button onclick="add_another_change()">Добавить изменение</button>
+    <button class="btn btn-secondary" onclick="add_another_change()">Добавить изменение</button>
     </fieldset>
 
-    <fieldset name="constraint-1-construction" class="col-md-4">
+    <fieldset name="constraint-1-construction" class="col-md-3">
         <legend>Ограничения</legend>
 
 <!--        <div class="row no-pad-children">-->
@@ -252,7 +258,7 @@
                   <option value="">Любое</option>
             </select>
 
-<!--            <div class="form-field-text col-md-4">-->
+<!--            <div class="form-field-text col-md-3">-->
 <!--&lt;!&ndash;                <input type="" class="form-control" id=""&ndash;&gt;-->
 <!--&lt;!&ndash;                       placeholder="">&ndash;&gt;-->
 <!--&lt;!&ndash;                <label for=""></label>&ndash;&gt;-->

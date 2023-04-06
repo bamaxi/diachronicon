@@ -13,12 +13,6 @@ import app.logging_utils
 
 logger = logging_utils.init_logger(Config.LOGGING_FILE, loggingConfig)
 
-# from app.database import db_session
-# from app.database_utils import make_database
-
-
-# db = SQLAlchemy()
-# migrate = Migrate()
 
 class RequestWithOrderedFormData(Request):
     parameter_storage_class = ImmutableOrderedMultiDict
@@ -32,6 +26,7 @@ def create_app(test_config_obj=None, remove_wsgi_logger=False):
         # load the instance config, if it exists, when not testing
         # app.config.from_pyfile('config.py', silent=True)
         # or from CLass (needs to be imported from module)
+        print(Config.__dict__)
         app.config.from_object(Config)
         config = Config
     else:
