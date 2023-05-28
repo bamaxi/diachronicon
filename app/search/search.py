@@ -2,6 +2,7 @@
 from typing import Tuple, List, Dict, Union, Type, Optional
 
 from datetime import datetime
+from itertools import chain
 import logging
 from operator import (
     le,
@@ -386,7 +387,8 @@ def make_select(
     model2items: Model2Field2Val, basic_construction_columns=("id", "formula"),
     count_construction_columns=("variants", "changes", "construction"),
     # non_queried_to_join = (ConstructionVariant),
-    ignore_params=re.compile(r"duration")
+    ignore_params=re.compile(r"duration"),
+    model2basic_columns={Change: ("stage", "level", "type_of_change")}
 ) -> sqlalchemy.sql.expression.Select:
     """Make a minimal select based on mapping of model to params and values"""
     # basic_select_list = _make_basic_select_list(basic_construction_columns)
@@ -432,9 +434,11 @@ def make_select(
     # load queried columns of other tables
     for model, items in no_construction_model2items.items():
         print(f"model, items: {model}, {items}")
+        basic_columns = model2basic_columns.get(model, [])
         for item in items:
+            columns = chain(basic_columns, item)
             stmt = stmt.options(Load(model).load_only(
-                *[getattr(model, column) for column in item
+                *[getattr(model, column) for column in columns
                   if column in model.__dict__])
             )
             print(f"updated statement:\n{stmt}")

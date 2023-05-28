@@ -26,24 +26,38 @@
                     {% set ns.param_i = ns.param_i + 1  %}
                     {% if results_ | length > 0 %}
                     <span class="text-secondary"> {{ ns.param_i }} </span>
+                        {% if ("first_attested" in result and "last_attested" in result) %}
+                            <span class="years"> {{ result.first_attested }} &mdash; {{ result.last_attested }} </span>
+                        {% endif %}
+                        <div class="row ms-3">
+                        <div class="col-md-5">
+                        {% if "level" in result %}
+                            <b>{{ result.level }}</b>
+                        {% endif %}
+                        {% if "type_of_change" in result %}
+                            {% set type=result.type_of_change %}
+                            : <span {{ 'class=source-change' if type == "source" else '' }} >
+                            {{ type }}
+                            </span>
+                        {% endif %}
+                        </div>
+
+                        {% if "stage" in result %}
+                        <div class="col-md-6">
+                        <span><i>{{ result.stage }}</i></span>
+                        </div>
+                        {% endif %}
+
                         {% if "formula" in query %}
                         <span><i>{{ result.formula }}</i></span>
                         {% endif %}
+                        </div>
+
                     {% endif %}
 
                         {# {% if loop.changed(result.formula) %}
                             <span><i>{{ result.formula }}</i></span>
                         {% endif %} #}
-
-                    {% if "stage" in result %}
-                    <span><i>{{ result.stage }}</i></span>
-                    {% endif %}
-                    {% if ("first_attested" in result and "last_attested" in result) %}
-                        <span> {{ result.first_attested }} &mdash; {{ result.last_attested }} </span>
-                    {% endif %}
-                    {% if "level" in result %}
-                        | <b>{{ result.level }}</b>
-                    {% endif %}
                 </div>
                 {%- endfor %}
                 {% endwith %}
