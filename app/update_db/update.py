@@ -17,7 +17,16 @@ from ..models import (
 
 
 logging.basicConfig(handlers=(logging.StreamHandler(),))
+print(__name__)
 logger = logging.getLogger(__name__)
+
+
+ORIG_SHEET_NAME2DB_TABLE_NAME = {
+    "cnstruct": "construction",
+    "gen_inf": "general_info",
+    "ch": "changes",
+    "cnstraint": "constraints",
+}
 
 
 SHEET_TO_CLASS = {
@@ -29,17 +38,25 @@ SHEET_TO_CLASS = {
 
 COLUMNS_CORRECTION = {
     "general_info": {
-            "construction_name": "name",
+        "construction_name": "name",
     },
     "construction": {
         "construction_id": "id",
         "in_Russian_Constructicon": "in_rus_constructicon",
         "number_in_Russian_Constructicon": "rus_constructicon_id",
+        "constructicon_morphosyntags": "morphosyntags",
+        "constructicon_semantags": "semantags",
     },
     "constraints": {
         # "constraint_id": "id",
         "syntactic_constraints": "syntactic",
         "semantic_constraints": "semantic",
+    },
+    "changes": {
+        "change_id": "id",
+        "part_of_construction_changed": "stage",
+        "first_entry": "first_attested",
+        "last_entry": "last_attested",
     }
 }
 
@@ -188,6 +205,7 @@ def fix_construction_id(construction_id: str):
         return construction_id
 
     construction_id = construction_id.replace(".", "0")
+    construction_id = construction_id.replace("?", "9")
     if "(" in construction_id and ")" in construction_id:
         num = construction_id[:construction_id.index("(")]
         group = construction_id[construction_id.index("(")+1:construction_id.index(")")]
@@ -278,24 +296,34 @@ extra_processing = {
 }
 
 
-def parse(filename: str, verbose=False):
+def parse(filename: str, use_old_sheet_names=True, verbose=False):
     wb = load_workbook(filename)
 
     # parse.idscorrection = {}
 
     data = []
     for sheet in wb.worksheets:
-        model_class = SHEET_TO_CLASS.get(sheet.title)
+        if not use_old_sheet_names:
+            corrected_sheet_name = ORIG_SHEET_NAME2DB_TABLE_NAME.get(sheet.title)
+        else:
+            corrected_sheet_name = sheet.title
+        model_class = SHEET_TO_CLASS.get(corrected_sheet_name)
         if model_class is None:
             continue
 
         rows_iter = sheet.iter_rows()
 
+        # TODO: formula versus value
         title_row = next(rows_iter)
         title_row_values = [cell.value.replace(" ", "_")
                             for cell in title_row if cell.value]
-        title_row_values = [COLUMNS_CORRECTION.get(sheet.title, {}).get(value, value)
-                            for value in title_row_values]
+        title_row_values = [
+            COLUMNS_CORRECTION.get(corrected_sheet_name, {}).get(value, value)
+            for value in title_row_values
+        ]
+        print("title is", sheet.title, model_class, corrected_sheet_name,
+              COLUMNS_CORRECTION.get(corrected_sheet_name, {}).get("change_id"),
+              title_row_values)
 
         for row in rows_iter:
             cell_values = [cell.value.strip() if isinstance(cell.value, str) else cell.value
@@ -306,13 +334,13 @@ def parse(filename: str, verbose=False):
             phrase_dict = dict(zip(title_row_values, cell_values))
             fix_values(phrase_dict, model_class)
 
+            if verbose:
+                print(model_class, phrase_dict)
+
             values = model_class(**phrase_dict)
 
             if model_class in extra_processing:
                 extra_processing[model_class](phrase_dict, values, verbose=verbose)
-
-            if verbose:
-                print(model_class, phrase_dict)
 
             data.append(values)
 
@@ -344,7 +372,8 @@ if __name__ == "__main__":
                         help="whether to silence SQL console logging")
     args = parser.parse_args()
 
-    kwargs = dict(sqlalchemy_echo=None) if args.sql_quiet else {}
+    kwargs = (dict(sqlalchemy_echo=False, sqlalchemy_echo_pool=False)
+              if args.sql_quiet else {})
 
     if args.database_url is None:
         from ..database import engine, db_session, Base
@@ -356,7 +385,11 @@ if __name__ == "__main__":
 
     data = parse(args.file, verbose=args.verbose)
 
-    db_session.add_all(data)
-    db_session.commit()
+    # db_session.add_all(data)
+    for piece in data:
+        db_session.add(piece)
+        db_session.commit()
+
+    # db_session.commit()
 
     print(f"Commit made!")

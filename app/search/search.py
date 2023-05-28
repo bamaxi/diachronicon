@@ -51,10 +51,13 @@ Model2Field2Val = Dict[DBModel, Union[Dict[str, Optional[str]],
                                       List[Dict[str, Optional[str]]]]]
 
 logger = logging.getLogger(f"diachronicon.{__name__}")
+logger.setLevel(logging.ERROR)
+logger.handlers.clear()
+logger.addHandler(logging.NullHandler())
 
 _OPERATORS = {'le': le, 'ge': ge, 'eq': eq}
-CHANGE_COLUMNS = [str(col).removeprefix('change.')
-                  for col in Change.__table__.columns]
+# CHANGE_COLUMNS = [str(col).removeprefix('change.')  # instead of `.removeprefix(')
+#                   for col in Change.__table__.columns]
 
 MEANING_VALUES = []  # Construction.contemporary_meaning.unique()
 SYNT_FUNCTIONS_ANCHOR = []  # Construction.synt_function_of_anchor.type.enums

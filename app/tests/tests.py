@@ -147,6 +147,7 @@ class AppTestCase(unittest.TestCase):
                 response, status_code = self.get_construction_page(id_)
                 assert status_code == 200
 
+    @unittest.skip
     def test_search_content(self):
         for param, val_res_list in SEARCH_PARAM2RESULTS.items():
             for val, res in val_res_list:

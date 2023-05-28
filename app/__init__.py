@@ -1,7 +1,8 @@
-﻿import os
+﻿import logging
+import os
 
 from werkzeug.datastructures import ImmutableOrderedMultiDict
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, render_template, send_from_directory, g
 from flask.wrappers import Request
 
 # база данных
@@ -53,7 +54,7 @@ def create_app(test_config_obj=None, remove_wsgi_logger=False):
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):
-        db_session.remove()
+        app.db_session.remove()
 
     # инициализация базы данных
     # db.init_app(app)
@@ -74,6 +75,8 @@ def create_app(test_config_obj=None, remove_wsgi_logger=False):
     if app.debug:
         from werkzeug.debug import DebuggedApplication
         app.wsgi_app = DebuggedApplication(app.wsgi_app, evalex=True)
+
+    logging.disable()
 
     @app.route('/favicon.ico')
     def favicon():

@@ -32,22 +32,22 @@ def make_database(
     if not sqlalchemy_echo:
         logging.getLogger("sqlalchemy").setLevel(logging.ERROR)
 
-    db_session = scoped_session(
+    Session = scoped_session(
         sessionmaker(bind=engine, **session_maker_options)
     )
 
-    print(engine, db_session)
+    print(engine, Session)
 
     # Base = declarative_base()
-    # Base.query = db_session.query_property()
+    # Base.query = Session.query_property()
     import app.models
     from app.models import Base
-    Base.query = db_session.query_property()
+    Base.query = Session.query_property()
 
     if do_init:
         init_db(Base, engine)
 
-    return engine, db_session, Base
+    return engine, Session, Base
 
 
 def get_default_database() -> Tuple[
