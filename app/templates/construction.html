@@ -1,9 +1,9 @@
 ﻿{% extends "layout.html" %}
 
-{% macro search_like_this(name, value, msg="[искать это]") -%}
+{% macro search_like_this(name, value, alt_msg="[искать это]") -%}
     <span class="search-like sup"><a
         href="{{ url_for('search.search', **{name: value, 'no-search': 1})}}"
-            >{{ msg }}</a>
+            ><img class="search-icon" src="/static/icons/search.svg" alt="{{ alt_msg }}"></a>
     </span>
 {%- endmacro %}
 
@@ -67,11 +67,16 @@
            </div>
            <div class="alternate-variants">
                <label class="label-formula">Альтернативные формулы</label>
+               {% set alt_formulas = construction.get_alternate_formulas() %}
+               {% if alt_formulas %}
+               <ul>
                {% for alt_variant in construction.get_alternate_formulas() %}
-               <span class="variant" >{{
+               <li><span class="variant" >{{
                    alt_variant + " " + search_like_this("c-formula", alt_variant)
-               }}</span>
+               }}</span></li>
                {% endfor %}
+               </ul>
+               {% endif %}
            </div>
            {%- if construction.in_rus_constructicon -%}
            <div class="constructicon-relation">
@@ -89,12 +94,12 @@
        <section class="changes-container">
             <div class="changes-wrapper">
                 <div class="row">
-                    <p>
-                        <a class="changes-toggle" href="#changes-{{ res_id }}"
-                          role="button" aria-expanded="false" aria-controls="changes-{{ res_id }}">
-                                Show history data
-                        </a>
-                    </p>
+<!--                    <p>-->
+<!--                        <a class="changes-toggle" href="#changes-{{ res_id }}"-->
+<!--                          role="button" aria-expanded="false" aria-controls="changes-{{ res_id }}">-->
+<!--                                Show history data-->
+<!--                        </a>-->
+<!--                    </p>-->
                 </div>
                 <div class="row">
                     <div class="changes collapse-show col-12" id="changes-{{ res_id }}">

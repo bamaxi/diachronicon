@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+
+
+{% block content %}
+<form class="row" id="search-form" action="#" method="get">
+    <div class="form-field-text">
+        <input type="text" class="form-control" id="constructionId"
+               placeholder="id" name="c-id"
+               {{ fill_if_queried("c-id", query) }}
+        >
+        <label for="constructionId">id</label>
+<!--            <div class="error feedback-invalid">Укажите положительное целое число</div>-->
+    </div>
+</form>
+
+{% endblock %}

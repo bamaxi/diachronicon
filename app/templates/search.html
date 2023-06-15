@@ -195,6 +195,23 @@
 <!--            <option value="any">Любое</option>-->
         </select>
 
+        <div class="form-field-text">
+            <input type="text" class="form-control" id="type_of_change"
+                   list="types_of_change_values" placeholder="synt_function_of_anchor"
+                   name="change-1-type_of_change"
+                  {{ fill_if_queried("change-1-type_of_change", query) }}
+            >
+            <label for="type_of_change">Подтипы изменений</label>
+            {%- if types_of_change -%}
+            <datalist id="types_of_change_values">
+                {%- for type_ in types_of_change %}
+                    <option value="{{ type_ }}"></option>
+                {% endfor -%}
+            </datalist>
+            {%- endif -%}
+            <div class="error feedback-invalid"></div>
+        </div>
+
 <!--        <div class="row no-pad-children">-->
         <select class="form-select col-2" aria-label="Выбрать длительность изменения"
                 name="change-1-duration_sign">

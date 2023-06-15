@@ -10,7 +10,7 @@
         {% set ns = namespace(param_i=0) %}
         {%- for id_, results_ in results.items() -%}
             {% with main_result = results_[0], construction_i = loop.index %}
-            <div class="row result">
+            <div class="row result py-2">
             <div class="short">
                 <span class="text-primary">{{ loop.index }}</span>
                 <span>
@@ -24,7 +24,7 @@
                 {%- for result in results_ -%}
                 <div>
                     {% set ns.param_i = ns.param_i + 1  %}
-                    {% if results_ | length > 0 %}
+                    {% if (n_construction_results > 1) or changes_queried %}
                     <span class="text-secondary"> {{ ns.param_i }} </span>
                         {% if ("first_attested" in result and "last_attested" in result) %}
                             <span class="years"> {{ result.first_attested }} &mdash; {{ result.last_attested }} </span>

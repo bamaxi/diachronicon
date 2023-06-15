@@ -36,12 +36,6 @@ from app.models import (
     ConstructionVariant
 )
 from app.search import bp
-from app.search.plotting import (
-    NO_DATE,
-    new_plot_single_const_changes,
-    super_new_plot_single_const_changes,
-    ConstructionChangesPlot
-)
 
 
 DBModel = Type[Union[
@@ -62,86 +56,11 @@ _OPERATORS = {'le': le, 'ge': ge, 'eq': eq}
 
 MEANING_VALUES = []  # Construction.contemporary_meaning.unique()
 SYNT_FUNCTIONS_ANCHOR = []  # Construction.synt_function_of_anchor.type.enums
+TYPES_OF_CHANGE = []
 
 pd_na = pd.NA
 
 
-def parse_year(year: Union[str, int, None], left_bias=0.0):
-    """Parse year string into datetime
-
-    :param year:
-    :param left_bias:
-    :return:
-    """
-    if not year or year == '-':
-        return None
-    if isinstance(year, int) or year.isnumeric():
-        return year
-    if '-' in year:
-        if year.endswith('-ые'):
-            return int(year.split('-')[0])
-
-        left, right = [int(part) for part in year.split('-')]
-        return int(left + (right-left) * (1-left_bias))
-
-    logger.debug(f"unsupported year type: {year}")
-    return None
-
-
-def prepare_graph_data(changes):
-    """Update dates and
-
-    :param changes:
-    :return:
-    """
-    changes_data = {}
-
-    for change in changes:
-        level_data = changes_data.setdefault(change.level, {})
-
-        for field in ('first_attested', 'last_attested'):
-            year = parse_year(getattr(change, field))
-            value = datetime(year, 1, 1) if year else NO_DATE
-
-            level_data.setdefault(field, []).append(value)
-
-        # if all(date is NO_DATE for date in level_data.values()):
-
-    return changes_data
-
-
-@bp.route('/item/<int:index>/')
-@bp.route('/construction/<int:index>/')
-def construction(index: int):
-    print(index, type(index))
-    index = int(index)
-
-    session = current_app.db_session
-    stmt = select(Construction).where(Construction.id == index).options(
-        selectinload("*"))
-    res_ = session.execute(stmt)
-
-    construction = res_.first() or abort(404)
-    construction = construction[0]
-
-    changes_data = prepare_graph_data(construction.changes)
-    logger.debug(f"{changes_data}")
-
-    if changes_data:
-        graphJSON = str(ConstructionChangesPlot.from_elements(changes_data).to_plotly_json())
-        # graphJSON = new_plot_single_const_changes(changes_data)
-        # graphJSON = super_new_plot_single_const_changes(changes_data)
-    else:
-        graphJSON = None
-
-    return render_template(
-        'construction.html',
-        title=f"Конструкция '{construction.general_info.name}'",
-        year=datetime.now().year,
-        res_id=construction.id,
-        construction=construction,
-        graphJSON=graphJSON
-    )
 
 
 HTML_NAME2MODEL = {
@@ -606,6 +525,19 @@ def group_rows_by_construction(rows: List[Dict]) -> Dict:
     return row_id2data
 
 
+def reduce_rows(rows: Dict):
+    final_res = {}
+    for constr_id, results in rows.items():
+        print(constr_id, results)
+        one_res = results[0]
+        if len(one_res) == 2 and "id" in one_res and "formula" in one_res:
+            final_res[constr_id] = [one_res]
+        else:
+            final_res[constr_id] = results
+
+    return final_res
+
+
 # TODO: add wtforms instead of manual handling
 @bp.route('/search/', methods=['GET', 'POST'])
 def search():
@@ -620,6 +552,19 @@ def search():
         synt_functions_anchor = Construction.synt_function_of_anchor.type.enums
     except (ValueError, TypeError):
         synt_functions_anchor = SYNT_FUNCTIONS_ANCHOR
+    types_of_change = TYPES_OF_CHANGE
+    try:
+        with current_app.engine.connect() as conn:
+            q = conn.execute(select(Change.type_of_change).order_by(
+                Change.type_of_change.asc()).distinct())
+            types_of_change = q.scalars().all()
+    except Exception as e:
+        print(e)
+        raise e
+        print("-" * 50)
+        types_of_change = TYPES_OF_CHANGE
+
+    print(types_of_change)
 
     query_args = request.args
     print(*query_args.items(), sep='\n')
@@ -658,10 +603,15 @@ def search():
         # for field in row:
         #     print(vars(field))
         # print(row._asdict())
-    row_id2data = group_rows_by_construction(results)
+    row_id2data = reduce_rows(group_rows_by_construction(results))
 
     print(row_id2data)
     print("formula" in query_args, query_args, sep="\n")
+
+    changes_queried = any(field in query_args for field in [
+        'change-1-stage', 'change-1-stage-abs', 'change-1-level',
+        'change-1-type_of_change', 'change-1-duration_sign'
+    ])
 
     return render_template(
         'search.html',
@@ -669,17 +619,25 @@ def search():
         year=datetime.now().year,
         meaning_values=meaning_values,
         synt_functions_anchor=synt_functions_anchor,
+        types_of_change=types_of_change,
         form_input=request.form,
         results=row_id2data,
         n_param_results=len(results),
-        query=query_args
+        query=query_args,
+        changes_queried=changes_queried
     )
 
 
 @bp.route('/simple-search/')
 def simple_search():
+    try:
+        with current_app.engine.connect() as conn:
+            all_formulas = conn.execute(select(Construction.formula)).scalars().all()
+    except:
+        all_formulas = []
     return render_template(
         'search_simple.html',
         # '/errors/404.html',
         # message="Page under construction"
+        items=all_formulas,
     ), 404

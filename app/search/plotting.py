@@ -51,19 +51,34 @@ class ConstructionChangesPlot(BaseChangesPlot):
     """Plot of a single construction"""
     def __init__(
         self, no_last_date_option: Literal['current' or 'largest'] = 'largest',
-        plot_rgba: Tuple[int, int, int, float] = (190,80,120,.03)
+        plot_rgba: Tuple[int, int, int, float] = (190,80,120,.03),
+        use_one_legend_entry_per_name=True,
+        add_transparent_early_late=True,
     ):
         super().__init__()
 
         self.no_last_date_option = no_last_date_option
-        self.last_date = (datetime(datetime.now().year, 1, 1)
+        this_year = datetime(datetime.now().year, 1, 1)
+        self.last_date = (this_year
                           if no_last_date_option == 'current' else None)
+
+        self.name2num = {}
+        self.name2bar_indices = {}
+        # whether to allow only one trace from the group to appear in legend
+        self.use_one_legend_entry_per_name = use_one_legend_entry_per_name
+
+        # to add transparent bars on ends
+        self.add_transparent_early_late = add_transparent_early_late
+        self.min_date = self.MIN_DATE = datetime(1800, 1, 1)
+        self.max_date = self.MAX_DATE = this_year
+        self.TRANSP_OPACITY = 0.4
 
         self.elements = {}
         self.bars = []
 
         self.layout = {
             'barmode': 'overlay',
+            'hovermode': 'closest',
             # 'paper_bgcolor': 'rgba(0,0,0,0)',
             # 'plot_bgcolor': 'rgba(190,80,120,.03)',
             'legend': {'title': {'text': 'Уровень'}, 'tracegroupgap': 0},
@@ -72,10 +87,12 @@ class ConstructionChangesPlot(BaseChangesPlot):
             'xaxis': {
                 # 'anchor': 'y', 'domain': [0.0, 1.0],
                 'type': 'date', 'title': {'text': 'Год'},
+                'range': [self.MIN_DATE, self.MAX_DATE],
                 'showgrid': True, 'zeroline': False,
             },
             'yaxis': {
                 'anchor': 'x', 'domain': [0.0, 1.0],
+                'range': [0.9, 1.1],
                 'showgrid': False, 'zeroline': False, 'visible': False,
             }
         }
@@ -84,7 +101,14 @@ class ConstructionChangesPlot(BaseChangesPlot):
         data = self.elements
 
         self.last_date = max(_date for level in data
-                             for _date in data[level]['last_attested'])
+                             for _date in data[level]['last_attested']
+                             if _date is not NO_DATE)
+
+    def get_smallest_date(self):
+        data = self.elements
+        self.first_date = min(_date for level in data
+                              for _date in data[level]['first_attested']
+                              if _date is not NO_DATE)
 
     def process_dates(self):
         # elements = self.elements
@@ -111,56 +135,110 @@ class ConstructionChangesPlot(BaseChangesPlot):
             self.elements[level]['last_attested'] = corrected_last_dates
 
     def _add_interval(
-        self, first_date_: datetime, last_date_: datetime, level: str, j: int
+        self, first_date_: datetime, last_date_: datetime, level: str, j: int,
+        opacity=None, different_hover=None, pop: List[str]=None, showlegend=True
     ):
+        if last_date_ is NO_DATE or first_date_ is NO_DATE:
+            print(first_date_, last_date_)
+            return
+
         _x = (last_date_ - first_date_).total_seconds() * 1000
-        self.bars.append(
-            {
-                'alignmentgroup': 'True',
-                'base': array(first_date_, dtype=object),
-                # 'base': array(first_date_, ),
-                # 'customdata': level,
-                'name': level,
-                # 'text': (
-                #     f'{first_date_}-{last_date_}'
-                # ),
-                'legendgroup': level,
-                'marker': {'color': COLORS[level], 'opacity': 0.6},
-                'offset': {'synt': -1, 'sem': 1}[level] * (-0.03 + j * 0.01),
-                'width': 0.01,
-                'offsetgroup': level,
-                'orientation': 'h',
-                'showlegend': True,
-                'textposition': 'auto',
-                # 'x': array(x),
-                'x': array(_x),
-                'xaxis': 'x',
-                # 'y': array([1, 1, 1, 1], dtype='int64'),
-                'y': array(1),
-                'yaxis': 'y',
-                # some attributes have `data.` prepended as per:
-                #   https://stackoverflow.com/questions/66119369/custom-data-in-plotly-tooltip-not-showing
-                #   https://plotly.com/python/reference/bar/#bar-hovertemplate
-                #   https://plotly.com/javascript/plotlyjs-events/#event-data
-                'hovertemplate': (
-                    'Тип: %{data.name}<br>'
-                    'Первое вхождение: %{data.base|%Y}<br>'
-                    'Последнее вхождение: %{x|%Y}<br>'
-                    'Номер конструкции: %{y}'
-                    '<extra></extra>'
-                ),
-            }
-        )
+
+        dir = {'synt': -1, 'sem': 1}[level]
+        print(level, self.name2num)
+        max_offset = -0.01 * (self.name2num.get(level, 3))
+        offset = dir * (max_offset + j * 0.01)  # former max_offset = -0.03
+        print(offset)
+
+        bar = {
+            'alignmentgroup': 'True',
+            'base': array(first_date_, dtype=object),
+            # 'base': array(first_date_, ),
+            # 'customdata': level,
+            'name': level,
+            # 'text': (
+            #     f'{first_date_}-{last_date_}'
+            # ),
+            'legendgroup': level,
+            'marker': {'color': COLORS[level], 'opacity': 0.6},
+            'offset': offset,
+            'width': 0.01,
+            'offsetgroup': level,
+            'orientation': 'h',
+            'showlegend': showlegend,
+            'textposition': 'auto',
+            # 'x': array(x),
+            'x': array(_x),
+            'xaxis': 'x',
+            # 'y': array([1, 1, 1, 1], dtype='int64'),
+            'y': array(1),
+            'yaxis': 'y',
+            # some attributes have `data.` prepended as per:
+            #   https://stackoverflow.com/questions/66119369/custom-data-in-plotly-tooltip-not-showing
+            #   https://plotly.com/python/reference/bar/#bar-hovertemplate
+            #   https://plotly.com/javascript/plotlyjs-events/#event-data
+            'hovertemplate': (
+                'Тип: %{data.name}<br>'
+                'Первое вхождение: %{data.base|%Y}<br>'
+                'Последнее вхождение: %{x|%Y}<br>'
+                'Номер конструкции: %{y}'
+                '<extra></extra>'
+            ),
+        }
+        if opacity:
+            bar["opacity"] = opacity
+        if different_hover:
+            bar["hovertemplate"] = different_hover
+
+        if pop:
+            for key_to_remove in pop:
+                bar.pop(key_to_remove)
+
+        self.bars.append(bar)
+
+        print("added bar")
 
     def make_bars(self) -> None:
+        if self.first_date is not NO_DATE and self.first_date < self.MIN_DATE:
+            min_date = self.first_date
+        else:
+            min_date = self.MIN_DATE
+        print(self.MIN_DATE, self.first_date, min_date)
+        # min_date = min(self.MIN_DATE, self.first_date)
+        if self.last_date is not NO_DATE and self.last_date > self.MAX_DATE:
+            max_date = self.last_date
+        else:
+            max_date = self.MAX_DATE
+        # max_date = max(self.MAX_DATE, self.last_date)
+
+        self.min_date = min_date
+        self.max_date = max_date
+
         for i, (level, level_data) in enumerate(self.elements.items()):
             for j, (first_date_, last_date_) in enumerate(
                     zip(level_data['first_attested'], level_data['last_attested'])
             ):
-                if last_date_ is NO_DATE and first_date_ is NO_DATE:
+                if last_date_ is NO_DATE or first_date_ is NO_DATE:
                     continue
 
+                if (not isinstance(first_date_, datetime)
+                    or not isinstance(last_date_, datetime)
+                ):
+                    continue
+
+                print(level, level_data)
+
                 self._add_interval(first_date_, last_date_, level, j)
+                if self.add_transparent_early_late:
+                    args = dict(
+                        opacity=self.TRANSP_OPACITY, # pop=[],
+                        different_hover="Тип: %{data.name}<br><нет данных>",
+                        showlegend=False)
+
+                    self._add_interval(
+                        min_date, first_date_, level, j, **args)
+                    self._add_interval(
+                        last_date_, max_date, level, j, **args)
 
     # def __add__(self, other):
 
@@ -171,28 +249,73 @@ class ConstructionChangesPlot(BaseChangesPlot):
         construction = ConstructionChangesPlot(*args, **kwargs)
         construction.elements = elements
 
+        construction.num_elements = len(elements)
+        construction.count_data_in_name()
+        print(construction.name2num)
+        # construction.make_name2bar_indices()/
+        print("added elements, counted data by name")
+
         construction.get_largest_date()
+        construction.get_smallest_date()
+
         construction.process_dates()
+        print("processed dates")
 
         construction.make_bars()
 
+        print(f"made bars")
+
+        min_date = construction.min_date
+        max_date = construction.max_date
+
+        construction.layout["xaxis"]["range"] = [min_date, max_date]
+
+        print("updated xaxis dates")
+
         return construction
 
-    def to_plotly_obj(self, layout: Dict[str, Union[str, int]] = None) -> go.Figure:
+    def count_data_in_name(self) -> Dict[str, int]:
+        name2num = {}
+        for name, changes in self.elements.items():
+            # any of `first_attested`, `last_attested` should do
+            name2num[name] = len(changes.get("first_attested", []))
+
+        self.name2num = name2num
+        return name2num
+
+    def make_name2bar_indices(self) -> Dict[str, List[int]]:
+        name2bar_indices = {}
+        for i, bar in enumerate(self.bars):
+            name = bar["name"]
+            name2bar_indices.setdefault(name, []).append(i)
+
+        print(f"calculated name2bar_indices:\n{name2bar_indices}")
+
+        self.name2bar_indices = name2bar_indices
+        return name2bar_indices
+
+    def limit_one_legend_entry_per_name(self):
+        if not self.name2bar_indices:
+            self.make_name2bar_indices()
+
+        print(f"name2bar_i:\n{self.name2bar_indices}")
+
+        for name, bar_indices in self.name2bar_indices.items():
+            bar_indices_to_hidelegend = bar_indices[1:]
+            for bar_i in bar_indices_to_hidelegend:
+                self.bars[bar_i]["showlegend"] = False
+
+    def to_plotly_obj(
+        self, layout: Dict[str, Union[str, int]] = None
+    ) -> go.Figure:
         figure = go.Figure(layout=layout or self.layout)
 
-        # max_offset = float("-inf")
-        # min_offset = float("inf")
+        if self.use_one_legend_entry_per_name:
+            self.limit_one_legend_entry_per_name()
+
         for bar in self.bars:
             print(bar)
             figure.add_bar(**bar)
-
-            # offset = bar["offset"]
-            # max_offset = offset if offset > max_offset else max_offset
-            # min_offset = offset if offset < min_offset else min_offset
-
-        # figure.update_layout({"yaxis": {"domain": [0.5 + min_offset - 0.1,
-        #                                            0.5 + max_offset + 0.1]}})
 
         return figure
 
@@ -282,7 +405,6 @@ def new_plot_single_const_changes(
             # x.append((last_date_ - first_date_).total_seconds() * 1000)
 
             print(first_date_, last_date_)
-
 
             fig.add_bar(**{
                 'alignmentgroup': 'True',

@@ -13,11 +13,18 @@
 <form class="row" id="search-form" action="#" method="get">
   <div class="form-field-text">
       <input type="text" class="form-control" id="constructionFormula"
-             placeholder="конструкция" name="c"
+             placeholder="конструкция" name="c" list="constructions"
              {{ fill_if_queried('c', query) }}
       >
-      <label for="constructionFormula">Конструкция (формула или название)</label>
+      <label for="constructionFormula">Конструкция</label>
 <!--      <div class="error feedback-invalid">Укажите положительное целое число</div>-->
+      {%- if items -%}
+      <datalist id="constructions">
+        {%- for item in items %}
+            <option value="{{ item }}"></option>
+        {% endfor -%}
+      </datalist>
+      {%- endif -%}
   </div>
 </form>
 
