@@ -27,7 +27,7 @@ def create_app(test_config_obj=None, remove_wsgi_logger=False):
         # load the instance config, if it exists, when not testing
         # app.config.from_pyfile('config.py', silent=True)
         # or from CLass (needs to be imported from module)
-        print(Config.__dict__)
+        # print(Config.__dict__)
         app.config.from_object(Config)
         config = Config
     else:

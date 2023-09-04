@@ -3,7 +3,8 @@ from operator import itemgetter
 from datetime import datetime
 
 from numpy import array
-import pandas as pd
+# import pandas as pd
+import networkx as nx
 
 # import plotly
 # import plotly.express as px
@@ -15,6 +16,7 @@ from plotly import (
 )
 
 from app.constants import NO_DATE
+from app.models import Change
 
 
 COLORS = {
@@ -336,6 +338,87 @@ class ConstructionComparisonChangesPlot(BaseChangesPlot):
             comparison.constructions.append(construction)
 
 
+class ConstructionSequentialChangesPlot(BaseChangesPlot):
+    feats_to_check = ("stage", "level", "type_of_change",
+                      "first_attested", "last_attested")
+
+    def __init__(self, nodes: List=None, edges=None, graph: nx.Graph = None):
+        super().__init__()
+
+        self.nodes = nodes
+        self.edges = edges
+
+        self.graph = graph
+
+        self.layout = dict(
+            title='<br>Последовательность изменений',
+            titlefont_size=16,
+            showlegend=False,
+            hovermode='closest',
+            margin=dict(b=20, l=5, r=5, t=40),
+            # annotations=[dict(
+            #     text="Python code: <a href='https://plotly.com/ipython-notebooks/network-graphs/'> https://plotly.com/ipython-notebooks/network-graphs/</a>",
+            #     showarrow=False,
+            #     xref="paper", yref="paper",
+            #     x=0.005, y=-0.002)],
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
+        )
+
+    @staticmethod
+    def model2node(element, feats_to_check):
+        attrs = {feat: getattr(element, feat) for feat in feats_to_check}
+        node = (element.id, attrs)
+        return node
+
+    @classmethod
+    def from_elements(cls, elements: List[Change], **kwargs):
+        graph = nx.Graph()
+        for element in elements:
+            node = cls.model2node(element, cls.feats_to_check)
+            graph.add_node(node)
+
+            for next_change in element.next_changes:
+                next_change_node = cls.model2node(next_change, cls.feats_to_check)
+                graph.add_node(next_change_node)
+                graph.add_edge(node, next_change_node)
+
+        return cls(graph=graph)
+
+    def add_all(self, G: nx.Graph):
+        edge_x = []
+        edge_y = []
+        for edge in G.edges():
+            x0, y0 = G.nodes[edge[0]]['pos']
+            x1, y1 = G.nodes[edge[1]]['pos']
+            edge_x.append(x0)
+            edge_x.append(x1)
+            edge_x.append(None)
+            edge_y.append(y0)
+            edge_y.append(y1)
+            edge_y.append(None)
+
+        edge_trace = go.Scatter(
+            x=edge_x, y=edge_y,
+            line=dict(width=0.5, color='#888'),
+            hoverinfo='none',
+            mode='lines')
+
+    def to_plotly_obj(
+        self, layout: Dict[str, Union[str, int]] = None
+    ) -> go.Figure:
+        figure = go.Figure(layout=layout or self.layout)
+
+        for item in self.items:
+            print(item)
+            figure.add_bar(**item)
+
+        return figure
+
+
+
+
+
 def new_plot_single_const_changes(
         data: Dict[str, Dict[str, List[datetime]]],
         no_last_date_option: Literal['current' or 'largest'] = 'largest'
@@ -443,157 +526,157 @@ def new_plot_single_const_changes(
     return graphJSON
 
 
-def plot_single_const_changes(
-        df: pd.DataFrame,
-        no_last_date_option: Literal['current' or 'largest'] = 'largest'
-):
-    fig = go.Figure(
-        layout={
-            'barmode': 'overlay',
-            'legend': {'title': {'text': 'level'}, 'tracegroupgap': 0},
-            'margin': {'t': 60},
-            # 'template': '...',
-            'xaxis': {'anchor': 'y', 'domain': [0.0, 1.0], 'type': 'date', 'title': {'text': 'year'}},
-            'yaxis': {'anchor': 'x', 'domain': [0.0, 1.0], }  # 'title': {'text': 'construction_id'}}
-        }
-    )
-
-    fig.add_bar(**{
-        'alignmentgroup': 'True',
-        'base': array(['1850', '1831', '1857', '1873'], dtype=object),
-        'hovertemplate': ('level=%{name}<br>first_attested=%{base}<br>'
-                          'last_attested=%{x}<br>construction_id=%{y}'
-                          '<extra></extra>'),
-        'legendgroup': 'synt',
-        'marker': {'color': '#636efa', 'opacity': 0.6},
-        'name': 'synt',
-        'offset': 0.0,
-        'width': 0.1,
-        'offsetgroup': 'synt',
-        'orientation': 'h',
-        'showlegend': True,
-        'textposition': 'auto',
-        'x': array([1.1360736e+12, 4.8282048e+12, 3.1553280e+11, 4.4810496e+12]),
-        'xaxis': 'x',
-        'y': array([1, 1, 1, 1], dtype='int64'),
-        'yaxis': 'y'
-    })
-
-    fig.add_bar(**{
-        'alignmentgroup': 'True',
-        'base': array(['1850', '1831'], dtype=object),
-        'hovertemplate': ('level=%{name}<br>first_attested=%{base}<br>'
-                          'last_attested=%{x}<br>construction_id=%{y}'
-                          '<extra></extra>'),
-        'legendgroup': 'sem',
-        'marker': {'color': '#EF553B', 'opacity': 0.6},
-        'name': 'sem',
-        'offset': -0.1,
-        'width': 0.1,
-        'offsetgroup': 'sem',
-        'orientation': 'h',
-        'showlegend': True,
-        'textposition': 'auto',
-        'x': array([1.1360736e+12, 3.1561920e+11]),
-        'xaxis': 'x',
-        'y': array([1, 1], dtype='int64'),
-        'yaxis': 'y'
-    })
-
-    # fig = px.timeline(
-    #     df, x_start="first_attested", x_end="last_attested",
-    #     y="construction_id", color='level',
-    #     opacity=.6,
-    #                   # , hover_name="hoverName"
-    #                   # # , color_discrete_sequence=px.colors.qualitative.Prism
-    #                   # , opacity=.6
-    #                   # , template='plotly_white'
-    #                   # , color='level'
-    #                   # , hover_data=['first_attested', 'last_attested']
-    # )
-
-    # print(vars(fig))
-    # print(fig.data)
-
-    # print(list(fig.data))
-    # for obj in fig.data:
-    #     # stage, level = obj.hovertext[0].split("|")
-    #     # print(stage, level)
-    #     print(obj)
-    #     level = obj.name
-    #     if (level == 'synt'):
-    #         obj.width = 0.1
-    #         obj.offset = 0.0
-    #     elif (level == 'sem'):
-    #         obj.width = 0.1
-    #         obj.offset = -0.1
-    #     print(obj)
-    #     print(obj.hovertemplate)
-    #
-    # fig.add_bar(**{
-    #     'alignmentgroup': 'True',
-    #     'base': array([1850, 1831], dtype=object),
-    #     'hovertemplate': ('<b>%{hovertext}</b><br>'),
-    #     'hovertext': array(['3|sem', '0|sem'], dtype=object),
-    #     'legendgroup': 'sem2',
-    #     'marker': {'color': '#EF553B', 'opacity': 0.6},
-    #     'name': 'sem2',
-    #     'offsetgroup': 'sem2',
-    #     'orientation': 'h',
-    #     'showlegend': True,
-    #     'textposition': 'auto',
-    #     'x': array([1860, 2015]),
-    #     'xaxis': 'x',
-    #     'y': array([3, 3], dtype=object),
-    #     'yaxis': 'y'
-    # })
-
-    # data = [dict(Task="Job A", Start='2007', Finish='2010'),
-    #         dict(Task="Job A", Start='2008', Finish='2010'),
-    #         dict(Task="Job B", Start='2004', Finish='2010'),
-    #         dict(Task="Job C", Start='2009', Finish='2010')]
-    #
-    # df = pd.DataFrame(data)
-    #
-    # df['JobNum'] = ""
-    # df.loc[0, 'JobNum'] = 1
-    # for idx in range(1, df.shape[0]):
-    #     if df.loc[idx - 1, 'Task'] == df.loc[idx, 'Task']:
-    #         df.loc[idx, 'JobNum'] = df.loc[idx - 1, 'JobNum'] + 1
-    #     else:
-    #         df.loc[idx, 'JobNum'] = 1
-    #
-    # df['hoverName'] = df.apply(lambda x: x['Task'] + "|" + str(x['JobNum']), axis=1)
-    #
-    # print(df.info())
-    # print(df['Start'])
-    # print(df['Finish'])
-
-    # fig = px.timeline(df
-    #                   , x_start="Start"
-    #                   , x_end="Finish"
-    #                   , y="Task"
-    #                   , hover_name="hoverName"
-    #                   # , color_discrete_sequence=px.colors.qualitative.Prism
-    #                   , opacity=.7
-    #                   , template='plotly_white'
-    #                   , color='JobNum'
-    #                   , hover_data=['Start', 'Finish']
-    #                   )
-    #
-    # for obj in fig.data:
-    #     Task, JobNum = obj.hovertext[0].split("|")
-    #     if (int(JobNum) == 1):
-    #         obj.width = 0.1
-    #         obj.offset = 0.05
-    #     elif (int(JobNum) == 2):
-    #         obj.width = 0.1
-    #         obj.offset = -0.05
-
-    # graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-    graphJSON = str(fig.to_json())
-
-    return graphJSON
+# def plot_single_const_changes(
+#         df: pd.DataFrame,
+#         no_last_date_option: Literal['current' or 'largest'] = 'largest'
+# ):
+#     fig = go.Figure(
+#         layout={
+#             'barmode': 'overlay',
+#             'legend': {'title': {'text': 'level'}, 'tracegroupgap': 0},
+#             'margin': {'t': 60},
+#             # 'template': '...',
+#             'xaxis': {'anchor': 'y', 'domain': [0.0, 1.0], 'type': 'date', 'title': {'text': 'year'}},
+#             'yaxis': {'anchor': 'x', 'domain': [0.0, 1.0], }  # 'title': {'text': 'construction_id'}}
+#         }
+#     )
+#
+#     fig.add_bar(**{
+#         'alignmentgroup': 'True',
+#         'base': array(['1850', '1831', '1857', '1873'], dtype=object),
+#         'hovertemplate': ('level=%{name}<br>first_attested=%{base}<br>'
+#                           'last_attested=%{x}<br>construction_id=%{y}'
+#                           '<extra></extra>'),
+#         'legendgroup': 'synt',
+#         'marker': {'color': '#636efa', 'opacity': 0.6},
+#         'name': 'synt',
+#         'offset': 0.0,
+#         'width': 0.1,
+#         'offsetgroup': 'synt',
+#         'orientation': 'h',
+#         'showlegend': True,
+#         'textposition': 'auto',
+#         'x': array([1.1360736e+12, 4.8282048e+12, 3.1553280e+11, 4.4810496e+12]),
+#         'xaxis': 'x',
+#         'y': array([1, 1, 1, 1], dtype='int64'),
+#         'yaxis': 'y'
+#     })
+#
+#     fig.add_bar(**{
+#         'alignmentgroup': 'True',
+#         'base': array(['1850', '1831'], dtype=object),
+#         'hovertemplate': ('level=%{name}<br>first_attested=%{base}<br>'
+#                           'last_attested=%{x}<br>construction_id=%{y}'
+#                           '<extra></extra>'),
+#         'legendgroup': 'sem',
+#         'marker': {'color': '#EF553B', 'opacity': 0.6},
+#         'name': 'sem',
+#         'offset': -0.1,
+#         'width': 0.1,
+#         'offsetgroup': 'sem',
+#         'orientation': 'h',
+#         'showlegend': True,
+#         'textposition': 'auto',
+#         'x': array([1.1360736e+12, 3.1561920e+11]),
+#         'xaxis': 'x',
+#         'y': array([1, 1], dtype='int64'),
+#         'yaxis': 'y'
+#     })
+#
+#     # fig = px.timeline(
+#     #     df, x_start="first_attested", x_end="last_attested",
+#     #     y="construction_id", color='level',
+#     #     opacity=.6,
+#     #                   # , hover_name="hoverName"
+#     #                   # # , color_discrete_sequence=px.colors.qualitative.Prism
+#     #                   # , opacity=.6
+#     #                   # , template='plotly_white'
+#     #                   # , color='level'
+#     #                   # , hover_data=['first_attested', 'last_attested']
+#     # )
+#
+#     # print(vars(fig))
+#     # print(fig.data)
+#
+#     # print(list(fig.data))
+#     # for obj in fig.data:
+#     #     # stage, level = obj.hovertext[0].split("|")
+#     #     # print(stage, level)
+#     #     print(obj)
+#     #     level = obj.name
+#     #     if (level == 'synt'):
+#     #         obj.width = 0.1
+#     #         obj.offset = 0.0
+#     #     elif (level == 'sem'):
+#     #         obj.width = 0.1
+#     #         obj.offset = -0.1
+#     #     print(obj)
+#     #     print(obj.hovertemplate)
+#     #
+#     # fig.add_bar(**{
+#     #     'alignmentgroup': 'True',
+#     #     'base': array([1850, 1831], dtype=object),
+#     #     'hovertemplate': ('<b>%{hovertext}</b><br>'),
+#     #     'hovertext': array(['3|sem', '0|sem'], dtype=object),
+#     #     'legendgroup': 'sem2',
+#     #     'marker': {'color': '#EF553B', 'opacity': 0.6},
+#     #     'name': 'sem2',
+#     #     'offsetgroup': 'sem2',
+#     #     'orientation': 'h',
+#     #     'showlegend': True,
+#     #     'textposition': 'auto',
+#     #     'x': array([1860, 2015]),
+#     #     'xaxis': 'x',
+#     #     'y': array([3, 3], dtype=object),
+#     #     'yaxis': 'y'
+#     # })
+#
+#     # data = [dict(Task="Job A", Start='2007', Finish='2010'),
+#     #         dict(Task="Job A", Start='2008', Finish='2010'),
+#     #         dict(Task="Job B", Start='2004', Finish='2010'),
+#     #         dict(Task="Job C", Start='2009', Finish='2010')]
+#     #
+#     # df = pd.DataFrame(data)
+#     #
+#     # df['JobNum'] = ""
+#     # df.loc[0, 'JobNum'] = 1
+#     # for idx in range(1, df.shape[0]):
+#     #     if df.loc[idx - 1, 'Task'] == df.loc[idx, 'Task']:
+#     #         df.loc[idx, 'JobNum'] = df.loc[idx - 1, 'JobNum'] + 1
+#     #     else:
+#     #         df.loc[idx, 'JobNum'] = 1
+#     #
+#     # df['hoverName'] = df.apply(lambda x: x['Task'] + "|" + str(x['JobNum']), axis=1)
+#     #
+#     # print(df.info())
+#     # print(df['Start'])
+#     # print(df['Finish'])
+#
+#     # fig = px.timeline(df
+#     #                   , x_start="Start"
+#     #                   , x_end="Finish"
+#     #                   , y="Task"
+#     #                   , hover_name="hoverName"
+#     #                   # , color_discrete_sequence=px.colors.qualitative.Prism
+#     #                   , opacity=.7
+#     #                   , template='plotly_white'
+#     #                   , color='JobNum'
+#     #                   , hover_data=['Start', 'Finish']
+#     #                   )
+#     #
+#     # for obj in fig.data:
+#     #     Task, JobNum = obj.hovertext[0].split("|")
+#     #     if (int(JobNum) == 1):
+#     #         obj.width = 0.1
+#     #         obj.offset = 0.05
+#     #     elif (int(JobNum) == 2):
+#     #         obj.width = 0.1
+#     #         obj.offset = -0.05
+#
+#     # graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+#     graphJSON = str(fig.to_json())
+#
+#     return graphJSON
 
 
 def super_new_plot_single_const_changes(

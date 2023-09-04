@@ -1,4 +1,5 @@
 ﻿import argparse
+from collections import defaultdict
 import logging
 from typing import (
     Type, Tuple, List, Dict, Union, Callable, Iterator,
@@ -7,6 +8,8 @@ from typing import (
 from openpyxl import load_workbook
 
 from ..models import (
+    UKNOWN_SYNT_FUNCTION_OF_ANCHOR,
+    SYNT_FUNCTION_OF_ANCHOR_VALUES,
     Construction,
     ConstructionVariant,
     GeneralInfo,
@@ -36,29 +39,58 @@ SHEET_TO_CLASS = {
     "constraints": Constraint,
 }
 
-COLUMNS_CORRECTION = {
-    "general_info": {
+
+class StrLoweringDict(dict):
+    def get(self, item: str, default: Any = None):
+        # logger.debug(f"item requested: `{item}`")
+        # if default is None:
+        default = item.lower()
+        return super(StrLoweringDict, self).get(item, default)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({super().__repr__()})"
+
+
+default_colname_correction = StrLoweringDict()
+
+
+SHEET2COLUMN2CORRECTION = {
+    "general_info": StrLoweringDict({
         "construction_name": "name",
-    },
-    "construction": {
+    }),
+    "construction": StrLoweringDict({
         "construction_id": "id",
-        "in_Russian_Constructicon": "in_rus_constructicon",
-        "number_in_Russian_Constructicon": "rus_constructicon_id",
+        "in_russian_constructicon": "in_rus_constructicon",
+        "number_in_russian_constructicon": "rus_constructicon_id",
         "constructicon_morphosyntags": "morphosyntags",
         "constructicon_semantags": "semantags",
-    },
-    "constraints": {
+    }),
+    "constraints": StrLoweringDict({
         # "constraint_id": "id",
         "syntactic_constraints": "syntactic",
         "semantic_constraints": "semantic",
-    },
-    "changes": {
+    }),
+    "changes": StrLoweringDict({
         "change_id": "id",
         "part_of_construction_changed": "stage",
         "first_entry": "first_attested",
         "last_entry": "last_attested",
-    }
+        "frequency_(trend)": "frequency_trend",
+    }),
 }
+
+
+SHEET2MUSTHAVE_COLUMNS = {
+    "changes": {"construction_id", }
+}
+
+
+SHEET2DISCARDED_COLUMNS = {
+    "constraints": {"constraint_id"}
+}
+
+
+CONSTRUCTION_ID2VARIANTSMET = {}
 
 
 class EOF(object):
@@ -120,7 +152,7 @@ def tokenize_formula(
 
 def flatten_span(
     span_token_values: List[Dict[str, Any]], depth=1, order=0
-) -> List[Dict[str, str]]:
+) -> List[Dict[str, Union[str, int]]]:
     flattened_token_list = []
 
     if len(span_token_values) == 1:
@@ -200,29 +232,70 @@ def parse_formula_old(
     return data
 
 
-def fix_construction_id(construction_id: str):
-    if isinstance(construction_id, int):
-        return construction_id
+def fix_construction_id(
+    construction_id: str, variant_sep="-",
+    corrections=str.maketrans({".": "0", "?": "9", " ": None})
+):
+    logger.debug(f"constr id: {construction_id}, type is {type(construction_id)}")
+    if isinstance(construction_id, (int, float)):
+        return int(construction_id)
 
-    construction_id = construction_id.replace(".", "0")
-    construction_id = construction_id.replace("?", "9")
-    if "(" in construction_id and ")" in construction_id:
-        num = construction_id[:construction_id.index("(")]
-        group = construction_id[construction_id.index("(")+1:construction_id.index(")")]
-        return int(group+num)
+    if variant_sep in construction_id:
+        main_id_part, variant_id, *extra = construction_id.split(variant_sep)
+        if extra:
+            raise ValueError(f"construction id: extra variant_sep in `{main_id_part}`")
     else:
-        print(construction_id)
+        main_id_part, variant_id = construction_id, ""
+
+    variants_met = CONSTRUCTION_ID2VARIANTSMET
+
+    # variant_id, prev_variant_id = len(variants_met), variant_id
+    # variants_met.append(variant_id)
+    # logger.debug(f"previous variant_id:  {prev_variant_id}, new: {variant_id}")
+
+
+    main_id_part = main_id_part.translate(corrections)
+    logger.debug(f"old: {construction_id}, new main part: {main_id_part}")
+
+    if "(" in main_id_part and ")" in main_id_part:
+        num = main_id_part[:main_id_part.index("(")]
+        group = main_id_part[main_id_part.index("(")+1:main_id_part.index(")")]
+
+        return int(group + num + str(variant_id))
+
+    else:
+        print(main_id_part)
         raise ValueError
 
 
+id_to_change_object = {}
+
+
 def fix_values(
-        phrase_dict: Dict[str, Union[str, int, None]],
-        model_class: Type[Union[Construction, GeneralInfo, Change, Constraint]]
+    phrase_dict: Dict[str, Union[str, int, None]],
+    model_class: Type[Union[Construction, GeneralInfo, Change, Constraint]]
 ):
+    logger.debug(f"fixing values: {phrase_dict}, model: {model_class}")
     if model_class is Construction:
         phrase_dict["id"] = fix_construction_id(phrase_dict["id"])
     elif "construction_id" in phrase_dict:
         phrase_dict["construction_id"] = fix_construction_id(phrase_dict["construction_id"])
+
+    if model_class is Change:
+        former_change = phrase_dict.pop("former_change")
+        if former_change:
+            if not isinstance(former_change, int):
+                previous_changes_ids = [int(_id.strip()) for _id in former_change.split(",")]
+            else:
+                previous_changes_ids = [former_change]
+            for _id in previous_changes_ids:
+                obj = id_to_change_object.get(_id)
+                if obj:
+                    phrase_dict.setdefault("previous_changes", []).append(obj)
+                else:
+                    raise ValueError(f"no change defined: {_id} (from {phrase_dict['id']})")
+        else:
+            phrase_dict["previous_changes"] = []
 
     return phrase_dict
 
@@ -258,6 +331,19 @@ def process_construction(
     :param verbose:
     :return:
     """
+
+    synt_function = phrase_dict.get("synt_function_of_anchor")
+    logger.debug(f"function is: {synt_function}")
+    if synt_function not in SYNT_FUNCTION_OF_ANCHOR_VALUES:
+        if synt_function is None:
+            first_synt_function = UKNOWN_SYNT_FUNCTION_OF_ANCHOR
+        else:
+            first_synt_function = synt_function.split()[0]
+            if first_synt_function not in SYNT_FUNCTION_OF_ANCHOR_VALUES:
+                first_synt_function = UKNOWN_SYNT_FUNCTION_OF_ANCHOR
+        phrase_dict["synt_function_of_anchor"] = first_synt_function
+        constr.synt_function_of_anchor = first_synt_function
+        logger.debug(f"final function is: {first_synt_function}")
 
     formula_elements = formula_parser(phrase_dict["formula"])
     formula_elements_vals = [FormulaElement(**el_data)
@@ -297,7 +383,7 @@ extra_processing = {
 
 
 def parse(filename: str, use_old_sheet_names=True, verbose=False):
-    wb = load_workbook(filename)
+    wb = load_workbook(filename, data_only=True)
 
     # parse.idscorrection = {}
 
@@ -315,14 +401,17 @@ def parse(filename: str, use_old_sheet_names=True, verbose=False):
 
         # TODO: formula versus value
         title_row = next(rows_iter)
-        title_row_values = [cell.value.replace(" ", "_")
+        title_row_values = [cell.value.replace(" ", "_").lower()
                             for cell in title_row if cell.value]
+        this_sheet_corrections = SHEET2COLUMN2CORRECTION.get(corrected_sheet_name, {})
+        logger.debug(f"this sheet corrections: {this_sheet_corrections}")
+
         title_row_values = [
-            COLUMNS_CORRECTION.get(corrected_sheet_name, {}).get(value, value)
+            this_sheet_corrections.get(value, value)
             for value in title_row_values
         ]
         print("title is", sheet.title, model_class, corrected_sheet_name,
-              COLUMNS_CORRECTION.get(corrected_sheet_name, {}).get("change_id"),
+              this_sheet_corrections.get("change_id"),
               title_row_values)
 
         for row in rows_iter:
@@ -332,12 +421,36 @@ def parse(filename: str, use_old_sheet_names=True, verbose=False):
                 continue
 
             phrase_dict = dict(zip(title_row_values, cell_values))
+
+            discard_row = False
+            for col in SHEET2MUSTHAVE_COLUMNS.get(corrected_sheet_name, ()):
+                if not phrase_dict.get(col):
+                    discard_row = True
+                    break
+
+            if model_class is Construction:
+                id_ = phrase_dict["id"]
+                if id_ in CONSTRUCTION_ID2VARIANTSMET:
+                    discard_row = True
+                else:
+                    CONSTRUCTION_ID2VARIANTSMET[id_] = True
+
+            if discard_row:
+                continue
+
             fix_values(phrase_dict, model_class)
 
             if verbose:
                 print(model_class, phrase_dict)
+            logger.debug(f"about to add to `{model_class}` this: {phrase_dict}")
 
             values = model_class(**phrase_dict)
+            if model_class is Change:
+                id_ = phrase_dict["id"]
+                if not id_ in id_to_change_object:
+                    id_to_change_object[id_] = values
+                else:
+                    raise ValueError(f"repeating change_id: {id_}")
 
             if model_class in extra_processing:
                 extra_processing[model_class](phrase_dict, values, verbose=verbose)
@@ -383,7 +496,8 @@ if __name__ == "__main__":
     if args.init:
         init_db(Base, engine)
 
-    data = parse(args.file, verbose=args.verbose)
+    data = parse(args.file, use_old_sheet_names=False, verbose=args.verbose)
+    print(len(data))
 
     # db_session.add_all(data)
     for piece in data:

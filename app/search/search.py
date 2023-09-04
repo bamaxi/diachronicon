@@ -10,7 +10,7 @@ from operator import (
     eq
 )
 
-import pandas as pd
+# import pandas as pd
 import sqlalchemy.sql.expression
 from sqlalchemy import (
     select,
@@ -58,9 +58,7 @@ MEANING_VALUES = []  # Construction.contemporary_meaning.unique()
 SYNT_FUNCTIONS_ANCHOR = []  # Construction.synt_function_of_anchor.type.enums
 TYPES_OF_CHANGE = []
 
-pd_na = pd.NA
-
-
+# pd_na = pd.NA
 
 
 HTML_NAME2MODEL = {

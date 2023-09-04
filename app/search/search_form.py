@@ -28,7 +28,7 @@ class DataList:
     option_attrs2required = {"label": False, "value": True, "selected": False}
 
     def __init__(
-        self, name, literal_options: T.List[T.Union[int, str]] = None,
+        self, name: str, literal_options: T.List[T.Union[int, str]] = None,
         with_attr_options: T.List[T.Dict[str, T.Union[str, int]]] = None,
     ):
         self.name = name
@@ -61,6 +61,9 @@ class DataList:
             for opt in self.with_atrr_options:
                 atrrs_str = widgets_html_params(**opt)
                 option_htmls.append(f"<option {atrrs_str}></option>")
+        else:
+            for opt in self.literal_options:
+                option_htmls.append(f'<option value="{opt}"></option>')
 
         return Markup("\n".join(option_htmls))
 

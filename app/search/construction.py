@@ -26,7 +26,8 @@ from app.search.plotting import (
     NO_DATE,
     new_plot_single_const_changes,
     super_new_plot_single_const_changes,
-    ConstructionChangesPlot
+    ConstructionChangesPlot,
+    ConstructionSequentialChangesPlot,
 )
 
 
@@ -124,9 +125,16 @@ def construction(index: int):
             # graphJSON = super_new_plot_single_const_changes(changes_data)
         else:
             graphJSON = None
+
+        if construction.changes:
+            network = ConstructionSequentialChangesPlot.from_elements(construction.changes)
+
+
+
     except Exception as e:
         print(e)
         graphJSON = None
+        networkJSON = None
 
     print(f"about to render `{index}`")
 
@@ -136,5 +144,6 @@ def construction(index: int):
         year=datetime.now().year,
         res_id=construction.id,
         construction=construction,
-        graphJSON=graphJSON
+        graphJSON=graphJSON,
+        networkJSON=networkJSON,
     )

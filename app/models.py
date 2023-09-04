@@ -7,6 +7,7 @@ from sqlalchemy import (
     Enum,
     Boolean,
     ForeignKey,
+    Table,
 )
 from sqlalchemy import event
 from sqlalchemy.orm import (
@@ -23,7 +24,9 @@ REPR_CHAR_LIM = 25
 
 
 # these are known in advance and equal to Russian Constructicon
+UKNOWN_SYNT_FUNCTION_OF_ANCHOR = "<unknown>"
 SYNT_FUNCTION_OF_ANCHOR_VALUES = (
+    UKNOWN_SYNT_FUNCTION_OF_ANCHOR,
     "Argument",
     "Coordinator",
     "Discourse Particle",
@@ -51,9 +54,12 @@ class GeneralInfo(Base):
                              primary_key=True)
     name = Column(String(200))
 
+    # project metadata
+    supervisor = Column(String(60))
+
     # author data
-    author_name = Column(String(50))
-    author_surname = Column(String(50))
+    author_name = Column(String(60))
+    author_surname = Column(String(60))
     group_number = Column(Integer)
 
     # links
@@ -200,6 +206,21 @@ class FormulaElement(Base):
                 f'{self.order!r}, {self.is_optional!r})')
 
 
+# change_to_next_changes = Table(
+#     "change_to_next_changes",
+#     Base.metadata,
+#     Column("change_id", Integer, ForeignKey("change.id"), primary_key=True),
+#     Column("next_change_id", Integer, ForeignKey("change.id"), primary_key=True),
+# )
+
+change_to_previous_changes = Table(
+    "change_to_previous_changes",
+    Base.metadata,
+    Column("change_id", Integer, ForeignKey("change.id"), primary_key=True),
+    Column("previous_change_id", Integer, ForeignKey("change.id"), primary_key=True),
+)
+
+
 class Change(Base):
     __tablename__ = 'change'
     _names = {
@@ -235,9 +256,9 @@ class Change(Base):
     first_example = Column(String(500))
     last_example = Column(String(500))
 
-    comment = Column(String(700))
-
-
+    # textual comments
+    comment = Column(String(500))
+    frequency_trend = Column(String(400))
 
     construction = relationship(
         "Construction", back_populates="changes",
@@ -249,6 +270,14 @@ class Change(Base):
         order_by="Constraint.id"
         # back_populates="change",
         # cascade="all, delete-orphan"  # TODO
+    )
+
+    previous_changes = relationship(
+        "Change",
+        secondary=change_to_previous_changes,
+        primaryjoin=id == change_to_previous_changes.c.change_id,
+        secondaryjoin=id == change_to_previous_changes.c.previous_change_id,
+        backref="next_changes",
     )
 
     def exist_constraints(self):
