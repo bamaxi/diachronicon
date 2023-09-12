@@ -59,7 +59,7 @@
                    name="c-meaning"
                    {{ fill_if_queried("c-meaning", query) }}
             >
-            <label for="formula">
+            <label for="meaning>
                 Значение
 <!--                <span class="symbol symbol-form symbol-logic"></span>-->
             </label>
@@ -76,6 +76,7 @@
 <!--                </div>-->
             <div class="error feedback-invalid"></div>
         </div>
+
 
 <!--            <div class="row">-->
         <div class="form-check">
@@ -163,11 +164,12 @@
         <div class="form-field-text" >
             <input type="number" class="form-control" id="change-1-stage-abs"
                    placeholder="change-1-stage-abs" name="change-1-stage-abs"
+                   list="stage-numbers"
                    {{ fill_if_queried("change-1-stage-abs", query) }}
             >
             <label for="change-1-stage-abs">Этап в истории конструкции</label>
             <div class="error feedback-invalid"></div>
-            <datalist>
+            <datalist id="stage-numbers">
                 <option label="первый" value="1"></option>
                 <option selected label="предпоследний" value="-2"></option>
                 <option label="последний" value="-1"></option>
@@ -183,7 +185,7 @@
 <!--                <div class="error feedback-invalid"></div>-->
 <!--            </div>-->
 
-        <select class="form-select" aria-label="Выбрать, что значит длительность"
+        <select class="form-select"
                 name="change-1-level">
             <option value="" selected>Выберите тип изменения</option>
             <option value="synt"

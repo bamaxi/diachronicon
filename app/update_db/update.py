@@ -1,6 +1,8 @@
-﻿import argparse
+﻿import abc
+import argparse
 from collections import defaultdict
 import logging
+import typing as T
 from typing import (
     Type, Tuple, List, Dict, Union, Callable, Iterator,
     Literal, Any)
@@ -382,6 +384,42 @@ extra_processing = {
 }
 
 
+RowDict = T.Dict[str, T.Any]
+
+
+def not_empty(collection: T.Iterable):
+    return bool(collection)
+
+def get_dict_has_keys_checker(keys: T.List[str]) -> T.Callable[[RowDict], bool]:
+    def has_dict_keys(d: RowDict) -> str:
+        return all(key in d for key in keys)
+    return has_dict_keys
+
+class BaseInputTable(abc.ABC):
+    MUST_HAVE_COLS = []
+    row_filters = [not_empty]
+
+    def __init__(self) -> None:
+        self.row_filters = self.row_filters + [
+            get_dict_has_keys_checker(self.MUST_HAVE_COLS)
+        ]
+
+    def is_row_okay(self, row: RowDict) -> bool:
+        return all(filt(row) for filt in self.row_filters)
+    
+    def process_row(self, row: RowDict) -> RowDict:
+        return row
+
+
+class ConstructionInputTable(BaseInputTable):
+    MUST_HAVE_COLS = []
+
+
+
+def convert_column_title(orig_title: str) -> str:
+    return orig_title.replace(" ", "_").lower()
+
+
 def parse(filename: str, use_old_sheet_names=True, verbose=False):
     wb = load_workbook(filename, data_only=True)
 
@@ -401,7 +439,7 @@ def parse(filename: str, use_old_sheet_names=True, verbose=False):
 
         # TODO: formula versus value
         title_row = next(rows_iter)
-        title_row_values = [cell.value.replace(" ", "_").lower()
+        title_row_values = [convert_column_title(cell.value)
                             for cell in title_row if cell.value]
         this_sheet_corrections = SHEET2COLUMN2CORRECTION.get(corrected_sheet_name, {})
         logger.debug(f"this sheet corrections: {this_sheet_corrections}")

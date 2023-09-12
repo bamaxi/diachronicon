@@ -25,6 +25,8 @@ class Config(object):
 
 
 class TestConfig(Config):
+    TESTING=True
+
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
