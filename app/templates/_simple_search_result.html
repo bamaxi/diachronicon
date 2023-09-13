@@ -1,0 +1,18 @@
+<h3>Результаты</h3>
+{%- if not results -%}
+<p>Ничего не найдено</p>
+{%- endif -%}
+{%- if results -%}
+    {%- for _res in results -%}
+    <div class="row result py-2">
+        <div class="short">
+            <span class="text-primary">{{ loop.index }}</span>
+            <span>
+                <a href="{{ url_for('search.construction', index=_res.id) }}">
+                    {{ _res.formula }}
+                </a>
+            </span>
+        </div>
+    </div>
+    {%- endfor -%}
+{% endif %}

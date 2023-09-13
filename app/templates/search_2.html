@@ -22,10 +22,15 @@
         {{ _form.construction.num_changes_sign }}
         {{ _form.construction.num_changes }}
         
+        <legend>Якорь</legend>
+        {{ _form.anchor.csrf_tag }}
+
+        {{ _form.anchor.synt_functions_of_anchor }}
+        {{ _form.anchor.anchor_schema }}
+        {{ _form.anchor.anchor_ru }}
     </fieldset>
     
-    
-    
+    {#
     <fieldset name="construction-anchor" class="col-md-3">
         <legend>Якорь</legend>
         {{ _form.anchor.csrf_tag }}
@@ -33,7 +38,7 @@
         {{ _form.anchor.synt_function_of_anchor }}
         {{ _form.anchor.anchor_schema }}
         {{ _form.anchor.anchor_ru }}
-    </fieldset>
+    </fieldset> #}
 
     
         {% for _change in _form.changes %}
@@ -64,8 +69,8 @@
         <div id="form-error feedback-invalid"></div>
     </div>
 </form>
-{% include "_search_result.html" %}
 
+{% include "_search_result.html" %}
 
 {% endblock %}
 

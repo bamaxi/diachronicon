@@ -48,6 +48,10 @@ class BaseChangesPlot:
     def to_plotly_image(self, name, format='png') -> None:
         self.to_plotly_obj().write_image(name.format(format))
 
+    # def __getattribute__(self, __name: str) -> Any:
+    #     print(f"fetching {__name}")
+    #     return super().__getattribute__(self, __name)
+
 
 class ConstructionChangesPlot(BaseChangesPlot):
     """Plot of a single construction"""

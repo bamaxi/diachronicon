@@ -1,3 +1,4 @@
+import typing as T
 from typing import Tuple, List, Dict, Union, Type, Optional
 
 from datetime import datetime
@@ -60,26 +61,43 @@ def parse_year(year: Union[str, int, None], left_bias=0.0):
     return None
 
 
-def prepare_graph_data(changes):
+def prepare_graph_data(changes, skip_empty=True):
     """Update dates and
 
     :param changes:
     :return:
     """
     changes_data = {}
+    print("changes:", changes)
 
     for change in changes:
         level_data = changes_data.setdefault(change.level, {})
+        presence = {}
 
         for field in ('first_attested', 'last_attested'):
             year = parse_year(getattr(change, field))
             value = datetime(year, 1, 1) if year else NO_DATE
 
+            # level_data = changes_data.setdefault(change.level, {})
+            presence[field] = value != NO_DATE
             level_data.setdefault(field, []).append(value)
 
-        # if all(date is NO_DATE for date in level_data.values()):
+        if skip_empty and not any(present for present in presence.values()):
+            for field in ('first_attested', 'last_attested'):
+                level_data[field].pop()
 
     return changes_data
+
+
+# def is_dict_empty(d: T.Dict[str, T.Any]) -> bool:
+#     res = True
+#     for key, val in d.items():
+#         if isinstance(val, dict):
+#             _res = is_dict_empty(val)
+#             res |= _res
+#         elif isinstance(val, dict):
+#             for item in val:
+                
 
 
 @bp.route('/item/<int:index>/')
@@ -109,41 +127,63 @@ def construction(index: int):
         # print(vars(construction))
         # print(construction.Construction)
 
-        logger.debug(construction)
+        # logger.debug(construction)
         print(construction)
 
+    title = (getattr(getattr(construction, "general_info", object), "name", None)
+             or construction.formula)
+    context = dict(
+        title=f"Конструкция '{title}'",
+        year=datetime.now().year,
+        res_id=construction.id,
+        construction=construction,  
+        graphJSON=None,
+        networkJSON=None
+    )
+
+    # title = f"Конструкция '{construction.general_info.name}'"
+    # print(title)
+
+    # res_id = construction.id
+    # print(res_id)
+
+    # context = dict(
+    #     title=title,
+    #     year=datetime.now().year,
+    #     res_id=res_id,
+    #     construction=construction,
+        # graphJSON=None,
+        # networkJSON=None,
+    # )
+    # context = dict(graphJSON=None, networkJSON=None)
+
+    print("preparing changes")
     try:
+        print("preparing changes")
         changes_data = prepare_graph_data(construction.changes)
+        
+
         logger.debug(f"{changes_data}")
+        print(changes_data)
 
         if changes_data:
             graph = ConstructionChangesPlot.from_elements(changes_data)
             print(graph.bars)
 
             graphJSON = str(graph.to_plotly_json())
+            context.update(dict(graphJSON=graphJSON))
             # graphJSON = new_plot_single_const_changes(changes_data)
             # graphJSON = super_new_plot_single_const_changes(changes_data)
-        else:
-            graphJSON = None
 
         if construction.changes:
             network = ConstructionSequentialChangesPlot.from_elements(construction.changes)
 
-
-
     except Exception as e:
-        print(e)
-        graphJSON = None
-        networkJSON = None
+        print(f"exception at preparation: {e}")
 
     print(f"about to render `{index}`")
 
     return render_template(
         'construction.html',
-        title=f"Конструкция '{construction.general_info.name}'",
-        year=datetime.now().year,
-        res_id=construction.id,
-        construction=construction,
-        graphJSON=graphJSON,
-        networkJSON=networkJSON,
+        **context
     )

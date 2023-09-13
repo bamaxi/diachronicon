@@ -196,6 +196,21 @@ def make_bootstrap_errors_div(field):
     
     return error_div
 
+def make_options_from_values(
+    values: T.List[str], kind: str, add_explanation_first=True,
+    explanation_template="Выберите {kind}"
+) -> T.Tuple[T.List[T.Tuple[str, str]], str]:
+    options = []
+    if add_explanation_first:
+        options.append(("", Markup(explanation_template.format(kind=kind))))
+    
+    for val in values:
+        assert bool(val), f"value must be non-empty, got: {val}"
+        options.append((val, Markup(val)))
+
+    selected = ""
+    return options, selected
+
 
 def make_sign_options_for_param(param: str):
         # _options = [

@@ -338,10 +338,10 @@ num_changes_deriv = ValueWithSignDerivation("num_changes", "num_changes_sign")
 
 deriv = {"construction": [num_changes_deriv], "changes": [dur_deriv]}
 
-q = Query(deriv)
-res = q.parse_form(form)
+# q = Query(deriv)
+# res = q.parse_form(form)
 
-print(res)
+# print(res)
 
-print(res.tree())
+# print(res.tree())
 

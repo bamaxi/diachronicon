@@ -38,14 +38,20 @@ from app.models import (
     FormulaElement,
     ConstructionVariant
 )
+import app.database
 from app.search import bp
 from app.search.search_form import (
     make_sign_options_for_param,
+    make_options_from_values,
     DataList,
     BootstrapBooleanField,
     BoostrapSelectField,
     BootstrapStringField,
     BootstrapIntegerField,
+)
+from app.search.query_sqlalchemy import (
+    default_sqlquery,
+    SQLQuery,
 )
 
 
@@ -66,10 +72,24 @@ _OPERATORS = {'le': le, 'ge': ge, 'eq': eq}
 #                   for col in Change.__table__.columns]
 
 MEANING_VALUES = []  # Construction.contemporary_meaning.unique()
-SYNT_FUNCTIONS_ANCHOR = []  # Construction.synt_function_of_anchor.type.enums
+SYNT_FUNCTIONS_ANCHOR = Construction.synt_function_of_anchor.type.enums
 TYPES_OF_CHANGE = []
+CONSTRUCTION_NAMES = []
 
-# pd_na = pd.NA
+def find_unique(model, field, engine=None) -> T.List[str]:
+    if engine is None:
+        engine = app.database.engine
+
+    # _field = getattr(model, field)
+    # print(_field, type(_field))
+    # res = _field.unique()
+    stmt = select(getattr(model, field))
+    with engine.connect() as conn:
+        results = conn.execute(stmt).scalars().all()
+    
+    print(type(results), results)
+    return results
+
 
 
 HTML_NAME2MODEL = {
@@ -577,7 +597,8 @@ class ConstructionForm(FlaskForm):
     )
 
     in_rus_constructicon = BootstrapBooleanField(
-        label="Есть в конструктиконе", name="in_rus_constructicon"
+        label="Есть в конструктиконе", name="in_rus_constructicon",
+        default=None
     )
 
     _num_changes_sign_options, selected = make_sign_options_for_param("Количество")
@@ -598,6 +619,7 @@ class AnchorForm(FlaskForm):
     _synt_functions_datalist = DataList(
         id=_synt_functions_datalist_id,
         literal_options=_synt_functions_anchor)
+    
     synt_functions_of_anchor = BootstrapStringField(
         label="Синт. функция якоря", name="synt_function_of_anchor",
         render_kw=dict(div_extra_contents = [_synt_functions_datalist],
@@ -705,8 +727,23 @@ def receive():
     form = SingleForm()
     print("in receive")
     print(form.is_submitted(), form.validate_on_submit())
+
     print(form.data)
-    return render_template("search_2.html", _form=form)
+
+    query = default_sqlquery()
+    query.parse_form(form.data, do_extra_processing=True)
+    stmt = query.query()
+
+    print(stmt)
+    print(stmt.compile(compile_kwargs={"literal_binds": True}))
+
+    with current_app.engine.connect() as conn:
+        results = conn.execute(stmt).mappings().all()
+
+    for res in results:
+        print(res)
+
+    return render_template("search_2.html", _form=form, results=results)
 
 
 # # TODO: add wtforms instead of manual handling
@@ -798,17 +835,66 @@ def receive():
 #         changes_queried=changes_queried
 #     )
 
+class SimpleSearchForm(FlaskForm):
+    _construction_values = find_unique(Construction, "formula")
+    _construction_options, _selected = make_options_from_values(
+        _construction_values, "конструкцию")
+    formula = BoostrapSelectField(
+        _construction_options[0][1], name="formula", 
+        choices=_construction_options,
+        render_kw=dict(selected=_selected))
+    
+    # submit = wtforms.SubmitField()
+
 
 @bp.route('/simple-search/')
 def simple_search():
-    try:
+    # try:
+    #     with current_app.engine.connect() as conn:
+    #         all_formulas = conn.execute(select(Construction.formula)).scalars().all()
+    # except:
+    #     all_formulas = []
+    simple_form = SimpleSearchForm()
+
+    if simple_form.is_submitted():
+        print(f'FORM SUBMITTED')
+
+        queried_formula = simple_form.data["formula"]
+        stmt = select(Construction).where(Construction.formula == queried_formula)
         with current_app.engine.connect() as conn:
-            all_formulas = conn.execute(select(Construction.formula)).scalars().all()
-    except:
-        all_formulas = []
+            results = conn.execute(stmt).mappings().all()
+
+        return render_template(
+            'search_simple.html',
+            # '/errors/404.html',
+            # message="Page under construction"
+            _form=simple_form,
+            results=results,
+            # items=all_formulas,
+        )
+
+    return render_template(
+            'search_simple.html',
+            _form=simple_form,
+        )
+
+@bp.route('/simple-form', methods=["POST"])
+def receive_simple():
+    simple_form = SimpleSearchForm()
+    print("in receive")
+    print(simple_form.is_submitted(), simple_form.validate_on_submit())
+
+    queried_formula = simple_form.data["formula"]
+    stmt = select(Construction).where(Construction.formula == queried_formula)
+    print(stmt)
+    with current_app.engine.connect() as conn:
+        results = conn.execute(stmt).mappings().all()
+
+    print(results)
+
     return render_template(
         'search_simple.html',
-        # '/errors/404.html',
-        # message="Page under construction"
-        items=all_formulas,
-    ), 404
+        _form=simple_form,
+        results=results,
+        query=simple_form,
+    )

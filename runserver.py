@@ -3,8 +3,8 @@ from config import TestConfig
 
 # app = create_app()
 app = create_app(test_config_obj=TestConfig)
-print("about to run (runserver)")
-app.run("0.0.0.0", 5000)
+# print("about to run (runserver)")
+# app.run("0.0.0.0", 5000)
 
 
 # flask shell

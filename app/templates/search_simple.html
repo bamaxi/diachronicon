@@ -10,8 +10,8 @@
 
 Здесь можно выполнить простой поиск по формуле конструкции.
 
-<form class="row" id="search-form" action="#" method="get">
-  <div class="form-field-text">
+<form class="row" id="search-form" action="/simple-form" method="post">
+  {# <div class="form-field-text">
       <input type="text" class="form-control" id="constructionFormula"
              placeholder="конструкция" name="c" list="constructions"
              {{ fill_if_queried('c', query) }}
@@ -26,9 +26,25 @@
       </datalist>
       {%- endif -%}
   </div>
+  #}
+  {{ _form.csrf_tag }}
+  <div class="col-md-4"></div>
+  <div class="col-md-4">
+    {{ _form.formula() }}
+    <button class="btn btn-primary" type="submit">Искать</button>
+    <div id="form-error feedback-invalid"></div>
+  </div>
+  {# <div class="col-md-4"></div> #}
+
+  {#
+  <div class="col-12">
+        <button class="btn btn-primary" type="submit">Искать</button>
+        <div id="form-error feedback-invalid"></div>
+  </div>
+  #}
 </form>
 
-{% include '_search_result.html' %}
+{% include '_simple_search_result.html' %}
 
 {% endblock %}
 

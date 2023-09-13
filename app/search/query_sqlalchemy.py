@@ -293,8 +293,10 @@ class SQLComparison(Comparison, metaclass=SQLQueryMeta):
 
 
 class SQLNumChangesComparison(Comparison):
-    # def __init__(self, param: str, op: OperatorsStr | Operators, value: _VT) -> None:
-    #     super().__init__(param, op, value)
+    def __init__(self, param: str, op: OperatorsStr | Operators, value: _VT) -> None:
+        # TODO: special cases with <1, 0, -1 ... | <
+
+        super().__init__(param, op, value)
 
     def query(self, stmt, subform, **kwargs) -> T.Any:
         # assume Construction.id is always selected
@@ -391,6 +393,7 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
 
     def process_extra(self):
         self.check(None, self.form, None)
+        print("check finished")
 
 
     def query(self, stmt=None, subform=None):
@@ -398,17 +401,21 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
             stmt = self._make_base_statement()
         
         return self.form.query(stmt, subform)
+    
 
-from pprint import pprint
+def default_sqlquery():
+    return SQLQuery(deriv)
 
-pprint(form)
+# from pprint import pprint
 
-q = SQLQuery(deriv)
-res = q.parse_form(deepcopy(form), do_extra_processing=True)
+# pprint(form)
 
-# pprint(res)
+# q = SQLQuery(deriv)
+# res = q.parse_form(deepcopy(form), do_extra_processing=True)
 
-print(res.__tree_repr__())
+# # pprint(res)
 
-final_stmt = q.query()
-print(final_stmt)
+# print(res.__tree_repr__())
+
+# final_stmt = q.query()
+# print(final_stmt)
