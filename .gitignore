@@ -8,4 +8,5 @@
 __pycache__
 /logs
 .idea
-venv*/
+*env*/
+node_modules

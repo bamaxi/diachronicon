@@ -9,7 +9,7 @@
             <span class="text-primary">{{ loop.index }}</span>
             <span>
                 <a href="{{ url_for('search.construction', index=_res.id) }}">
-                    {{ _res.formula }}
+                    {{ _res.formula or _res.name }}
                 </a>
             </span>
         </div>

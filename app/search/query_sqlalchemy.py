@@ -112,6 +112,7 @@ class SQLQueryMeta(QueryMeta):
             )
 
         new_cls = super().__new__(__mcls, name, bases, namespace, **kwargs)
+        new_cls.fields_queried = None
 
         # pop prefixed name from the registry copy and replace the non-prefixed class
         __mcls.REGISTRY.pop(name)
@@ -127,6 +128,8 @@ class SQLStringPattern(BaseQueryElement, metaclass=SQLQueryMeta):
         super().__init__()
         self.param = param
         self.pattern = value
+
+        self.fields_queried = [param]
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.param!r}, {self.pattern!r})"
@@ -208,6 +211,7 @@ class SQLTokensQuery(BaseQueryElement, metaclass=SQLQueryMeta):
         tokens = [SQLStringPattern(param, pat) for pat in self.tokenize(value)]
         self.tokens: T.List[T.Union[SQLStringPattern, SQLComparison]] = tokens
 
+        self.fields_queried = [param]
     
     def tokenize(self, query: str) -> T.List[str]:
         return tokenize_formula_query(query)
@@ -216,9 +220,8 @@ class SQLTokensQuery(BaseQueryElement, metaclass=SQLQueryMeta):
         tokens = self.tokens
         sql_model = model.sql_model
 
-        model_aliases = [aliased(sql_model) for i in range(len(tokens))]
+        model_aliases = [sql_model] + [aliased(sql_model) for i in range(len(tokens) - 1)]
         for i, (tok, aliased_model) in enumerate(zip(tokens, model_aliases)):
-            
             if i != 0:
                 stmt = stmt.where(
                     aliased_model.construction_id == model_aliases[0].construction_id,
@@ -247,6 +250,8 @@ class SQLSubForm(SubForm, metaclass=SQLQueryMeta):
             raise ValueError(f"model unknown: {name}")
         
         super().__init__(name, content)
+
+        self.fields_queried = content.fields_queried
         self.sql_model = MAPPING[name]
 
     def query(self, stmt = None, subform: T.Optional['SQLSubForm']=None, **kwargs):
@@ -256,6 +261,11 @@ class SQLSubForm(SubForm, metaclass=SQLQueryMeta):
 
 
 class SQLConjunction(Conjunction, metaclass=SQLQueryMeta):
+    def __init__(self, items: T.List[BaseQueryElement]) -> None:
+        super().__init__(items)
+
+        self.fields_queried = sum([item.fields_queried for item in items], [])
+
     def query(self, stmt=None, subform: T.Optional[SQLSubForm]=None, **kwargs):
         for item in self.items:
             stmt = item.query(stmt, subform, **kwargs)
@@ -264,6 +274,11 @@ class SQLConjunction(Conjunction, metaclass=SQLQueryMeta):
     
 
 class SQLConjunctionCopies(ConjunctionCopies, metaclass=SQLQueryMeta):
+    def __init__(self, items: T.List[BaseQueryElement]) -> None:
+        super().__init__(items)
+
+        self.fields_queried = sum([item.fields_queried for item in items], [])
+
     def query(self, stmt, subform: SQLSubForm, **kwargs) -> T.Any:
         items = self.items
 
@@ -278,6 +293,11 @@ class SQLConjunctionCopies(ConjunctionCopies, metaclass=SQLQueryMeta):
 
 
 class SQLComparison(Comparison, metaclass=SQLQueryMeta):
+    def __init__(self, param: str, op: OperatorsStr | Operators, value: _VT) -> None:
+        super().__init__(param, op, value)
+
+        self.fields_queried = [param]
+
     def query(self, stmt, subform: SQLSubForm, **kwargs):
         print(self, '', subform, sep="\n")
         sql_entity = getattr(self, "sql_model", None) or subform.sql_model
@@ -297,6 +317,7 @@ class SQLNumChangesComparison(Comparison):
         # TODO: special cases with <1, 0, -1 ... | <
 
         super().__init__(param, op, value)
+        self.fields_queried = [param]
 
     def query(self, stmt, subform, **kwargs) -> T.Any:
         # assume Construction.id is always selected
@@ -310,6 +331,10 @@ class SQLNumChangesComparison(Comparison):
 
 
 class SQLDurationComparison(Comparison):
+    def __init__(self, param: str, op: OperatorsStr | Operators, value: _VT) -> None:
+        super().__init__(param, op, value)
+        self.fields_queried = [param]
+
     def query(self, stmt, subform, **kwargs) -> T.Any:
         sql_model = subform.sql_model
         stmt = stmt.where(
@@ -326,25 +351,38 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
 
     def _make_construction_stmt(self):
         self.sql_models_queried |= {Construction, GeneralInfo}
-        return select(Construction.id, GeneralInfo.name).join_from(Construction, GeneralInfo)
+        return select(
+            Construction.id, Construction.formula, GeneralInfo.name
+        ).join_from(Construction, GeneralInfo)
 
     def _make_base_statement(self):
-        basic_stmt = self._make_construction_stmt()
+        stmt = basic_stmt = self._make_construction_stmt()
+        print(basic_stmt)
+
         for subform in self.subforms_used:
             sql_model = subform.sql_model
             if not sql_model in self.sql_models_queried:
                 stmt = basic_stmt.join_from(Construction, sql_model)
+
+        print("showing fields queried:")
+        for subform in self.subforms_used:
+            print(subform.fields_queried)
                 
         return stmt
     
+    def add_sql_model(self, model):
+        print(f"adding model: {model}")
+        self.sql_models_queried |= {model}
+        
     alt_comparison = {
         Construction: {
-            "formula": SQLTokensQuery,
-            "num_changes": SQLNumChangesComparison,
+            "formula": (SQLTokensQuery, None),
+            "num_changes": (SQLNumChangesComparison,
+                            lambda self: self.add_sql_model(Change)),
         },
         Change: {
-            "stage": SQLStringPattern,
-            "duration": SQLDurationComparison,
+            "stage": (SQLStringPattern, None),
+            "duration": (SQLDurationComparison, None),
         }
     }
 
@@ -375,7 +413,11 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
             param = item.param
             if self.alt_comparison.get(sql_model, {}).get(param) is not None:
                 args = {attr: getattr(item, attr) for attr in ("param", "op", "value")}
-                new_item = self.alt_comparison[sql_model][param](**args)
+                new_item_model, callback = self.alt_comparison[sql_model][param]
+                
+                new_item = new_item_model(**args)
+                if callback is not None:
+                    callback(self)
                 
                 print(f"replacing comparison with: {new_item}")
 
@@ -399,6 +441,8 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
     def query(self, stmt=None, subform=None):
         if stmt is None:
             stmt = self._make_base_statement()
+        
+        print(f"form query: made base statement")
         
         return self.form.query(stmt, subform)
     

@@ -29,8 +29,10 @@
            </div>
            <div class="author-data">
                 <label class="label-author">Автор</label><br>
+                {% if construction.general_info %}
                 <span class="author">{{ construction.general_info.author_name + " "
                        + construction.general_info.author_surname}}</span>
+                {% endif %}
            </div>
            <div class="data-links">
                <a href="#data-sources-{{ res_id }}">К&nbsp;описанию&nbsp;данных</a>
@@ -124,6 +126,7 @@
 
        <section class="data-sources" id="data-sources-{{ res_id }}">
            <label class="data-sources-label">Источники данных</label>
+           {% if construction.general_info %}
            <span class="about-thesis">
                Конструкция была описана автором
                {{ make_link_format_dead(construction.general_info.term_paper,
@@ -136,6 +139,7 @@
                                         "доступны по ссылке") }}
                .
            </span>
+           {% endif %}
        </section>
    </article>
 </div>

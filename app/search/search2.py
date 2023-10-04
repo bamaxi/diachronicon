@@ -26,6 +26,7 @@ from sqlalchemy.orm import (
     load_only
 )
 import wtforms
+import wtforms.validators
 from flask import current_app
 from flask import render_template, abort, request, redirect
 from flask_wtf import FlaskForm
@@ -539,7 +540,8 @@ def build_query(
         # TODO: remove once searching many is supported
         break
 
-    print(f"final select is:\n{stmt}")
+    print("final select is:",
+          stmt.compile(compile_kwargs={"literal_binds": True}), sep="\n")
 
     return stmt
 
@@ -565,6 +567,98 @@ def reduce_rows(rows: Dict):
             final_res[constr_id] = results
 
     return final_res
+
+
+@bp.route('/search/', methods=['GET', 'POST'])
+def search():
+    """Search view"""
+
+    # TODO: implement as singletons?
+    try:
+        meaning_values = Construction.contemporary_meaning.unique()
+    except (ValueError, TypeError):
+        meaning_values = MEANING_VALUES
+    try:
+        synt_functions_anchor = Construction.synt_function_of_anchor.type.enums
+    except (ValueError, TypeError):
+        synt_functions_anchor = SYNT_FUNCTIONS_ANCHOR
+    types_of_change = TYPES_OF_CHANGE
+    try:
+        with current_app.engine.connect() as conn:
+            q = conn.execute(select(Change.type_of_change).order_by(
+                Change.type_of_change.asc()).distinct())
+            types_of_change = q.scalars().all()
+    except Exception as e:
+        print(e)
+        raise e
+        print("-" * 50)
+        types_of_change = TYPES_OF_CHANGE
+
+    print(types_of_change)
+
+    query_args = request.args
+    print(*query_args.items(), sep='\n')
+    logger.debug(f"{query_args}")
+
+    # a GET request with
+    #   - no parameters or unfilled parameters
+    #   - or a `no-search` flag (usually after linking from construction page)
+    if (request.method != 'POST'
+        and (not (request.args and any(val for key, val in query_args.items()))
+             or query_args.get('no-search') == '1')
+    ):
+        return render_template(
+            'search.html',
+            title='Поиск',
+            year=datetime.now().year,
+            meaning_values=meaning_values,
+            synt_functions_anchor=synt_functions_anchor,
+            query=request.args,
+        )
+
+    print(f'in conditional')
+
+    print(request.form)
+    print(request.data)
+
+    stmt = build_query(query_args)
+
+    print("built stmt")
+
+    with current_app.engine.connect() as conn:
+        results = conn.execute(stmt).mappings().all()
+
+    for row in results:
+        print(type(row))
+        print(row)
+        # print(row._fields)
+        # for field in row:
+        #     print(vars(field))
+        # print(row._asdict())
+    row_id2data = reduce_rows(group_rows_by_construction(results))
+
+    print(row_id2data)
+    print("formula" in query_args, query_args, sep="\n")
+
+    changes_queried = any(field in query_args for field in [
+        'change-1-stage', 'change-1-stage-abs', 'change-1-level',
+        'change-1-type_of_change', 'change-1-duration_sign'
+    ])
+
+    return render_template(
+        'search.html',
+        title='Поиск: результаты',
+        year=datetime.now().year,
+        meaning_values=meaning_values,
+        synt_functions_anchor=synt_functions_anchor,
+        types_of_change=types_of_change,
+        form_input=request.form,
+        results=row_id2data,
+        n_param_results=len(results),
+        query=query_args,
+        changes_queried=changes_queried
+    )
+
 
 
 def safe_get(callable: T.Callable[[], T.Optional[T.List[str]]], default=None):
@@ -598,7 +692,8 @@ class ConstructionForm(FlaskForm):
 
     in_rus_constructicon = BootstrapBooleanField(
         label="Есть в конструктиконе", name="in_rus_constructicon",
-        default=None
+        # default=None
+        false_values=()
     )
 
     _num_changes_sign_options, selected = make_sign_options_for_param("Количество")
@@ -608,6 +703,7 @@ class ConstructionForm(FlaskForm):
         render_kw=dict(selected=selected))
     num_changes = BootstrapIntegerField(
         label="Количество изменений", name="num_changes",
+        validators=[wtforms.validators.Optional(strip_whitespace=True)]
     )
 
 
@@ -645,7 +741,8 @@ class ChangeForm(FlaskForm):
     stage_abs = BootstrapIntegerField(
         label="Этап в истории конструкции", name="stage_abs",
         render_kw=dict(div_extra_contents = [_stages_datalist],
-                       list=_stages_datalist_id)
+                       list=_stages_datalist_id),
+        validators=[wtforms.validators.Optional(strip_whitespace=True)]
     )
 
     level = BoostrapSelectField(
@@ -672,10 +769,16 @@ class ChangeForm(FlaskForm):
         _duration_sign_options[0][1], name="duration_sign", 
         choices=_duration_sign_options,
         render_kw=dict(selected=selected))
-    duration = BootstrapIntegerField("Длительность периода", name="duration")
+    duration = BootstrapIntegerField(
+        "Длительность периода", name="duration", 
+        validators=[wtforms.validators.Optional(strip_whitespace=True)])
 
-    first_attested = BootstrapIntegerField("Первое вхождение в таком виде", name="first_attested")
-    last_attested = BootstrapIntegerField("Последнее вхождение в таком виде", name="last_attested")
+    first_attested = BootstrapIntegerField(
+        "Первое вхождение в таком виде", name="first_attested",
+        validators=[wtforms.validators.Optional(strip_whitespace=True)])
+    last_attested = BootstrapIntegerField(
+        "Последнее вхождение в таком виде", name="last_attested",
+        validators=[wtforms.validators.Optional(strip_whitespace=True)])
     
 
 class SingleForm(FlaskForm):
@@ -689,22 +792,22 @@ class SearchForm(FlaskForm):
 
 
 
-@bp.route('/search/', methods=['GET', 'POST'])
-def search():
-    # form = SearchForm()
-    form = SingleForm()
-    print("form initialized")
+# @bp.route('/search/', methods=['GET', 'POST'])
+# def search():
+#     # form = SearchForm()
+#     form = SingleForm()
+#     print("form initialized")
 
-    # if form.validate_on_submit():
-    #     print("hooray")
-    #     print(form.data)
-    if form.data:
-        print("wow!")
-        print(form.data)
-        return render_template("search_2.html", _form=form)
+#     # if form.validate_on_submit():
+#     #     print("hooray")
+#     #     print(form.data)
+#     if form.data:
+#         print("wow!")
+#         print(form.data)
+#         return render_template("search_2.html", _form=form)
     
-    print("rendering clean form")
-    return render_template('search_2.html', _form=form)
+#     print("rendering clean form")
+#     return render_template('search_2.html', _form=form)
 
     # # a GET request with
     # #   - no parameters or unfilled parameters
@@ -732,7 +835,10 @@ def receive():
 
     query = default_sqlquery()
     query.parse_form(form.data, do_extra_processing=True)
+
+    print("parsed form")
     stmt = query.query()
+    print("made stmt")
 
     print(stmt)
     print(stmt.compile(compile_kwargs={"literal_binds": True}))

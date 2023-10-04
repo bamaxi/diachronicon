@@ -59,9 +59,9 @@
                    name="c-meaning"
                    {{ fill_if_queried("c-meaning", query) }}
             >
-            <label for="meaning>
+            <label for="meaning">
                 Значение
-<!--                <span class="symbol symbol-form symbol-logic"></span>-->
+                {# <span class="symbol symbol-form symbol-logic"></span> #}
             </label>
             {%- if meaning_values -%}
             <datalist id="meaning_values">
@@ -234,7 +234,7 @@
                    placeholder="change-1-duration" name="change-1-duration"
                    {{ fill_if_queried("change-1-duration", query) }}
             >
-            <label for="change-1-duration">Длительность периода</label>
+            <label for="change-1-duration">Длительность периода (лет)</label>
             <div class="error feedback-invalid"></div>
         </div>
 <!--        </div>-->
