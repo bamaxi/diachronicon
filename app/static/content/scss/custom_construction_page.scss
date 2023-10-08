@@ -8,6 +8,11 @@
     font-size: small;
 }
 
+img.search-icon {
+    width: 1em;
+    height: 1em;
+}
+
 .construction-name {
     @extend .col-5;
     /* @include make-col(5); */
@@ -15,11 +20,11 @@
     /* @extend .text-center; */
 }
 
-.author-data {
-    @extend .col-5;
-    /* @include make-col(5); */
-    @extend .text-center;
-}
+// .author-data {
+//     // @extend .col-5;
+//     /* @include make-col(5); */
+//     // @extend .text-center;
+// }
 
 .data-links {
     @extend .col-2;
@@ -39,15 +44,15 @@
     /* padding-top: 1.5rem; */
 }
 
-.label-author,
-.label-formula,
-.label-meaning,
-.label-synt,
-.label-anchors,
-.data-sources-label {
-    font-weight: bold;
-    &:after { content:":"; }
-}
+// .label-author,
+// .label-formula,
+// .label-meaning,
+// .label-synt,
+// .label-anchors,
+// .data-sources-label {
+//     font-weight: bold;
+//     &:after { content:":"; }
+// }
 
 /* .anchor-ru, */
 /* .anchor-en, */
@@ -55,25 +60,76 @@
     /* @extend .col-4; */
 /* } */
 
+
+@mixin non-form-label {
+    font-weight: bold;
+}
+
+
+.label-formula,
+.label-alt-formulas,
+.label-meaning,
+.label-synt,
+.label-anchors,
+.label-ruconstructicon {
+    @include non-form-label();
+    white-space: pre;
+    & + *::before { content: "\a"; white-space: pre}
+    // &::after { content: "\a"; white-space: pre}  // doesn't seem to work with spans
+}
+
+.label-author,
+.data-sources-label {
+    @include non-form-label()
+}
+
+
+$border-horizontal-percent: 90%;
+
+.description-row + .description-row {
+    z-index: 1;
+    &::before {
+        content: "";
+        z-index: -1;
+        width: $border-horizontal-percent;
+        margin-left: (100% - $border-horizontal-percent) / 2;
+        border-bottom: 1px solid $gray-300;
+        padding-top: 1rem;
+        margin-bottom: 1rem;
+    }
+}
+
 .anchors {
     display: block;
-    padding-left: 1.5rem;
+    // padding-left: 0.5rem;
+    & > label {
+        float: left;
+        width: 30%;
+        @extend .text-secondary;
+    }
+    & > span {
+        width: 70%;
+    }
+    & > label ~ label, & > span ~ span {
+        padding-top: 0.5rem;
+    }
+    
 }
 
-.anchors > label {
-    float: left;
-    width: 30%;
-    @extend .text-secondary;
-}
 
-.anchors > span {
-    width: 70%;
+.variants {
+    list-style: none;
+    margin-left: 0;
+    padding-left: 0.75rem;
+    &::before {display: none};
 }
 
 /* an alternative is {display: flex; flex-wrap: wrap} on parent  */
 .variant {
+    text-indent: -1rem;
+    padding-top: 0.4rem;
     display: inline-block;
-    margin-right: 0.75rem;
+    margin-right: 0.25rem;
 }
 
 
@@ -89,17 +145,17 @@
         }
     }
     
-    @media screen and (min-width: $changes_chart_min_width * (1.5 + 0.1)) {
+    @media screen and (min-width: ($changes_chart_min_width * (1.5 + 0.1))) {
         width: $changes_chart_min_width * 1.25;
         height: $changes_chart_min_height * 1.25;
     }
     
-    @media screen and (min-width: $changes_chart_min_width * (2 + 0.1)) {
+    @media screen and (min-width: ($changes_chart_min_width * (2 + 0.1))) {
         width: $changes_chart_min_width * 1.4;
         height: $changes_chart_min_height * 1.4;
     }
     
-    @media screen and (min-width: $changes_chart_min_width * (2 + 0.1 + 0.01)) {
+    @media screen and (min-width: ($changes_chart_min_width * (2 + 0.1 + 0.01))) {
         width: $changes_chart_min_width * 1.7;
         height: $changes_chart_min_height * 1.7;
     }

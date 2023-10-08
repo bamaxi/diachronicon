@@ -1,7 +1,7 @@
 ﻿{% extends "layout.html" %}
 
 {% macro search_like_this(name, value, alt_msg="[искать это]") -%}
-    <span class="search-like sup"><a
+    <span class="search-like"><a
         href="{{ url_for('search.search', **{name: value, 'no-search': 1})}}"
             ><img class="search-icon" src="/static/icons/search.svg" alt="{{ alt_msg }}"></a>
     </span>
@@ -27,51 +27,35 @@
            <div class="construction-name">
                 <h3>{{ construction.general_info.name }}</h3>
            </div>
-           <div class="author-data">
-                <label class="label-author">Автор</label><br>
-                {% if construction.general_info %}
-                <span class="author">{{ (construction.general_info.author_name or "") + " "
-                       + (construction.general_info.author_surname or "")}}</span>
-                {% endif %}
+            <a class="data-link" href="#on-data-{{ res_id }}">О разметке конструкции</a>
+       </section>
+
+       <section class="description-row pt-4 row">
+           <div class="formula-data col-md-5 border-end">
+               <label class="label-formula">Формула</label>
+               <span class="formula">{{ construction.formula }}</span>
+               {# {{ search_like_this('c-formula', construction.formula)}} #}
            </div>
-           <div class="data-links">
-               <a href="#data-sources-{{ res_id }}">К&nbsp;описанию&nbsp;данных</a>
+           <div class="syntax-data col-md-4 border-end">
+               <label class="label-synt">Синтаксическая функция</label>
+               <span class="synt">{{ construction.synt_function_of_anchor }}</span>
+               {{ search_like_this('anchor-synt_functions_of_anchor',
+                                    construction.synt_function_of_anchor)}}
+           </div>
+           <div class="meaning-data col-md-3">
+               <label class="label-meaning">Значение</label>
+               <span class="meaning">{{ construction.contemporary_meaning }}</span>
+               {{ search_like_this('construction-meaning',
+                                    construction.contemporary_meaning)}}
            </div>
        </section>
 
-       <section class="description">
-           <div class="formula-data">
-<!--               <label class="label-formula">Формула</label>-->
-               <span class="formula">{{ construction.formula }}</span>
-               {{ search_like_this('c-formula', construction.formula)}}
-           </div>
-           <div class="meaning-data">
-               <label class="label-meaning">Значение</label>
-               <span class="meaning">{{ construction.contemporary_meaning }}</span>
-               {{ search_like_this('c-meaning',
-                                    construction.contemporary_meaning)}}
-           </div>
-           <div class="syntax-data">
-               <label class="label-synt">Синтаксическая функция</label>
-               <span class="synt">{{ construction.synt_function_of_anchor }}</span>
-               {{ search_like_this('c-synt_function_of_anchor',
-                                    construction.synt_function_of_anchor)}}
-           </div>
-           <div class="anchors-container">
-               <label class="label-anchors">Якори</label>
-               <div class="anchors">
-                   <label class="label-anchor-ru">рус.</label>
-                        <span class="anchor-ru">{{ construction.anchor_ru }}</span>
-                   <label class="label-anchor-eng">англ.</label>
-                        <span class="anchor-eng">{{ construction.anchor_eng }}</span>
-                   <label class="label-anchor-schema">общая схема</label>
-                        <span class="anchor-schema">{{ construction.anchor_schema }}</span>
-           </div>
-           <div class="alternate-variants">
-               <label class="label-formula">Альтернативные формулы</label>
+       <section class="description-row row">
+            <div class="alternate-variants col-md-5 border-end">
+               <label class="label-alt-formulas">Альтернативные формулы</label>
                {% set alt_formulas = construction.get_alternate_formulas() %}
                {% if alt_formulas %}
-               <ul>
+               <ul class="variants">
                {% for alt_variant in construction.get_alternate_formulas() %}
                <li><span class="variant" >{{
                    alt_variant + " " + search_like_this("c-formula", alt_variant)
@@ -80,16 +64,30 @@
                </ul>
                {% endif %}
            </div>
-           {%- if construction.in_rus_constructicon -%}
-           <div class="constructicon-relation">
-               <label class="label-formula">Конструкция представлена в Русском конструктиконе</label>
-               {% if construction.rus_constructicon_id %}
-               <span class="constructicon-id">{{ construction.rus_constructicon_id }}</span>
-               <a  class="sup" href="https://constructicon.github.io/russian/">Constructicon</a>
-               {% endif %}
+           <div class="anchors-container col-md-4 border-end">
+               <label class="label-anchors">Якори</label>
+               <div class="anchors">
+                   <label class="label-anchor-ru">рус.</label>
+                        <span class="anchor-ru">{{ construction.anchor_ru }}</span>
+                   <label class="label-anchor-eng">англ.</label>
+                        <span class="anchor-eng">{{ construction.anchor_eng }}</span>
+                   <label class="label-anchor-schema">общая схема</label>
+                        <span class="anchor-schema">{{ construction.anchor_schema }}</span>
+                </div>
            </div>
-           {% endif %}
-       </div>
+           
+            <div class="constructicon-relation col-md-3">
+                <label class="label-ruconstructicon">Русский конструктикон</label>
+                {%- if construction.in_rus_constructicon -%}
+                {% if construction.rus_constructicon_id %}
+                    <span class="constructicon-id">{{ construction.rus_constructicon_id }}</span>
+                    <a class="sup" href="https://constructicon.ruscorpora.ru">Constructicon</a>
+                    {% endif %}
+                {% else %}
+                    <span class="no-rus-constructicon">Конструкция отсутствует</span>
+                {% endif %}
+            </div>
+           
        </section>
 
        {% if construction.changes %}
@@ -124,22 +122,31 @@
        </section>
        {% endif %}
 
-       <section class="data-sources" id="data-sources-{{ res_id }}">
-           <label class="data-sources-label">Источники данных</label>
-           {% if construction.general_info %}
-           <span class="about-thesis">
-               Конструкция была описана автором
-               {{ make_link_format_dead(construction.general_info.term_paper,
-                                        "в курсовой работе") }}
-               .
-           </span>
-           <span class="about-sample">
-               Аннотированные данные
-               {{ make_link_format_dead(construction.general_info.annotated_sample,
-                                        "доступны по ссылке") }}
-               .
-           </span>
-           {% endif %}
+       <section class="on-data" id="on-data-{{ res_id }}">
+            <h4>О разметке</h4>
+            <div class="author-data">
+                <label class="label-author">Разметчик</label>
+                {% if construction.general_info %}
+                <span class="author">{{ (construction.general_info.author_name or "") + " "
+                    + (construction.general_info.author_surname or "")}}</span>
+                {% endif %}
+            </div>
+
+            <label class="data-sources-label">Источники данных</label>
+            {% if construction.general_info %}
+            <span class="about-thesis">
+                Конструкция была описана разметчиком
+                {{ make_link_format_dead(construction.general_info.term_paper,
+                                            "в курсовой работе") }}
+                .
+            </span>
+            <span class="about-sample">
+                <label>Аннотированные данные</label>
+                {{ make_link_format_dead(construction.general_info.annotated_sample,
+                                            "доступны по ссылке") }}
+                .
+            </span>
+            {% endif %}
        </section>
    </article>
 </div>
