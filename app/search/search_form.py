@@ -138,7 +138,7 @@ def add_indent(item: T.Union[str, Markup, Field, Widget], indent="") -> str:
         return item(base_indent=indent)
 
 
-def format_attrs_simple(attrs: T.Dict[str, SupportsStr], attrs_sep: str=ATTRS_SEP):
+def simple_html_params(attrs: T.Dict[str, SupportsStr], attrs_sep: str=ATTRS_SEP):
     return attrs_sep.join([f'{key}="{value}"' for key, value in attrs.items()])
 
 
@@ -146,7 +146,7 @@ def convert_underscore(s: str, to: str="-"):
     return s.replace("_", "-")
 
 
-def format_attrs_partial_order(
+def partial_order_html_params(
     attrs: T.Dict[str, SupportsStr],
     order: T.Iterable[str]=["type", "class", "id", "name", "list", "value"],
     attrs_sep: str=ATTRS_SEP,
@@ -165,7 +165,7 @@ def format_attrs_partial_order(
     # if other_attrs:
     #     return f"{format_attrs_simple(preordered_attrs)} {widgets_html_params(**other_attrs)}"
     # return f"{format_attrs_simple(preordered_attrs)}"
-    return f"{format_attrs_simple(preordered_attrs)} {widgets_html_params(**attrs)}"
+    return f"{simple_html_params(preordered_attrs)} {widgets_html_params(**attrs)}"
 
 
 def make_default_attrs(widget: Widget, field: wtforms.Field, **kwargs) -> T.Dict[str, T.Any]:
@@ -238,7 +238,7 @@ def render_option(value, label, selected, **kwargs):
     options = dict(kwargs, value=value)
     if selected:
         options["selected"] = True
-    return Markup(f"<option {format_attrs_partial_order(options)}>{label}</option>")
+    return Markup(f"<option {partial_order_html_params(options)}>{label}</option>")
 
 
 class BootstrapSelectWidget:
@@ -261,7 +261,7 @@ class BootstrapSelectWidget:
              for value, label, _ in field.iter_choices()]
         )
         
-        select_opening = f"<select {format_attrs_partial_order(attrs)}>"
+        select_opening = f"<select {partial_order_html_params(attrs)}>"
         select_closing = "</select>"
         return Markup("\n".join([select_opening, options_html, select_closing]))
 
@@ -283,9 +283,9 @@ class BootstrapCheckWidget:
         # if field.render_kw:
         #     attrs.update(field.render_kw)
         attrs = make_default_attrs(self, field, **kwargs)
-        input_ = self.input_template.format(input_attrs=format_attrs_partial_order(attrs))
+        input_ = self.input_template.format(input_attrs=partial_order_html_params(attrs))
 
-        outer_div_attrs = format_attrs_partial_order({"class": self.outer_div_class})
+        outer_div_attrs = partial_order_html_params({"class": self.outer_div_class})
         outer_div_opening = f"<div {outer_div_attrs}>"
 
         label = field.label(**{"class": "form-check-label"})
@@ -341,7 +341,7 @@ class BootstrapStringWidget:
         if value:
             input_attrs["value"] = value
 
-        input_ = f"<input {format_attrs_partial_order(input_attrs)}>"
+        input_ = f"<input {partial_order_html_params(input_attrs)}>"
 
         # label with optional extra
         label_text = field.label.text
@@ -349,13 +349,13 @@ class BootstrapStringWidget:
             label_text += label_extra_text
         label = Label(field_id=field.id, text=label_text).__html__()
 
-        help_div_attrs_str = format_attrs_partial_order(
+        help_div_attrs_str = partial_order_html_params(
             {"class": "form-text", "id": aria_describedby})
         help_div = (f"<div {help_div_attrs_str}>{field.description}</div>")
         
         error_div = make_bootstrap_errors_div(field)
 
-        outer_div_attrs = format_attrs_partial_order({"class": self.outer_div_class})
+        outer_div_attrs = partial_order_html_params({"class": self.outer_div_class})
         outer_div_opening = f"<div {outer_div_attrs}>"
 
         div_contents = [outer_div_opening, input_, label, help_div]
@@ -377,7 +377,7 @@ class BootstrapStringField(wtforms.StringField):
     widget = BootstrapStringWidget()
 
 class BootstrapIntegerField(wtforms.IntegerField):
-    widget = BootstrapStringWidget(use_placeholder=False)
+    widget = BootstrapStringWidget(use_placeholder=True)
 
 
 def render_datalist():

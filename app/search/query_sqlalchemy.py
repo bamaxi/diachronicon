@@ -30,6 +30,9 @@ from app.models import (
 
 from app.search.query import (
     _VT,
+    BasicFormType,
+    ElementDerivation,
+    FormType,
     Operators,
     OperatorsStr,
     QueryMeta,
@@ -40,9 +43,16 @@ from app.search.query import (
     BinaryConnective,
     Conjunction,
     ConjunctionCopies,
+    ValueWithSignDerivation,
     form,
     deriv,
 )
+
+
+DBModel: T.TypeAlias = T.Type[T.Union[
+    Construction, Change, GeneralInfo, Constraint, FormulaElement,
+    ConstructionVariant
+]]
 
 INPUT_WILDCARDS = ["*"]
 OUT_WILDCARD = "%"
@@ -140,7 +150,8 @@ class SQLStringPattern(BaseQueryElement, metaclass=SQLQueryMeta):
     def __tree_repr__(self) -> str:
         return self.__str__()
 
-    def query(self, stmt=None, model: T.Optional["SQLSubForm"]=None, **kwargs):
+    def query(self, stmt=None, model: T.Optional["SQLSubForm"]=None,
+              query_model: T.Optional[BaseQuery] = None, **kwargs):
         return stmt.where(getattr(model, self.param).ilike(self.pattern))
 
 
@@ -201,26 +212,41 @@ def format_kwargs(kwargs: T.Dict[str, T.Any], joiner=", ") -> str:
     return joiner.join([f"{name!r}={val!r}" for name, val in kwargs.items()])
 
 
+def make_aliases(
+        sql_model: DBModel, n: int,
+        alias_adder: T.Optional[T.Callable[[DBModel], T.Any]]=None
+    ) -> T.List[DBModel]:
+    """Makes a list of `n` aliases with the model itself used in place of first alias
+    
+    This prevents `cartesian product` — proliferation of unneeded columns"""
+    aliases = [aliased(sql_model) for i in range(n)]
+    if alias_adder:
+        for alias in aliases:
+            alias_adder(alias)
+    return [sql_model] + aliases
+
 
 class SQLTokensQuery(BaseQueryElement, metaclass=SQLQueryMeta):
-    def __init__(self, param: str, value: str, **kwargs) -> None:
+    def __init__(self, param: str, value: str, sql_model: DBModel=None, **kwargs) -> None:
         super().__init__()
         self.param = param
         self.value = value
         
-        tokens = [SQLStringPattern(param, pat) for pat in self.tokenize(value)]
+        tokens = [SQLStringPattern("value", pat) for pat in self.tokenize(value)]
         self.tokens: T.List[T.Union[SQLStringPattern, SQLComparison]] = tokens
 
         self.fields_queried = [param]
+
+        self.sql_model = sql_model
     
     def tokenize(self, query: str) -> T.List[str]:
         return tokenize_formula_query(query)
     
-    def query(self, stmt, model: 'SQLSubForm', **kwargs):
+    def query(self, stmt, model: 'SQLSubForm', query_model: 'SQLQuery', **kwargs):
         tokens = self.tokens
-        sql_model = model.sql_model
+        sql_model = self.sql_model or model.sql_model
 
-        model_aliases = [sql_model] + [aliased(sql_model) for i in range(len(tokens) - 1)]
+        model_aliases = make_aliases(sql_model, len(tokens), query_model.add_sql_model)
         for i, (tok, aliased_model) in enumerate(zip(tokens, model_aliases)):
             if i != 0:
                 stmt = stmt.where(
@@ -254,10 +280,11 @@ class SQLSubForm(SubForm, metaclass=SQLQueryMeta):
         self.fields_queried = content.fields_queried
         self.sql_model = MAPPING[name]
 
-    def query(self, stmt = None, subform: T.Optional['SQLSubForm']=None, **kwargs):
+    def query(self, stmt = None, subform: T.Optional['SQLSubForm']=None, 
+              query_model: T.Optional['SQLModel']=None, **kwargs):
         if stmt is None:
             raise ValueError(f"empty `stmt`")
-        return self.content.query(stmt, self, **kwargs)
+        return self.content.query(stmt, self, query_model, **kwargs)
 
 
 class SQLConjunction(Conjunction, metaclass=SQLQueryMeta):
@@ -266,9 +293,10 @@ class SQLConjunction(Conjunction, metaclass=SQLQueryMeta):
 
         self.fields_queried = sum([item.fields_queried for item in items], [])
 
-    def query(self, stmt=None, subform: T.Optional[SQLSubForm]=None, **kwargs):
+    def query(self, stmt=None, subform: T.Optional[SQLSubForm]=None,
+              query_model: T.Optional[BaseQuery]=None, **kwargs):
         for item in self.items:
-            stmt = item.query(stmt, subform, **kwargs)
+            stmt = item.query(stmt, subform, query_model, **kwargs)
 
         return stmt
     
@@ -279,12 +307,16 @@ class SQLConjunctionCopies(ConjunctionCopies, metaclass=SQLQueryMeta):
 
         self.fields_queried = sum([item.fields_queried for item in items], [])
 
-    def query(self, stmt, subform: SQLSubForm, **kwargs) -> T.Any:
+    def query(self, stmt, subform: SQLSubForm, query_model: 'SQLQuery', **kwargs) -> T.Any:
         items = self.items
 
         # print(subform)
 
-        model_aliases = [aliased(subform.sql_model) for i in range(len(items))]
+        model_aliases = make_aliases(subform.sql_model, len(items),
+                                     query_model.add_sql_model)
+        for alias in model_aliases:
+            query_model.add_sql_model(alias)
+        
         for item, alias in zip(items, model_aliases):
             subform.sql_model = alias
             stmt = item.query(stmt, subform, orig_model=subform.sql_model, **kwargs)
@@ -298,7 +330,7 @@ class SQLComparison(Comparison, metaclass=SQLQueryMeta):
 
         self.fields_queried = [param]
 
-    def query(self, stmt, subform: SQLSubForm, **kwargs):
+    def query(self, stmt, subform: SQLSubForm, query_model: BaseQuery, **kwargs):
         print(self, '', subform, sep="\n")
         sql_entity = getattr(self, "sql_model", None) or subform.sql_model
         print(sql_entity)
@@ -319,7 +351,7 @@ class SQLNumChangesComparison(Comparison):
         super().__init__(param, op, value)
         self.fields_queried = [param]
 
-    def query(self, stmt, subform, **kwargs) -> T.Any:
+    def query(self, stmt, subform: SubForm, query_model: BaseQuery, **kwargs) -> T.Any:
         # assume Construction.id is always selected
         stmt = stmt.group_by(Construction.formula).having(
             self.op(func.count(Construction.changes), self.value)
@@ -327,7 +359,7 @@ class SQLNumChangesComparison(Comparison):
         return stmt
     
     def __str__(self) -> str:
-        return f"count(construction.changes) {self._op2sign(self.op)} {self.value}"
+        return f"count(construction.changes) {self.op2sign(self.op)} {self.value}"
 
 
 class SQLDurationComparison(Comparison):
@@ -335,7 +367,7 @@ class SQLDurationComparison(Comparison):
         super().__init__(param, op, value)
         self.fields_queried = [param]
 
-    def query(self, stmt, subform, **kwargs) -> T.Any:
+    def query(self, stmt, subform: SubForm, query_model: BaseQuery, **kwargs) -> T.Any:
         sql_model = subform.sql_model
         stmt = stmt.where(
             self.op((sql_model.last_attested - sql_model.first_attested), self.value) 
@@ -343,48 +375,76 @@ class SQLDurationComparison(Comparison):
         return stmt
     
     def __str__(self) -> str:
-        return f"(last_attested - first_attested) {self._op2sign(self.op)} {self.value}"
+        return f"(last_attested - first_attested) {self.op2sign(self.op)} {self.value}"
 
 
 class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
-    sql_models_queried = set()
+    def __init__(
+        self, form2derivable_fields: T.Optional[T.Dict[str, T.List[ElementDerivation]]]=None
+    ) -> None:
+        super().__init__(form2derivable_fields)
+
+        self.sql_models_queried: T.Set[DBModel] = set()
+        self.sql_models_to_query: T.Set[DBModel] = set()
 
     def _make_construction_stmt(self):
+        """Make statement considered basic — a construction statement """
         self.sql_models_queried |= {Construction, GeneralInfo}
         return select(
             Construction.id, Construction.formula, GeneralInfo.name
         ).join_from(Construction, GeneralInfo)
+    
+    def apply_join(self, stmt, maybe_left: DBModel, maybe_right: DBModel):
+        print(f"attempting to join: {maybe_left} {maybe_right}")
+        return stmt.join_from(maybe_left, maybe_right)
 
     def _make_base_statement(self):
         stmt = basic_stmt = self._make_construction_stmt()
         print(basic_stmt)
 
-        for subform in self.subforms_used:
-            sql_model = subform.sql_model
+        # for subform in self.subforms_used:
+        print("showing `sql_models_queried`:", self.sql_models_queried)
+        all_models = [subform.sql_model for subform in self.subforms_used] + list(self.sql_models_to_query)
+        print("all models", all_models, sep="\n")
+        for sql_model in all_models: 
             if not sql_model in self.sql_models_queried:
-                stmt = basic_stmt.join_from(Construction, sql_model)
+                print(sql_model)
+                stmt = self.apply_join(stmt, Construction, sql_model)
+                self.sql_models_queried |= {sql_model}
 
         print("showing fields queried:")
         for subform in self.subforms_used:
             print(subform.fields_queried)
-                
+
         return stmt
     
-    def add_sql_model(self, model):
+    def add_sql_model(self, model: DBModel):
         print(f"adding model: {model}")
-        self.sql_models_queried |= {model}
-        
-    alt_comparison = {
-        Construction: {
-            "formula": (SQLTokensQuery, None),
-            "num_changes": (SQLNumChangesComparison,
-                            lambda self: self.add_sql_model(Change)),
-        },
-        Change: {
-            "stage": (SQLStringPattern, None),
-            "duration": (SQLDurationComparison, None),
-        }
-    }
+        self.sql_models_to_query |= {model}
+
+    def parse_val(self, form_name: str, key: str, val: str) -> BaseQueryElement:
+        if form_name == "construction":
+            if key == "formula":
+                self.sql_models_to_query |= {FormulaElement}
+                return SQLTokensQuery(key, val, sql_model=FormulaElement)
+            # if key == "num_changes":
+            #     self.add_sql_model(Change)
+            #     return SQLNumChangesComparison(key, val)
+
+        elif form_name == "change":
+            if key == "stage":
+                return SQLStringPattern(key, value)
+
+        return super().parse_val(form_name, key, val)
+    
+    def derive_field(self, form: FormType | BasicFormType, form_name: str | None, field_derivation: ElementDerivation):
+        maybe_derived_field = super().derive_field(form, form_name, field_derivation)
+
+        print("derived a field:", maybe_derived_field)
+        if isinstance(maybe_derived_field, SQLNumChangesComparison):
+            self.add_sql_model(Change)
+
+        return maybe_derived_field
 
     def check(
         self, subform: SQLSubForm, item: BaseQueryElement,
@@ -441,11 +501,14 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
     def query(self, stmt=None, subform=None):
         if stmt is None:
             stmt = self._make_base_statement()
+            print(f"form query: made base statement")
         
-        print(f"form query: made base statement")
-        
-        return self.form.query(stmt, subform)
+        return self.form.query(stmt, subform, self)
     
+
+num_changes_deriv = ValueWithSignDerivation("num_changes", "num_changes_sign", SQLNumChangesComparison)
+dur_deriv = ValueWithSignDerivation("duration", "duration_sign", SQLDurationComparison)
+deriv = {"construction": [num_changes_deriv], "changes": [dur_deriv]}
 
 def default_sqlquery():
     return SQLQuery(deriv)

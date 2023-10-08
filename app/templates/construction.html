@@ -30,8 +30,8 @@
            <div class="author-data">
                 <label class="label-author">Автор</label><br>
                 {% if construction.general_info %}
-                <span class="author">{{ construction.general_info.author_name + " "
-                       + construction.general_info.author_surname}}</span>
+                <span class="author">{{ (construction.general_info.author_name or "") + " "
+                       + (construction.general_info.author_surname or "")}}</span>
                 {% endif %}
            </div>
            <div class="data-links">

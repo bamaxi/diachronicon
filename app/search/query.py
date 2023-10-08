@@ -6,12 +6,13 @@ from operator import (
     gt,
     le,
     ge,
-    eq
+    eq,
+    ne,
 )
 import enum
 import re
 
-OperatorsStr = T.Literal["lt", "gt", "le", "ge", "eq"]
+OperatorsStr = T.Literal["lt", "gt", "le", "ge", "eq", "ne"]
 
 class Operators(enum.Enum):
     lt = lt
@@ -19,6 +20,7 @@ class Operators(enum.Enum):
     le = le
     ge = ge
     eq = eq
+    ne = ne
 
 Operator2Sign = {
     lt: "<", "lt": "<",
@@ -26,6 +28,7 @@ Operator2Sign = {
     le: "≤", "le": "≤",
     ge: "≥", "ge": "≥",
     eq: "=", "eq": "=",
+    ne: "≠", "ne": "≠"
 }
 
 Operator2Name = {
@@ -34,11 +37,19 @@ Operator2Name = {
     le: "le",
     ge: "ge",
     eq: "eq",
+    ne: "ne",
 }
+
 
 _VT: T.TypeAlias = T.Union[str, int, T.Type[None]]
 VT = (str, int, type(None))
 
+
+# these repeat the names of the classes
+# _COMPARISON = "Comparison"
+_CONJUCTION = "Conjunction"
+_CONJUNCTION_COPIES = "ConjunctionCopies"
+_SUBFORM = "SubForm"
 
 
 class QueryMeta(ABCMeta):
@@ -66,6 +77,7 @@ class QueryMeta(ABCMeta):
 
 class BaseQueryElement(metaclass=QueryMeta):
     """Abstract class for query elements. Defines normal and tree representation"""
+    _args = ()  
 
     _BASE_INDENT = " " * 2
     INDENT = _BASE_INDENT
@@ -75,12 +87,9 @@ class BaseQueryElement(metaclass=QueryMeta):
         raise NotImplementedError(f"method not implemented for `{type(self)}`")
 
     def increase_indent(self, times=1) -> None:
-        print(self)
-
         try:
             self.INDENT += self._BASE_INDENT * times
         except AttributeError as e:
-            
             print(e)
             raise e
 
@@ -91,10 +100,20 @@ class BaseQueryElement(metaclass=QueryMeta):
     def __tree_repr__(self) -> str: ...
 
     def tree(self):
+        """Return representation of the object used for tree"""
         return self.__tree_repr__()
+    
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, type(self)):
+            return False
+        return all(getattr(self, _arg, None) == getattr(other, _arg, None)
+                   for _arg in self._args)
     
 
 class Comparison(BaseQueryElement):
+    """Comparison of a `param` to a certain `value` by `op` (eq, neq, gt, ge, lt, le)"""
+    _args = ("param", "op", "value")
+
     def __init__(self, param: str, op: T.Union[Operators, OperatorsStr], value: _VT) -> None:
         self.param = param
 
@@ -119,20 +138,24 @@ class Comparison(BaseQueryElement):
         self.value = value
 
     @staticmethod
-    def _op2sign(op: T.Union[Operators, OperatorsStr]) -> str:
+    def op2sign(op: T.Union[Operators, OperatorsStr]) -> str:
+        """Return string representation of the operator"""
         return Operator2Sign[op]
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.param}, {self.op}, {self.value})"
     
     def __str__(self) -> str:
-        return f"{self.param}{self._op2sign(self.op)}{self.value}"
+        return f"{self.param}{self.op2sign(self.op)}{self.value}"
     
     def __tree_repr__(self) -> str:
+        """Tree representation of comparison. Defaults to `self.__str__()`"""
         return self.__str__()
 
 
 class BinaryConnective(BaseQueryElement):
+    _args = ("items",)
+
     self_repr: str
 
     def __init__(self, items: T.List[BaseQueryElement]) -> None:
@@ -147,10 +170,10 @@ class BinaryConnective(BaseQueryElement):
         print(f"({self.__class__.__name__}) making tree repr"
               f" (indent={repr(self.INDENT)}) for: {self.items}")
 
-        self_repr = self.self_repr
         self.increase_indent()
 
-        return f"\n{self.INDENT}".join([self_repr] + [item.__tree_repr__() for item in self.items])
+        return f"\n{self.INDENT}".join(
+            [self.self_repr] + [item.__tree_repr__() for item in self.items])
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.items.__repr__()})"
@@ -167,13 +190,15 @@ class ConjunctionCopies(Conjunction):
     self_repr = "AND (distinct instances)"
     
 
-class Disjunction(BaseQueryElement):
+class Disjunction(BinaryConnective):
     """Disjunction (OR | ⋁) in a query. A disjunct is any other query element."""
 
     self_repr = "OR"
 
 
 class SubForm(BaseQueryElement):
+    _args = ("name", "content")
+
     def __init__(self, name: str, content: BaseQueryElement) -> None:
         self.name = name
         self.content = content
@@ -204,11 +229,13 @@ class ElementDerivation(metaclass=QueryMeta):
 
 class ValueWithSignDerivation(ElementDerivation):
     """Remember dict keys for `param`, `op(erator)` and later fetch them from form in `__call__`"""
-    def __init__(self, param, op_key) -> None:
+    def __init__(self, param, op_key, comparison_model: Comparison=None) -> None:
         self.param = param
         self.op_key = op_key
+        self.comparison = comparison_model or self.REGISTRY[_COMPARISON]
     
-    def __call__(self, form: PrimitiveFormType) -> T.Optional[Comparison]:      
+    def __call__(self, form: PrimitiveFormType) -> T.Optional[Comparison]:
+        """Fetch `op` and value from form"""   
         param = self.param
         value = form.get(param)
 
@@ -220,48 +247,73 @@ class ValueWithSignDerivation(ElementDerivation):
                 form.pop(key)
 
             op = getattr(Operators, str_op, None)
-            if op is not None:
-                # return Comparison(param, str_op, value)
-                return self.REGISTRY["Comparison"](param, str_op, value)
-            else:
+            if op is None:
                 raise ValueError(f"`{op_key}` has bad value: `{str_op}`")
+            
+            return self.comparison(param, str_op, value)
         else:
             print(f"{form} doesn't have one of `{param}`, `{op_key}`")
             return None
+        
+    def __repr__(self) -> str:
+        return (f"{self.__class__.__name__}({self.param!r}, {self.op_key!r}, "
+                f"{self.comparison!r})")
 
 
+# TODO: if this is used for derivation it should reset `subforms_used` in the end
+# or do without it alltogether
 class BaseQuery(metaclass=QueryMeta):
+    """Base class for deriving tree from dict forms"""
     def __init__(
         self, form2derivable_fields: T.Optional[T.Dict[str, T.List[ElementDerivation]]]=None
     ) -> None:
-        self.form2derivable_fields = form2derivable_fields
-        self.subforms_used = []
+        self.form2derivable_fields = form2derivable_fields or {}
+        self.subforms_used: T.List[SubForm] = []
 
-    def make_connective(self, form_name: str, elements: T.List[BaseQueryElement]) -> BinaryConnective:
+    def make_connective(
+        self, form_name: T.Optional[str], elements: T.List[BaseQueryElement]
+    ) -> BinaryConnective:
         if form_name == "changes":
             return self.REGISTRY["ConjunctionCopies"](elements)
 
         return self.REGISTRY["Conjunction"](elements)
     
+    def derive_field(
+        self, form: T.Union[FormType, BasicFormType], form_name: T.Optional[str],
+        field_derivation: ElementDerivation
+    ):
+        """Derive a single field. This function may be overriden in child `Query` for callbacks"""
+        return field_derivation(form)
+    
     def derive_fields(
         self, form: T.Union[FormType, BasicFormType], form_name: T.Optional[str]=None
     ):
-        fields_derived = []
-        if self.form2derivable_fields is not None and form_name is not None:
+        """Derives query fields that result from multiple fields of the input"""
+        derived_fields = []
+        if self.form2derivable_fields and form_name is not None:
             derivable_fields_this_form = self.form2derivable_fields.get(form_name, [])
 
             print(f"deriving: {derivable_fields_this_form}")
 
             for derivable_field in derivable_fields_this_form:
-                maybe_field_derived = derivable_field(form)
-                if maybe_field_derived is not None:
-                    fields_derived.append(maybe_field_derived)
+                maybe_derived_field = self.derive_field(form, form_name, derivable_field)
+                if maybe_derived_field is not None:
+                    derived_fields.append(maybe_derived_field)
         
-        return fields_derived
+        return derived_fields
+    
+    def add_derivation(self, form_name: str, derivation: ElementDerivation):
+        """Add a derivation this `Query` should perform"""
+        self.form2derivable_fields.setdefault(form_name, []).append(derivation)
+
+    def parse_val(self, form_name: str, key: str, val: str) -> BaseQueryElement:
+        """Parse a single value. This function may be overriden in child `Query`."""
+        return self.REGISTRY[_COMPARISON](key, eq, val)
 
     def parse(
         self, form: T.Union[FormType, BasicFormType], form_name: T.Optional[str]=None
     ) -> T.Union[T.List[BaseQueryElement], BaseQueryElement]:
+        
         print(form)
 
         elements = []
@@ -274,7 +326,8 @@ class BaseQuery(metaclass=QueryMeta):
                 print(f"parsing pair <`{key}`, val>")
                 if isinstance(val, VT) and not is_empty:
                     print(f"val is token: {val}")
-                    elements.append(self.REGISTRY["Comparison"](key, eq, val))
+                    element = self.parse_val(form_name, key, val)
+                    elements.append(element)
                 elif isinstance(val, (list, dict)):
                     print(f"val is collection: {val}")
                     val_parse = self.parse(val, form_name=key)
@@ -285,6 +338,7 @@ class BaseQuery(metaclass=QueryMeta):
                         self.subforms_used.append(subform)
                 elif not is_empty:
                     print("unknown connective")
+
         elif isinstance(form, list):
             for subform in form:
                 print(f"parsing subform: {subform}")
@@ -312,6 +366,9 @@ class BaseQuery(metaclass=QueryMeta):
 
 
 class Query(BaseQuery): ...
+
+_COMPARISON = Comparison.__name__
+
 
 form = {
     'construction':

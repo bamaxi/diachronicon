@@ -1,4 +1,6 @@
-﻿import re
+﻿print(f"search2 imported")
+
+import re
 import typing as T
 from typing import Tuple, List, Dict, Union, Type, Optional
 
@@ -569,95 +571,95 @@ def reduce_rows(rows: Dict):
     return final_res
 
 
-@bp.route('/search/', methods=['GET', 'POST'])
-def search():
-    """Search view"""
+# @bp.route('/search/', methods=['GET', 'POST'])
+# def search():
+#     """Search view"""
 
-    # TODO: implement as singletons?
-    try:
-        meaning_values = Construction.contemporary_meaning.unique()
-    except (ValueError, TypeError):
-        meaning_values = MEANING_VALUES
-    try:
-        synt_functions_anchor = Construction.synt_function_of_anchor.type.enums
-    except (ValueError, TypeError):
-        synt_functions_anchor = SYNT_FUNCTIONS_ANCHOR
-    types_of_change = TYPES_OF_CHANGE
-    try:
-        with current_app.engine.connect() as conn:
-            q = conn.execute(select(Change.type_of_change).order_by(
-                Change.type_of_change.asc()).distinct())
-            types_of_change = q.scalars().all()
-    except Exception as e:
-        print(e)
-        raise e
-        print("-" * 50)
-        types_of_change = TYPES_OF_CHANGE
+#     # TODO: implement as singletons?
+#     try:
+#         meaning_values = Construction.contemporary_meaning.unique()
+#     except (ValueError, TypeError):
+#         meaning_values = MEANING_VALUES
+#     try:
+#         synt_functions_anchor = Construction.synt_function_of_anchor.type.enums
+#     except (ValueError, TypeError):
+#         synt_functions_anchor = SYNT_FUNCTIONS_ANCHOR
+#     types_of_change = TYPES_OF_CHANGE
+#     try:
+#         with current_app.engine.connect() as conn:
+#             q = conn.execute(select(Change.type_of_change).order_by(
+#                 Change.type_of_change.asc()).distinct())
+#             types_of_change = q.scalars().all()
+#     except Exception as e:
+#         print(e)
+#         raise e
+#         print("-" * 50)
+#         types_of_change = TYPES_OF_CHANGE
 
-    print(types_of_change)
+#     print(types_of_change)
 
-    query_args = request.args
-    print(*query_args.items(), sep='\n')
-    logger.debug(f"{query_args}")
+#     query_args = request.args
+#     print(*query_args.items(), sep='\n')
+#     logger.debug(f"{query_args}")
 
-    # a GET request with
-    #   - no parameters or unfilled parameters
-    #   - or a `no-search` flag (usually after linking from construction page)
-    if (request.method != 'POST'
-        and (not (request.args and any(val for key, val in query_args.items()))
-             or query_args.get('no-search') == '1')
-    ):
-        return render_template(
-            'search.html',
-            title='Поиск',
-            year=datetime.now().year,
-            meaning_values=meaning_values,
-            synt_functions_anchor=synt_functions_anchor,
-            query=request.args,
-        )
+#     # a GET request with
+#     #   - no parameters or unfilled parameters
+#     #   - or a `no-search` flag (usually after linking from construction page)
+#     if (request.method != 'POST'
+#         and (not (request.args and any(val for key, val in query_args.items()))
+#              or query_args.get('no-search') == '1')
+#     ):
+#         return render_template(
+#             'search.html',
+#             title='Поиск',
+#             year=datetime.now().year,
+#             meaning_values=meaning_values,
+#             synt_functions_anchor=synt_functions_anchor,
+#             query=request.args,
+#         )
 
-    print(f'in conditional')
+#     print(f'in conditional')
 
-    print(request.form)
-    print(request.data)
+#     print(request.form)
+#     print(request.data)
 
-    stmt = build_query(query_args)
+#     stmt = build_query(query_args)
 
-    print("built stmt")
+#     print("built stmt")
 
-    with current_app.engine.connect() as conn:
-        results = conn.execute(stmt).mappings().all()
+#     with current_app.engine.connect() as conn:
+#         results = conn.execute(stmt).mappings().all()
 
-    for row in results:
-        print(type(row))
-        print(row)
-        # print(row._fields)
-        # for field in row:
-        #     print(vars(field))
-        # print(row._asdict())
-    row_id2data = reduce_rows(group_rows_by_construction(results))
+#     for row in results:
+#         print(type(row))
+#         print(row)
+#         # print(row._fields)
+#         # for field in row:
+#         #     print(vars(field))
+#         # print(row._asdict())
+#     row_id2data = reduce_rows(group_rows_by_construction(results))
 
-    print(row_id2data)
-    print("formula" in query_args, query_args, sep="\n")
+#     print(row_id2data)
+#     print("formula" in query_args, query_args, sep="\n")
 
-    changes_queried = any(field in query_args for field in [
-        'change-1-stage', 'change-1-stage-abs', 'change-1-level',
-        'change-1-type_of_change', 'change-1-duration_sign'
-    ])
+#     changes_queried = any(field in query_args for field in [
+#         'change-1-stage', 'change-1-stage-abs', 'change-1-level',
+#         'change-1-type_of_change', 'change-1-duration_sign'
+#     ])
 
-    return render_template(
-        'search.html',
-        title='Поиск: результаты',
-        year=datetime.now().year,
-        meaning_values=meaning_values,
-        synt_functions_anchor=synt_functions_anchor,
-        types_of_change=types_of_change,
-        form_input=request.form,
-        results=row_id2data,
-        n_param_results=len(results),
-        query=query_args,
-        changes_queried=changes_queried
-    )
+#     return render_template(
+#         'search.html',
+#         title='Поиск: результаты',
+#         year=datetime.now().year,
+#         meaning_values=meaning_values,
+#         synt_functions_anchor=synt_functions_anchor,
+#         types_of_change=types_of_change,
+#         form_input=request.form,
+#         results=row_id2data,
+#         n_param_results=len(results),
+#         query=query_args,
+#         changes_queried=changes_queried
+#     )
 
 
 
@@ -669,8 +671,8 @@ def safe_get(callable: T.Callable[[], T.Optional[T.List[str]]], default=None):
 
 
 class ConstructionForm(FlaskForm):
-    constructionId = BootstrapStringField(
-        label="id конструкции", name="constructionId",
+    construction_id = BootstrapStringField(
+        label="id конструкции", name="construction_id",
     )
     formula = BootstrapStringField(
         label="Формула", name="formula",
@@ -690,11 +692,19 @@ class ConstructionForm(FlaskForm):
         ), description="значение конструкциии в последний период",   
     )
 
-    in_rus_constructicon = BootstrapBooleanField(
-        label="Есть в конструктиконе", name="in_rus_constructicon",
-        # default=None
-        false_values=()
+    # in_rus_constructicon = BootstrapBooleanField(
+    #     label="Есть в конструктиконе", name="in_rus_constructicon",
+    #     # default=None
+    #     # false_values=()
+    #     validators=[wtforms.validators.Optional(strip_whitespace=True)]
+    # )
+    in_rus_constructicon = BoostrapSelectField(
+        label="Есть в конструктиконе?", name = "in_rus_constructicon",
+        choices=[("", "Есть в конструктиконе?"), ("True", "Да"), ("", "Нет")],
+        render_kw=dict(selected=""),
+        coerce=lambda val: val == "True"
     )
+
 
     _num_changes_sign_options, selected = make_sign_options_for_param("Количество")
     num_changes_sign = BoostrapSelectField(
@@ -792,38 +802,38 @@ class SearchForm(FlaskForm):
 
 
 
-# @bp.route('/search/', methods=['GET', 'POST'])
-# def search():
-#     # form = SearchForm()
-#     form = SingleForm()
-#     print("form initialized")
+@bp.route('/search/', methods=['GET', 'POST'])
+def search():
+    # form = SearchForm()
+    form = SingleForm()
+    print("form initialized")
 
-#     # if form.validate_on_submit():
-#     #     print("hooray")
-#     #     print(form.data)
-#     if form.data:
-#         print("wow!")
-#         print(form.data)
-#         return render_template("search_2.html", _form=form)
+    # if form.validate_on_submit():
+    #     print("hooray")
+    #     print(form.data)
+    if form.data:
+        print("wow!")
+        print(form.data)
+        return render_template("search_2.html", _form=form)
     
-#     print("rendering clean form")
-#     return render_template('search_2.html', _form=form)
+    print("rendering clean form")
+    return render_template('search_2.html', _form=form)
 
-    # # a GET request with
-    # #   - no parameters or unfilled parameters
-    # #   - or a `no-search` flag (usually after linking from construction page)
-    # if (request.method != 'POST'
-    #     and (not (request.args and any(val for key, val in query_args.items()))
-    #          or query_args.get('no-search') == '1')
-    # ):
-    #     return render_template(
-    #         'search.html',
-    #         title='Поиск',
-    #         year=datetime.now().year,
-    #         meaning_values=meaning_values,
-    #         synt_functions_anchor=synt_functions_anchor,
-    #         query=request.args,
-    #     )
+    # a GET request with
+    #   - no parameters or unfilled parameters
+    #   - or a `no-search` flag (usually after linking from construction page)
+    if (request.method != 'POST'
+        and (not (request.args and any(val for key, val in query_args.items()))
+             or query_args.get('no-search') == '1')
+    ):
+        return render_template(
+            'search.html',
+            title='Поиск',
+            year=datetime.now().year,
+            meaning_values=meaning_values,
+            synt_functions_anchor=synt_functions_anchor,
+            query=request.args,
+        )
 
 @bp.route('/form', methods=["POST"])
 def receive():
@@ -834,12 +844,14 @@ def receive():
     print(form.data)
 
     query = default_sqlquery()
-    query.parse_form(form.data, do_extra_processing=True)
+    # query.parse_form(form.data, do_extra_processing=True)
+    query.parse_form(form.data)
 
     print("parsed form")
     stmt = query.query()
     print("made stmt")
 
+    print(query.form.tree())
     print(stmt)
     print(stmt.compile(compile_kwargs={"literal_binds": True}))
 
