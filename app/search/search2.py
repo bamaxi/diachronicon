@@ -79,20 +79,38 @@ SYNT_FUNCTIONS_ANCHOR = Construction.synt_function_of_anchor.type.enums
 TYPES_OF_CHANGE = []
 CONSTRUCTION_NAMES = []
 
-def find_unique(model, field, engine=None) -> T.List[str]:
+
+def filter_ban_na(item: T.Any):
+    return item is not None
+
+
+def apply_filter(
+    data: T.List[T.Any], filter: T.Callable[[T.Any], bool]=None
+) -> T.List[T.Any]:
+    if filter:
+        data = [item for item in data if filter(item)]
+    return data
+
+
+def find_unique(
+    model: DBModel, field: str, filter: T.Optional[T.Callable[[T.Any], bool]]=filter_ban_na,
+    engine=None, cache: T.Dict[T.Tuple[DBModel, str], T.List[T.Any]]={}
+) -> T.List[str]:
+    if (model, field) in cache:
+        return apply_filter(cache[(model, field)], filter)
+
     if engine is None:
         engine = app.database.engine
 
-    # _field = getattr(model, field)
-    # print(_field, type(_field))
-    # res = _field.unique()
-    stmt = select(getattr(model, field))
+    col = getattr(model, field)
+    stmt = select(col.distinct()).order_by(col)
+
     with engine.connect() as conn:
         results = conn.execute(stmt).scalars().all()
     
+    cache[(model, field)] = results
     print(type(results), results)
-    return results
-
+    return apply_filter(results, filter)
 
 
 HTML_NAME2MODEL = {
@@ -700,7 +718,7 @@ class ConstructionForm(FlaskForm):
     # )
     in_rus_constructicon = BoostrapSelectField(
         label="Есть в конструктиконе?", name = "in_rus_constructicon",
-        choices=[("", "Есть в конструктиконе?"), ("True", "Да"), ("", "Нет")],
+        choices=[("", "Есть в конструктиконе?"), ("True", "Да"), ("False", "Нет")],
         render_kw=dict(selected=""),
         coerce=lambda val: val == "True"
     )
@@ -757,21 +775,35 @@ class ChangeForm(FlaskForm):
 
     level = BoostrapSelectField(
         label="Тип изменения", name="level",
-        choices=[("", "Выберите"), ("synt", "Синтаксическое"), ("sem", "Семантическое"),
-                 ("", "Любое")]
+        choices=[("", "Уровень изменения?"), ("synt", "Синтаксическое"),
+                 ("sem", "Семантическое")]
     )
 
     # should be changed into select with multiple options
     _type_of_change_datalist_id = "types_of_change_values"
-    _types_of_change = safe_get(Change.type_of_change.unique) or TYPES_OF_CHANGE
+    # _types_of_change = safe_get(Change.type_of_change.unique) or TYPES_OF_CHANGE
+    _types_of_change = find_unique(Change, "type_of_change")
     _types_of_change_datalist = DataList(
         id=_type_of_change_datalist_id,
         literal_options=_types_of_change
     )
     type_of_change = BootstrapStringField(
-        label="Подтипы изменений", name="type_of_change",
+        label="Тип изменения", name="type_of_change",
         render_kw=dict(div_extra_contents = [_types_of_change_datalist],
-                       list=_stages_datalist_id)
+                       list=_type_of_change_datalist_id)
+    )
+
+    _subtype_of_change_datalist_id = "subtypes_of_change_values"
+    # _types_of_change = safe_get(Change.type_of_change.unique) or TYPES_OF_CHANGE
+    _subtypes_of_change = find_unique(Change, "subtype_of_change")
+    _subtypes_of_change_datalist = DataList(
+        id=_subtype_of_change_datalist_id,
+        literal_options=_subtypes_of_change
+    )
+    subtype_of_change = BootstrapStringField(
+        label="Подтип изменения", name="subtype_of_change",
+        render_kw=dict(div_extra_contents = [_subtypes_of_change_datalist],
+                       list=_subtype_of_change_datalist_id)
     )
 
     _duration_sign_options, selected = make_sign_options_for_param("Длительность")

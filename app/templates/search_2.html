@@ -11,7 +11,7 @@
     {# {%- for _form in form.forms -%} #}
     {{ _form.csrf_tag }}
     <fieldset name="construction-general" class="col-md-3">
-        <legend>Общая информация</legend>
+        <legend>Общее</legend>
         {{ _form.construction.csrf_tag }}
 
         {{ _form.construction.construction_id }}
@@ -46,12 +46,13 @@
         <fieldset name="changes" class="col-md-3"
             {# {% if loop.index > 1 %}{{ style="display: none" }}{% endif %} #}
         >
-            <legend>{{ "Изменения конструкции" if loop.index == 1 else "& изменения..." }}</legend>
+            <legend>{{ "Изменения" if loop.index == 1 else "& изменения..." }}</legend>
 
             {{ _change.formula }}
             {{ _change.stage_abs }}
             {{ _change.level }}
             {{ _change.type_of_change }}
+            {{ _change.subtype_of_change }}
             {{ _change.duration_sign }}
             {{ _change.duration }}
             {{ _change.first_attested }}

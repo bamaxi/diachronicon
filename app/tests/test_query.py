@@ -1,5 +1,6 @@
 import pytest
 
+import typing as T
 import operator
 
 from app.search import query as q
@@ -35,6 +36,22 @@ def complex_form():
 @pytest.fixture
 def simple_form():
     return {'formula': 'np*', 'meaning': 'minimizer'}
+
+
+@pytest.fixture
+def derivable_form() -> T.Dict[str, str | int]:
+    return {"duration": 200, "duration_sign": "ge", "formula": "np*"}
+
+
+@pytest.fixture
+def construction_subform() -> T.Dict[str, T.Dict[str, str | int]]:
+    return {"construction": {"duration": 200, "duration_sign": "ge", "formula": "np*"}}
+
+
+@pytest.fixture
+def two_subforms_form():
+    return {"construction": {"duration": 200, "duration_sign": "ge", "formula": "np*"},
+            "anchor": {"synt_functions_of_anchor": "Subject"}}
 
 
 def test_comparison__init():
@@ -93,6 +110,10 @@ def test_comparison__eq():
     assert q.Comparison("stage", "ge", "vp") != q.Comparison("formula", "eq", "np*")
 
 
+def test_stringPattern():
+    assert q.StringPattern("formula", "np*") == q.StringPattern("formula", "np*")
+
+
 def test_conjunction__eq():
     # both eq
     assert q.Conjunction([
@@ -132,12 +153,92 @@ def test_conjunction__eq():
     ])
 
 
-def test_query_creatable():
-    assert q.BaseQuery()
+def test_conjunctionCopies__eq():
+    assert q.ConjunctionCopies([
+        q.Comparison("year", "ge", 1850), q.Comparison("year", "ge", 1951),
+    ]) == q.ConjunctionCopies([
+        q.Comparison("year", "ge", 1850), q.Comparison("year", "ge", 1951),
+    ])
+
+    assert q.ConjunctionCopies([
+        q.Comparison("year", "ge", 1850), q.Comparison("year", "ge", 1951),
+    ]) != q.Conjunction([
+        q.Comparison("year", "ge", 1850), q.Comparison("year", "ge", 1951),
+    ])
+
+
+class TestValueWithSignDerivation:
+    def test_basic(self, derivable_form):
+        dur_deriv = q.ValueWithSignDerivation("duration", "duration_sign")
+        result = dur_deriv(derivable_form)
+        assert result == q.Comparison("duration", "ge", 200)
+    
+    def test_derived_class(self, derivable_form):
+        class SpecialComparison(q.Comparison): ...
+
+        dur_deriv_2 = q.ValueWithSignDerivation("duration", "duration_sign", SpecialComparison)
+        result = dur_deriv_2(derivable_form)
+        assert result == SpecialComparison("duration", "ge", 200)
+
+
+# def test_SubForm():
+#     assert True
+
+@pytest.fixture
+def duration_derivation():
+    return q.ValueWithSignDerivation("duration", "duration_sign")
+
+
+
+class TestBaseQuery:
+    def test_creatable(self):
+        assert q.BaseQuery()
+    
+    def test_basic(self, base_query: q.BaseQuery, derivable_form):
+        result = base_query.parse_form(derivable_form)
+        assert result == q.Conjunction([q.Comparison("duration", "eq", 200),
+                                        q.Comparison("duration_sign", "eq", "ge"), 
+                                        q.Comparison("formula", "eq", "np*")])
+        
+    def test_subform(self, base_query: q.BaseQuery, construction_subform):
+        result = base_query.parse_form(construction_subform)
+
+        # assert result == q.Conjunction([q.SubForm("construction", q.Conjunction(
+        #     [q.Comparison("duration", "eq", 200),
+        #      q.Comparison("duration_sign", "eq", "ge"), 
+        #      q.Comparison("formula", "eq", "np*")]
+        # ))])
+        assert (type(result) == q.Conjunction and len(result.items) == 1
+                and result.items[0] == q.SubForm("construction", q.Conjunction(
+                    [q.Comparison("duration", "eq", 200),
+                    q.Comparison("duration_sign", "eq", "ge"), 
+                    q.Comparison("formula", "eq", "np*")])
+                )
+        )
+            
+    def test__init__with_derivation(self, duration_derivation, construction_subform):
+        base_query = q.BaseQuery({"construction": [duration_derivation]})
+        result = base_query.parse_form(construction_subform)
+        assert result == q.Conjunction([
+            q.SubForm("construction", q.Conjunction(
+                [q.Comparison("duration", "ge", 200), 
+                 q.Comparison("formula", "eq", "np*")])
+        )])
+
+
+    def test_add_derivation(self, duration_derivation, construction_subform):
+        base_query = q.BaseQuery()
+        base_query.add_derivation("construction", duration_derivation)
+        result = base_query.parse_form(construction_subform)
+        
+        assert result == q.Conjunction([
+            q.SubForm("construction", q.Conjunction(
+                [q.Comparison("duration", "ge", 200), 
+                 q.Comparison("formula", "eq", "np*")])
+        )])
 
 
 def test_simple_form(base_query, simple_form):
-    
     result = base_query.parse(simple_form)
     assert result == [q.Comparison("formula", "eq", "np*"),
                       q.Comparison("meaning", "eq", "minimizer")]

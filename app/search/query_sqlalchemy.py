@@ -40,6 +40,7 @@ from app.search.query import (
     BaseQueryElement,
     SubForm,
     Comparison,
+    StringPattern,
     BinaryConnective,
     Conjunction,
     ConjunctionCopies,
@@ -133,22 +134,10 @@ class SQLQueryMeta(QueryMeta):
 
 # class SQLConjunction(Conjunction, metaclass=SQLQueryMeta): ...
 
-class SQLStringPattern(BaseQueryElement, metaclass=SQLQueryMeta):
+class SQLStringPattern(StringPattern, metaclass=SQLQueryMeta):
     def __init__(self, param: str, value: str) -> None:
-        super().__init__()
-        self.param = param
-        self.pattern = value
-
+        super().__init__(param, value)
         self.fields_queried = [param]
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.param!r}, {self.pattern!r})"
-
-    def __str__(self) -> str:
-        return f'str-pattern("{self.pattern}")'
-    
-    def __tree_repr__(self) -> str:
-        return self.__str__()
 
     def query(self, stmt=None, model: T.Optional["SQLSubForm"]=None,
               query_model: T.Optional[BaseQuery] = None, **kwargs):

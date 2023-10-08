@@ -151,6 +151,24 @@ class Comparison(BaseQueryElement):
     def __tree_repr__(self) -> str:
         """Tree representation of comparison. Defaults to `self.__str__()`"""
         return self.__str__()
+    
+
+class StringPattern(BaseQueryElement):
+    _args = ("param", "value")
+
+    def __init__(self, param: str, value: str) -> None:
+        super().__init__()
+        self.param = param
+        self.pattern = value
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.param!r}, {self.pattern!r})"
+
+    def __str__(self) -> str:
+        return f'str-pattern("{self.pattern}")'
+    
+    def __tree_repr__(self) -> str:
+        return self.__str__()
 
 
 class BinaryConnective(BaseQueryElement):
