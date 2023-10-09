@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+
+
+{% block content %}
+    <h1>405 &mdash; Страница не доступна</h1>
+    {% if message is defined %}
+        <p>{{ message | safe }}</p>
+    {% endif %}
+<!--    <p>Мы уже разбираемся. Вы можете вернуться на главную</p>-->
+    <p><a href="{{ url_for('main.main') }}">Главная</a></p>
+{% endblock %}
