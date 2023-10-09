@@ -34,12 +34,12 @@
            <div class="formula-data col-md-5 border-end">
                <label class="label-formula">Формула</label>
                <span class="formula">{{ construction.formula }}</span>
-               {# {{ search_like_this('c-formula', construction.formula)}} #}
+               {{ search_like_this('construction-formula', construction.formula)}}
            </div>
            <div class="syntax-data col-md-4 border-end">
                <label class="label-synt">Синтаксическая функция</label>
                <span class="synt">{{ construction.synt_function_of_anchor }}</span>
-               {{ search_like_this('anchor-synt_functions_of_anchor',
+               {{ search_like_this('anchor-synt_function_of_anchor',
                                     construction.synt_function_of_anchor)}}
            </div>
            <div class="meaning-data col-md-3">
@@ -58,7 +58,7 @@
                <ul class="variants">
                {% for alt_variant in construction.get_alternate_formulas() %}
                <li><span class="variant" >{{
-                   alt_variant + " " + search_like_this("c-formula", alt_variant)
+                   alt_variant + " " + search_like_this("construction-formula", alt_variant)
                }}</span></li>
                {% endfor %}
                </ul>

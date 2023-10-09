@@ -340,6 +340,9 @@ class BootstrapStringWidget:
         value = field.data or cur_value
         if value:
             input_attrs["value"] = value
+        
+        if "div_extra_contents" in input_attrs:
+            input_attrs.pop("div_extra_contents")
 
         input_ = f"<input {partial_order_html_params(input_attrs)}>"
 

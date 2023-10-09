@@ -834,8 +834,10 @@ class SearchForm(FlaskForm):
 
 @bp.route('/search/', methods=['GET', 'POST'])
 def search():
-    # form = SearchForm()
     form = SingleForm()
+    if args := request.args:
+        print(args)
+        form.process(args)
     print("form initialized")
 
     # if form.validate_on_submit():
