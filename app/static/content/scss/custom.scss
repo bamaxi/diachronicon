@@ -15,6 +15,10 @@ $hide_chart_min_width: $changes_chart_min_width * (1 + 0.1);
 
 $table-bg-scale: -95%;
 
+body {
+    padding-top: 0
+}
+
 /* .body-content { */
     /* padding-left: 15px; */
     /* padding-right: 15px; */

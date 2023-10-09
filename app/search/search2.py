@@ -1,6 +1,4 @@
-﻿print(f"search2 imported")
-
-import re
+﻿import re
 import typing as T
 from typing import Tuple, List, Dict, Union, Type, Optional
 
@@ -85,7 +83,7 @@ def filter_ban_na(item: T.Any):
 
 
 def apply_filter(
-    data: T.List[T.Any], filter: T.Callable[[T.Any], bool]=None
+    data: T.List[T.Any], filter: T.Optional[T.Callable[[T.Any], bool]]=None
 ) -> T.List[T.Any]:
     if filter:
         data = [item for item in data if filter(item)]

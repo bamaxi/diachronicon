@@ -106,28 +106,43 @@ $border-horizontal-percent: 90%;
         float: left;
         width: 30%;
         @extend .text-secondary;
+        line-height: $line-height-sm;
     }
     & > span {
         width: 70%;
     }
     & > label ~ label, & > span ~ span {
-        padding-top: 0.5rem;
+        padding-top: 0.6rem;
     }
-    
+
+    @for $i from 1 through 3 {
+        .alternate-variants:has(li:first-child:nth-last-child(#{$i})) + .anchors-container & label ~ label,
+        .alternate-variants:has(li:first-child:nth-last-child(#{$i})) + .anchors-container & span ~ span
+        {
+            padding-top: 0.4rem;
+        }
+    }
 }
+
+// .alternate-variants:has(li:first-child:nth-last-child(4)) + .anchors-container .anchors label + label,
+// .alternate-variants:has(li:first-child:nth-last-child(4)) + .anchors-container .anchors span + span
+// {
+//     padding-top: 0.6rem;
+// }
 
 
 .variants {
     list-style: none;
     margin-left: 0;
-    padding-left: 0.75rem;
+    padding-left: 0;
     &::before {display: none};
 }
 
 /* an alternative is {display: flex; flex-wrap: wrap} on parent  */
 .variant {
     text-indent: -1rem;
-    padding-top: 0.4rem;
+    padding-left: 1rem;
+    // padding-top: 0.4rem;
     display: inline-block;
     margin-right: 0.25rem;
 }
