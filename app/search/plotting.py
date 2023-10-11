@@ -320,7 +320,7 @@ class ConstructionChangesPlot(BaseChangesPlot):
             self.limit_one_legend_entry_per_name()
 
         for bar in self.bars:
-            print(bar)
+            # print(bar)
             figure.add_bar(**bar)
 
         return figure

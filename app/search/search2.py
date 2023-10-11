@@ -852,10 +852,10 @@ def receive():
     print(stmt)
     print(stmt.compile(compile_kwargs={"literal_binds": True}))
 
-    return 0
-
     with current_app.engine.connect() as conn:
-        results = conn.execute(stmt).mappings().all()
+        _results = conn.execute(stmt)
+        # return 0
+        results = _results.mappings().all()
 
     for res in results:
         print(res)

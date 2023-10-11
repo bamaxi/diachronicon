@@ -129,7 +129,8 @@ class Construction(ConstructionMixin, Base):
 
     changes = relationship(
         "Change", back_populates="construction",
-        cascade="all, delete-orphan"  # TODO: check if setting is proper
+        cascade="all, delete-orphan",  # TODO: check if setting is proper
+        # order_by="Change.id"
     )
 
     # Uni-directional one-to-many

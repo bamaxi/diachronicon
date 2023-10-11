@@ -20,6 +20,9 @@
     {% endwith %}
 {%- endmacro %}
 
+{% macro conjugate(count, stem, gender) %}
+{% endmacro %}
+
 {% block content %}
 <div class="row justify-content-center">
    <article class="single-result col-10">
@@ -91,6 +94,28 @@
        </section>
 
        {% if construction.changes %}
+        <section class="description-row row">
+            <div class="num-changes-data col-md-4">
+                <label class="label-num-changes">Количество изменений</label>
+                <span class="num-changes-num">{{ len(constructicon.changes) }}}</span>
+                <span class="num-changes-desc">всего</span>
+                <span class="num-changes-num">{{ sum(1 for ch in constructicon.changes if ch.level=="synt") }}}</span>
+                <span class="num-changes-desc">(синт)</span>
+                <span class="num-changes-num">{{ sum(1 for ch in constructicon.changes if ch.level=="sem") }}}</span>
+                <span class="num-changes-desc">(сем)</span>
+            </div>
+            <div class="earliest-change-data col-md-4">
+                <label class="label-earliest-change">Самый ранний этап</label>
+                {% with earliest = constructicon.changes[0] %}
+                <span class="earliest-change-id">{{ earliest.first_attested + "—" + earliest.last_attested }}</span>
+            </div>
+            <div class="latest-change-data col-md-4">
+                <label class="label-latest-change">Самый поздний этап</label>
+                {% with latest = constructicon.changes[-1] %}
+                <span class="latest-change-id">{{ latest.first_attested + "—" + latest.last_attested }}</span>
+            </div>
+        </section>
+
        <section class="changes-container">
             <div class="changes-wrapper">
                 <div class="row">

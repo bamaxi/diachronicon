@@ -148,6 +148,17 @@ $border-horizontal-percent: 90%;
 }
 
 
+.num-changes-data {
+    & > * {
+        padding-left: 1rem;
+    }
+    & .num-changes-desc {
+        &::after { content: "\a"; white-space: pre}
+    }
+}
+
+
+
 .changes-chart {
     width: $changes_chart_min_width;
     height: $changes_chart_min_height;
