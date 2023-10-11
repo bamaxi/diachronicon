@@ -36,11 +36,8 @@ def create_app(test_config_obj=None, remove_wsgi_logger=False):
         config = test_config_obj
 
     # ensure the instance folder exists
-    try:
-        os.makedirs(app.instance_path)
-    except OSError:
-        pass
-
+    os.makedirs(app.instance_path, exist_ok=True)
+    
     if remove_wsgi_logger:
         logger.removeHandler('wsgi')
         print(logger.handlers)

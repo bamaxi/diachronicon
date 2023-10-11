@@ -150,6 +150,16 @@ class Construction(ConstructionMixin, Base):
 
     def exist_changes_constraints(self):
         return any(change.exist_constraints() for change in self.changes)
+    
+    def changes_one_based(self):
+        changes = self.changes
+        if not changes:
+            return changes
+        
+        first_id = changes[0].id
+        for change in changes:
+            change.id1 = change.id - first_id + 1
+        return changes
 
     def __repr__(self):
         return (f'Construction({self.id!r}, {self.formula!r}, '
@@ -226,6 +236,7 @@ change_to_previous_changes = Table(
 class Change(Base):
     __tablename__ = 'change'
     _names = {
+
         'стадия': 'stage',
         'уровень': 'level',
         'тип изменения': 'type_of_change',

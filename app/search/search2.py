@@ -660,7 +660,8 @@ class ConstructionForm(FlaskForm):
     )
 
     _meaning_datalist_id = "meaning_values"
-    _meaning_values = safe_get(Construction.contemporary_meaning.unique) or MEANING_VALUES
+    # _meaning_values = safe_get(Construction.contemporary_meaning.unique) or MEANING_VALUES
+    _meaning_values = find_unique(Change, "type_of_change")
     _meaning_datalist = DataList(
         id=_meaning_datalist_id,
         literal_options=_meaning_values)

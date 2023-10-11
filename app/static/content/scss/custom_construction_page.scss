@@ -66,12 +66,16 @@ img.search-icon {
 }
 
 
-.label-formula,
-.label-alt-formulas,
-.label-meaning,
-.label-synt,
-.label-anchors,
-.label-ruconstructicon {
+// .label-formula,
+// .label-alt-formulas,
+// .label-meaning,
+// .label-synt,
+// .label-anchors,
+// .label-ruconstructicon,
+// .label-num-changes,
+// .label-earliest-change,
+// .label-latest-change
+.description-label {
     @include non-form-label();
     white-space: pre;
     & + *::before { content: "\a"; white-space: pre}
@@ -97,6 +101,10 @@ $border-horizontal-percent: 90%;
         padding-top: 1rem;
         margin-bottom: 1rem;
     }
+}
+
+.description-row > div + div {
+    @extend .border-start
 }
 
 .anchors {
@@ -149,12 +157,14 @@ $border-horizontal-percent: 90%;
 
 
 .num-changes-data {
-    & > * {
+    & .num-changes-num {
         padding-left: 1rem;
+        display: inline block;
     }
-    & .num-changes-desc {
-        &::after { content: "\a"; white-space: pre}
-    }
+}
+
+.num-changes-num ~ .num-changes-num {
+    &::before { content: "\a"; white-space: pre}
 }
 
 

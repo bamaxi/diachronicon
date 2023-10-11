@@ -20,8 +20,8 @@
     {% endwith %}
 {%- endmacro %}
 
-{% macro conjugate(count, stem, gender) %}
-{% endmacro %}
+{# {% macro conjugate(count, stem, gender) %}
+{% endmacro %} #}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -35,18 +35,18 @@
 
        <section class="description-row pt-4 row">
            <div class="formula-data col-md-5 border-end">
-               <label class="label-formula">Формула</label>
+               <label class="description-label label-formula">Формула</label>
                <span class="formula">{{ construction.formula }}</span>
                {{ search_like_this('construction-formula', construction.formula)}}
            </div>
            <div class="syntax-data col-md-4 border-end">
-               <label class="label-synt">Синтаксическая функция</label>
+               <label class="description-label label-synt">Синтаксическая функция</label>
                <span class="synt">{{ construction.synt_function_of_anchor }}</span>
                {{ search_like_this('anchor-synt_function_of_anchor',
                                     construction.synt_function_of_anchor)}}
            </div>
            <div class="meaning-data col-md-3">
-               <label class="label-meaning">Значение</label>
+               <label class="description-label label-meaning">Значение</label>
                <span class="meaning">{{ construction.contemporary_meaning }}</span>
                {{ search_like_this('construction-meaning',
                                     construction.contemporary_meaning)}}
@@ -55,7 +55,7 @@
 
        <section class="description-row row">
             <div class="alternate-variants col-md-5 border-end">
-               <label class="label-alt-formulas">Альтернативные формулы</label>
+               <label class="description-label label-alt-formulas">Альтернативные формулы</label>
                {% set alt_formulas = construction.get_alternate_formulas() %}
                {% if alt_formulas %}
                <ul class="variants">
@@ -68,7 +68,7 @@
                {% endif %}
            </div>
            <div class="anchors-container col-md-4 border-end">
-               <label class="label-anchors">Якори</label>
+               <label class="description-label label-anchors">Якори</label>
                <div class="anchors">
                    <label class="label-anchor-ru">рус.</label>
                         <span class="anchor-ru">{{ construction.anchor_ru }}</span>
@@ -80,7 +80,7 @@
            </div>
            
             <div class="constructicon-relation col-md-3">
-                <label class="label-ruconstructicon">Русский конструктикон</label>
+                <label class="description-label label-ruconstructicon">Русский конструктикон</label>
                 {%- if construction.in_rus_constructicon -%}
                 {% if construction.rus_constructicon_id %}
                     <span class="constructicon-id">{{ construction.rus_constructicon_id }}</span>
@@ -93,28 +93,35 @@
            
        </section>
 
+        <h4>Изменения</h4>
        {% if construction.changes %}
+       {% with chs = construction.changes %}
         <section class="description-row row">
             <div class="num-changes-data col-md-4">
-                <label class="label-num-changes">Количество изменений</label>
-                <span class="num-changes-num">{{ len(constructicon.changes) }}}</span>
+                <label class="description-label label-num-changes">Количество изменений</label>
+                <span class="num-changes-num">{{ chs | length }}</span>
                 <span class="num-changes-desc">всего</span>
-                <span class="num-changes-num">{{ sum(1 for ch in constructicon.changes if ch.level=="synt") }}}</span>
+                <span class="num-changes-num">{{ chs|selectattr("level", "eq", "synt")|list|length  }}</span>
                 <span class="num-changes-desc">(синт)</span>
-                <span class="num-changes-num">{{ sum(1 for ch in constructicon.changes if ch.level=="sem") }}}</span>
+                <span class="num-changes-num">{{ chs|selectattr("level", "eq", "sem")|list|length }}</span>
                 <span class="num-changes-desc">(сем)</span>
             </div>
             <div class="earliest-change-data col-md-4">
-                <label class="label-earliest-change">Самый ранний этап</label>
-                {% with earliest = constructicon.changes[0] %}
-                <span class="earliest-change-id">{{ earliest.first_attested + "—" + earliest.last_attested }}</span>
+                <label class="description-label label-earliest-change">Самый ранний этап</label>
+                {% with earliest = chs | first %}
+                <span class="earliest-change-id">{{ "%s — %s"|format(earliest.first_attested,
+                    earliest.last_attested) }}</span>
+                {% endwith %}
             </div>
             <div class="latest-change-data col-md-4">
-                <label class="label-latest-change">Самый поздний этап</label>
-                {% with latest = constructicon.changes[-1] %}
-                <span class="latest-change-id">{{ latest.first_attested + "—" + latest.last_attested }}</span>
+                <label class="description-label label-latest-change">Самый поздний этап</label>
+                {% with latest = construction.changes[-1] %}
+                <span class="latest-change-id">{{ "%s — %s"|format(latest.first_attested,
+                    latest.last_attested) }}</span>
+                {% endwith %}
             </div>
         </section>
+        {% endwith %}
 
        <section class="changes-container">
             <div class="changes-wrapper">
@@ -151,9 +158,9 @@
             <h4>О разметке</h4>
             <div class="author-data">
                 <label class="label-author">Разметчик</label>
-                {% if construction.general_info %}
-                <span class="author">{{ (construction.general_info.author_name or "") + " "
-                    + (construction.general_info.author_surname or "")}}</span>
+                {% if construction.general_info and construction.general_info.author_name %}
+                <span class="author">{{ "%s %s"|format(construction.general_info.author_name, 
+                    construction.general_info.author_surname)}}</span>
                 {% endif %}
             </div>
 

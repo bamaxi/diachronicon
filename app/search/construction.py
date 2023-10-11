@@ -183,7 +183,9 @@ def construction(index: int):
 
     print(f"about to render `{index}`")
 
-    return render_template(
-        'construction.html',
-        **context
-    )
+    print(type(construction.changes))
+    changes_one_based = construction.changes_one_based()
+    print(changes_one_based)
+
+    page = render_template('construction.html',  **context)
+    return page
