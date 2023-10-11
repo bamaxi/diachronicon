@@ -1,0 +1,158 @@
+﻿{% extends "layout.html" %}
+
+{% macro search_like_this(name, value, alt_msg="[искать это]") -%}
+    <span class="search-like sup"><a
+        href="{{ url_for('search.search', **{name: value, 'no-search': 1})}}"
+            ><img class="search-icon" src="/static/icons/search.svg" alt="{{ alt_msg }}"></a>
+    </span>
+{%- endmacro %}
+
+{% macro make_link_format_dead(destination, text) -%}
+    {% with link = destination,
+           link = none if (link == 'link' or link == none) else link %}
+       {% if not(link) %}
+       <a href="#;" class="dead">
+       {% else %}
+       <a href="{{ link }}">
+       {% endif %}
+       {{ text }}
+       </a>
+    {% endwith %}
+{%- endmacro %}
+
+{% block content %}
+<div class="row justify-content-center">
+   <article class="single-result col-10">
+       <section class="construction-title">
+           <div class="construction-name">
+                <h3>{{ construction.general_info.name }}</h3>
+           </div>
+           <div class="author-data">
+                <label class="label-author">Автор</label><br>
+                {% if construction.general_info %}
+                <span class="author">{{ (construction.general_info.author_name or "") + " "
+                       + (construction.general_info.author_surname or "")}}</span>
+                {% endif %}
+           </div>
+           <div class="data-links">
+               <a href="#data-sources-{{ res_id }}">К&nbsp;описанию&nbsp;данных</a>
+           </div>
+       </section>
+
+       <section class="description">
+           <div class="formula-data">
+<!--               <label class="label-formula">Формула</label>-->
+               <span class="formula">{{ construction.formula }}</span>
+               {{ search_like_this('c-formula', construction.formula)}}
+           </div>
+           <div class="meaning-data">
+               <label class="label-meaning">Значение</label>
+               <span class="meaning">{{ construction.contemporary_meaning }}</span>
+               {{ search_like_this('c-meaning',
+                                    construction.contemporary_meaning)}}
+           </div>
+           <div class="syntax-data">
+               <label class="label-synt">Синтаксическая функция</label>
+               <span class="synt">{{ construction.synt_function_of_anchor }}</span>
+               {{ search_like_this('c-synt_function_of_anchor',
+                                    construction.synt_function_of_anchor)}}
+           </div>
+           <div class="anchors-container">
+               <label class="label-anchors">Якори</label>
+               <div class="anchors">
+                   <label class="label-anchor-ru">рус.</label>
+                        <span class="anchor-ru">{{ construction.anchor_ru }}</span>
+                   <label class="label-anchor-eng">англ.</label>
+                        <span class="anchor-eng">{{ construction.anchor_eng }}</span>
+                   <label class="label-anchor-schema">общая схема</label>
+                        <span class="anchor-schema">{{ construction.anchor_schema }}</span>
+           </div>
+           <div class="alternate-variants">
+               <label class="label-formula">Альтернативные формулы</label>
+               {% set alt_formulas = construction.get_alternate_formulas() %}
+               {% if alt_formulas %}
+               <ul>
+               {% for alt_variant in construction.get_alternate_formulas() %}
+               <li><span class="variant" >{{
+                   alt_variant + " " + search_like_this("c-formula", alt_variant)
+               }}</span></li>
+               {% endfor %}
+               </ul>
+               {% endif %}
+           </div>
+           {%- if construction.in_rus_constructicon -%}
+           <div class="constructicon-relation">
+               <label class="label-formula">Конструкция представлена в Русском конструктиконе</label>
+               {% if construction.rus_constructicon_id %}
+               <span class="constructicon-id">{{ construction.rus_constructicon_id }}</span>
+               <a  class="sup" href="https://constructicon.github.io/russian/">Constructicon</a>
+               {% endif %}
+           </div>
+           {% endif %}
+       </div>
+       </section>
+
+       {% if construction.changes %}
+       <section class="changes-container">
+            <div class="changes-wrapper">
+                <div class="row">
+<!--                    <p>-->
+<!--                        <a class="changes-toggle" href="#changes-{{ res_id }}"-->
+<!--                          role="button" aria-expanded="false" aria-controls="changes-{{ res_id }}">-->
+<!--                                Show history data-->
+<!--                        </a>-->
+<!--                    </p>-->
+                </div>
+                <div class="row">
+                    <div class="changes collapse-show col-12" id="changes-{{ res_id }}">
+                        <p class="changes-chart-was-hidden-message">
+                            Здесь мог быть отображён график, но он не уместился на экране Вашего устройства.
+                            Вы можете скачать его <a href="#">по ссылке</a>.
+                        </p>
+
+                        <div class="changes-chart" id="changes-chart-{{ res_id }}">
+                            <p class="changes-chart-no-js">
+                                JavaScript недоступен, график отображён как картинка.
+                                Включение JavaScript сделает график интерактивным.
+                            </p>
+                            <img src="#" class="changes-chart-no-js" width="100%">
+                        </div>
+                            {% include '_changes_table.html' %}
+                    </div>
+                </div>
+            </div>
+       </section>
+       {% endif %}
+
+       <section class="data-sources" id="data-sources-{{ res_id }}">
+           <label class="data-sources-label">Источники данных</label>
+           {% if construction.general_info %}
+           <span class="about-thesis">
+               Конструкция была описана автором
+               {{ make_link_format_dead(construction.general_info.term_paper,
+                                        "в курсовой работе") }}
+               .
+           </span>
+           <span class="about-sample">
+               Аннотированные данные
+               {{ make_link_format_dead(construction.general_info.annotated_sample,
+                                        "доступны по ссылке") }}
+               .
+           </span>
+           {% endif %}
+       </section>
+   </article>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+<script src="/static/scripts/plots_extra.js"></script>
+<script type='text/javascript'>
+  var changes_graph_{{ res_id }} = {{graphJSON | safe}};
+  if (changes_graph_{{ res_id }}){
+      var config = {responsive: true}
+      Plotly.plot('changes-chart-{{ res_id }}',changes_graph_{{ res_id }},{}, config);
+  }
+</script>
+{% endblock %}

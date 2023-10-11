@@ -7,6 +7,9 @@
 @import "reboot";
 
 
+$form-floating-padding-y: 0.5rem;
+$form-floating-height: add(2.5rem, $input-height-border);
+
 $changes_chart_min_width: 480px;
 $changes_chart_min_height: 400px;
 
