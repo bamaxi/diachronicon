@@ -1,3 +1,4 @@
+import typing as T
 from datetime import datetime
 
 from sqlalchemy import (
@@ -330,3 +331,12 @@ class Constraint(Base):
 #
 #     if change_id:
 #         db_session.execute(select())
+
+
+DBModel = T.Type[T.Union[
+    Construction, Change, GeneralInfo, Constraint, FormulaElement,
+    ConstructionVariant
+]]
+Model2Field2Val = T.Dict[DBModel, T.Union[T.Dict[str, T.Optional[str]],
+                                      T.List[T.Dict[str, T.Optional[str]]]]]
+

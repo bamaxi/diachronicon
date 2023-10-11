@@ -37,7 +37,9 @@ from app.models import (
     GeneralInfo,
     Constraint,
     FormulaElement,
-    ConstructionVariant
+    ConstructionVariant,
+    DBModel,
+    Model2Field2Val
 )
 import app.database
 from app.search import bp
@@ -54,14 +56,10 @@ from app.search.query_sqlalchemy import (
     default_sqlquery,
     SQLQuery,
 )
+from app.utils import (
+    find_unique
+)
 
-
-DBModel = Type[Union[
-    Construction, Change, GeneralInfo, Constraint, FormulaElement,
-    ConstructionVariant
-]]
-Model2Field2Val = Dict[DBModel, Union[Dict[str, Optional[str]],
-                                      List[Dict[str, Optional[str]]]]]
 
 logger = logging.getLogger(f"diachronicon.{__name__}")
 logger.setLevel(logging.ERROR)
@@ -76,39 +74,6 @@ MEANING_VALUES = []  # Construction.contemporary_meaning.unique()
 SYNT_FUNCTIONS_ANCHOR = Construction.synt_function_of_anchor.type.enums
 TYPES_OF_CHANGE = []
 CONSTRUCTION_NAMES = []
-
-
-def filter_ban_na(item: T.Any):
-    return item is not None
-
-
-def apply_filter(
-    data: T.List[T.Any], filter: T.Optional[T.Callable[[T.Any], bool]]=None
-) -> T.List[T.Any]:
-    if filter:
-        data = [item for item in data if filter(item)]
-    return data
-
-
-def find_unique(
-    model: DBModel, field: str, filter: T.Optional[T.Callable[[T.Any], bool]]=filter_ban_na,
-    engine=None, cache: T.Dict[T.Tuple[DBModel, str], T.List[T.Any]]={}
-) -> T.List[str]:
-    if (model, field) in cache:
-        return apply_filter(cache[(model, field)], filter)
-
-    if engine is None:
-        engine = app.database.engine
-
-    col = getattr(model, field)
-    stmt = select(col.distinct()).order_by(col)
-
-    with engine.connect() as conn:
-        results = conn.execute(stmt).scalars().all()
-    
-    cache[(model, field)] = results
-    print(type(results), results)
-    return apply_filter(results, filter)
 
 
 HTML_NAME2MODEL = {
