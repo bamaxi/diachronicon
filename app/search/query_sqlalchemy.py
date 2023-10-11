@@ -435,58 +435,6 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
 
         return maybe_derived_field
 
-    def check(
-        self, subform: SQLSubForm, item: BaseQueryElement,
-        parent_container: T.List[T.Any]
-    ) -> bool:
-        print(f"subform: {subform}\nitem:{item}\nparent_container:{parent_container}")
-
-        if isinstance(item, BinaryConnective):
-            additions = []
-            removals = set()
-            for i, _elem in enumerate(item.items):
-                need_pop = self.check(subform, _elem, additions)
-                if need_pop:
-                    removals.add(i)
-            
-            print(f"binary connective item: {item}\nadditions: {additions}\nremovals: {removals}")
-
-            item.items = [_elem for i, _elem in enumerate(item.items)
-                          if i not in removals]
-            item.items.extend(additions)
-
-        elif isinstance(item, Comparison):
-            print(f"comparison item: {item}")
-
-            sql_model = subform.sql_model
-            param = item.param
-            if self.alt_comparison.get(sql_model, {}).get(param) is not None:
-                args = {attr: getattr(item, attr) for attr in ("param", "op", "value")}
-                new_item_model, callback = self.alt_comparison[sql_model][param]
-                
-                new_item = new_item_model(**args)
-                if callback is not None:
-                    callback(self)
-                
-                print(f"replacing comparison with: {new_item}")
-
-                parent_container.append(new_item)
-                
-                return True
-            
-        elif isinstance(item, SubForm):
-            self.check(item, item.content, None)
-
-        else:
-            raise ValueError(f"unexpected type: {type(item)}: {item}")
-
-        return False
-
-    def process_extra(self):
-        self.check(None, self.form, None)
-        print("check finished")
-
-
     def query(self, stmt=None, subform=None):
         if stmt is None:
             stmt = self._make_base_statement()

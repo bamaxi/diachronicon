@@ -369,17 +369,14 @@ class BaseQuery(metaclass=QueryMeta):
         print(f"returning {'empty' if not elements else elements}")
         return elements
     
-    def process_extra(self): ...
 
-
-    def parse_form(self, form: T.Union[FormType, BasicFormType], do_extra_processing: bool=False):
+    def parse_form(self, form: T.Union[FormType, BasicFormType], print_tree: bool=False):
         form = deepcopy(form)
         res = self.REGISTRY["Conjunction"](self.parse(form))
         self.form = res
 
-        if do_extra_processing:
+        if print_tree:
             print(res.tree())
-            self.process_extra()
         return res
 
 
