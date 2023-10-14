@@ -1,4 +1,4 @@
-<div class="changes-data table-container">
+{# <div class="changes-data table-container">
     <table class="changes-table table table-sm">
       <thead class="thead-light">
         <tr>
@@ -21,4 +21,17 @@
         {% endfor %}
       </tbody>
     </table>
+</div> #}
+
+<div>
+  <ol class="changes-list">
+  {% for change in chs %}
+    <li>
+      <span class="number" id="change-{{ change.id1 }}">
+        <a href="#change-{{ change.id1 }}">{{ change.id1 }}</a>
+      </span>
+    </li>
+  {% endfor %}
+  </ol>
 </div>
+

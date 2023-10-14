@@ -111,6 +111,7 @@
                 {% with earliest = chs | first %}
                 <span class="earliest-change-id">{{ "%s — %s"|format(earliest.first_attested,
                     earliest.last_attested) }}</span>
+                <a class="earliest-change" href="#change-{{ earliest.id1 }}">{{ "[%s]"|format(earliest.id1) }}</a>
                 {% endwith %}
             </div>
             <div class="latest-change-data col-md-4">
@@ -118,10 +119,10 @@
                 {% with latest = construction.changes[-1] %}
                 <span class="latest-change-id">{{ "%s — %s"|format(latest.first_attested,
                     latest.last_attested) }}</span>
+                <a class="latest-change" href="#change-{{ latest.id1 }}">{{ "[%s]"|format(latest.id1) }}</a>
                 {% endwith %}
             </div>
         </section>
-        {% endwith %}
 
        <section class="changes-container">
             <div class="changes-wrapper">
@@ -152,6 +153,7 @@
                 </div>
             </div>
        </section>
+       {% endwith %}
        {% endif %}
 
        <section class="on-data" id="on-data-{{ res_id }}">

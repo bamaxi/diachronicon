@@ -211,7 +211,18 @@ $border-horizontal-percent: 90%;
     }
 }
 
+
 /* Table with data on changes of construction */
+
+ol.changes-list {
+    & > li {
+        list-style: none;
+        @extend .border-start;
+    }
+    & .number {
+        @extend .ml-5;
+    }
+}
 
 /* .table-container { */
     /* height: 300px; */
