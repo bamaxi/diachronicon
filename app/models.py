@@ -1,5 +1,6 @@
 import typing as T
 from datetime import datetime
+from itertools import chain
 
 from sqlalchemy import (
     Column,
@@ -25,9 +26,9 @@ REPR_CHAR_LIM = 25
 
 
 # these are known in advance and equal to Russian Constructicon
-UKNOWN_SYNT_FUNCTION_OF_ANCHOR = "<unknown>"
+UNKNOWN_SYNT_FUNCTION_OF_ANCHOR = "<unknown>"
 SYNT_FUNCTION_OF_ANCHOR_VALUES = (
-    UKNOWN_SYNT_FUNCTION_OF_ANCHOR,
+    UNKNOWN_SYNT_FUNCTION_OF_ANCHOR,
     "Argument",
     "Coordinator",
     "Discourse Particle",
@@ -151,14 +152,28 @@ class Construction(ConstructionMixin, Base):
     def exist_changes_constraints(self):
         return any(change.exist_constraints() for change in self.changes)
     
-    def changes_one_based(self):
+    # @staticmethod
+    # def _set_id1(lst: T.List['Change']):
+    #     if not lst:
+    #         return
+    #     first_id = lst[0].id
+    #     for item in lst:
+    #         item.id1 = item.id - first_id + 1
+    
+    def set_changes_one_based(self):
+        self.id_to_id1 = {}
         changes = self.changes
         if not changes:
             return changes
         
-        first_id = changes[0].id
-        for change in changes:
-            change.id1 = change.id - first_id + 1
+        for new_id1, ch in enumerate(changes, start=1):
+            self.id_to_id1.setdefault(ch.id, new_id1)
+            ch.id1 = new_id1
+        
+        for ch in changes:
+            for _ch in chain(ch.previous_changes, ch.next_changes):
+                _ch.id1 = self.id_to_id1[_ch.id]
+
         return changes
 
     def __repr__(self):
@@ -290,7 +305,17 @@ class Change(Base):
         secondary=change_to_previous_changes,
         primaryjoin=id == change_to_previous_changes.c.change_id,
         secondaryjoin=id == change_to_previous_changes.c.previous_change_id,
-        backref="next_changes",
+        # backref="next_changes",
+        back_populates="next_changes"
+    )
+
+    next_changes = relationship(
+        "Change",
+        secondary=change_to_previous_changes,
+        primaryjoin=id == change_to_previous_changes.c.previous_change_id,
+        secondaryjoin=id ==  change_to_previous_changes.c.change_id,
+        # backref="next_changes",
+        back_populates="previous_changes"
     )
 
     def exist_constraints(self):
@@ -343,6 +368,28 @@ class Constraint(Base):
 #
 #     if change_id:
 #         db_session.execute(select())
+
+@event.listens_for(Construction.changes, "append")
+def add_1based_id(target, value, initiator):
+    print("append event on `Construction.changes`")
+    print(target)
+    print(value)
+    print(initiator)
+
+
+# @event.listens_for(Change.next_changes, "append")
+# def add_1based_id(target, value, initiator):
+#     print("append event on `Change.next_changes`")
+#     print(target)
+#     print(value)
+#     print(initiator)
+
+@event.listens_for(Change.previous_changes, "modified")
+def add_1based_id(target, value, initiator):
+    print("modified event on `Change.previous_changes`")
+    print(target)
+    print(value)
+    print(initiator)
 
 
 DBModel = T.Type[T.Union[

@@ -11,6 +11,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import (
     selectinload,
+    joinedload,
     Session
 )
 
@@ -106,8 +107,21 @@ def construction(index: int):
     print(index, type(index))
     index = int(index)
 
-    stmt = select(Construction).where(Construction.id == index).options(
-        selectinload("*"))
+    stmt = select(Construction, Change).join(Change).options(
+        # joinedload(Construction.changes),
+        # joinedload(Construction.general_info)
+        selectinload("*"),
+        selectinload(Change.previous_changes),
+        selectinload(Change.next_changes),
+    ).where(
+            Construction.id == index
+    )
+    # .options(
+    #     joinedload(Change.previous_changes),
+    # )
+    # stmt = select(Construction).where(Construction.id == index).options(
+    #     joinedload("*")
+    # )
     # logger.debug(f"built query: {stmt}")
     print(f"built query: {stmt}")
 
@@ -183,9 +197,11 @@ def construction(index: int):
 
     print(f"about to render `{index}`")
 
-    print(type(construction.changes))
-    changes_one_based = construction.changes_one_based()
-    print(changes_one_based)
+    construction.set_changes_one_based()
+    print(construction.changes, construction.changes[0], construction.changes[0].next_changes,
+          construction.changes[-1], construction.changes[-1].previous_changes,
+          sep="\n"
+    )
 
     page = render_template('construction.html',  **context)
     return page
