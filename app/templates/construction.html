@@ -23,12 +23,18 @@
 {# {% macro conjugate(count, stem, gender) %}
 {% endmacro %} #}
 
+{% block head_links %}
+<link rel="canonical" href="/construction/{{ construction.id }}" />
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
    <article class="single-result col-10">
        <section class="construction-title">
            <div class="construction-name">
-                <h3>{{ construction.general_info.name }}</h3>
+                <h1>{{ construction.general_info.name }}</h1>
+                {# {% for morph_tag in construction.morp %}
+                {% endfor %} #}
            </div>
             <a class="data-link" href="#on-data-{{ res_id }}">О разметке конструкции</a>
        </section>
@@ -93,7 +99,7 @@
            
        </section>
 
-        <h4>Изменения</h4>
+        <h2>Изменения</h2>
        {% if construction.changes %}
        {% with chs = construction.changes %}
         <section class="description-row row">
@@ -157,7 +163,7 @@
        {% endif %}
 
        <section class="on-data" id="on-data-{{ res_id }}">
-            <h4>О разметке</h4>
+            <h2>О разметке</h2>
             <div class="author-data">
                 <label class="label-author">Разметчик</label>
                 {% if construction.general_info and construction.general_info.author_name %}

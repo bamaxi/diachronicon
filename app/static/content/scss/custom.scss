@@ -6,6 +6,7 @@
 
 @import "reboot";
 
+$enable-negative-margins: true;
 
 $form-floating-padding-y: 0.5rem;
 $form-floating-height: add(2.5rem, $input-height-border);
@@ -32,10 +33,22 @@ body {
     /* @extend .body-content; */
 /* } */
 
+
+
 @import "custom_search_page";
 @import "custom_construction_page";
 
 @import "bootstrap";
+
+// TODO:
+// @supports (scroll-snap-align: start) {
+//     article {
+//       scroll-snap-type: y proximity;
+//       scroll-padding-top: 15vh;
+//       overflow-y: scroll;
+//     }
+// }
+  
 
 a {
     text-decoration: none;
@@ -47,3 +60,14 @@ a {
         color: #dcdcdc;
     }
 }
+
+// leave some space after scroll
+
+// :target::before {
+//     // content: '';
+//     // display: block;
+//     // height:      180px;
+//     // margin-top: -180px;
+//     // // z-index: 0;
+// }
+

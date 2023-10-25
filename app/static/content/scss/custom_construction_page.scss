@@ -75,11 +75,19 @@ img.search-icon {
 // .label-num-changes,
 // .label-earliest-change,
 // .label-latest-change
-.description-label {
-    @include non-form-label();
+.description-label, .change-label {
+    // @include non-form-label();
     white-space: pre;
     & + *::before { content: "\a"; white-space: pre}
     // &::after { content: "\a"; white-space: pre}  // doesn't seem to work with spans
+}
+
+.description-label {
+    @include non-form-label();
+}
+
+.change-label {
+    font-style: italic;
 }
 
 .label-author,
@@ -144,6 +152,12 @@ $border-horizontal-percent: 90%;
     margin-left: 0;
     padding-left: 0;
     &::before {display: none};
+}
+
+
+@mixin make-hanging-indent($indent, $padding: $indent) {
+    text-indent: $indent * -1rem;
+    padding-left: $padding *  1rem;
 }
 
 /* an alternative is {display: flex; flex-wrap: wrap} on parent  */
@@ -218,11 +232,125 @@ ol.changes-list {
     & > li {
         list-style: none;
         @extend .border-start;
+
+        // & span:first-child {
+        //     border: 2px solid orange;
+        //     position: absolute;
+        // }
     }
+
+    & > li.header {
+        font-weight: bold;
+    }
+
+    & > li + li {
+        @extend .pt-3;
+
+        & {
+            padding: auto;
+        }
+    }
+
     & .number {
-        @extend .ml-5;
+        position: absolute;
+        // @extend .ms-n5;
+        margin-left: -3rem;
+        // width: auto;
+        max-width: fit-content;
+
+        &.desc {
+            margin-left: -4rem;
+        }
     }
 }
+
+.number:target {
+    scroll-margin-top: 100px; 
+
+    li:target-within, & {
+        animation-name: target-higlight;
+        animation-duration: 2s;
+    }
+}
+
+li:has(.number:target) {
+    animation-name: target-higlight;
+    animation-duration: 2s;
+}
+
+
+// .changes-references > * + * {
+//     @extend .pt-3
+// }
+
+@keyframes target-higlight {
+  from {background-color: $purple-200}
+  to {background-color: white}
+}
+
+
+
+.change-types {
+    display: block;
+    // padding-left: 0.5rem;
+    & > * {
+        // @include make-hanging-indent(.5)
+        width: 100%;
+    }
+
+    & > label {
+        float: left;
+        // width: 40%;
+        @extend .text-secondary;
+        line-height: $line-height-sm;
+    }
+    // & > span {
+    //     width: 60%;
+    // }
+    
+    & > label ~ label {
+        padding-top: 0.4rem;
+    }
+
+    & > :not(label) {
+        display: inline-block;
+        @include make-hanging-indent(.75, 1);
+
+        & ~ :not(label) {
+            padding-top: 0.2rem;
+        }
+    }
+
+    // & *:not(label).change-type {
+    //     white-space: pre;
+    //     & ~ &::before { content: "\a"; white-space: pre}
+    // }
+
+}
+
+
+
+
+@mixin pad-changes-divs($rem) {
+    padding-top: $rem*1rem;
+} 
+
+// .changes-references > * + * {
+//     @include pad-changes-divs(0.5)
+// }
+
+.examples, .changes-references {
+    font-size: smaller;
+
+    & > * + * {
+        @include pad-changes-divs(0.5)
+    }
+}
+
+.example-toggle {
+    font-size: smaller
+}
+
 
 /* .table-container { */
     /* height: 300px; */

@@ -1,3 +1,14 @@
+{% macro format_change(cur_change_i, target_change_i) %}
+  <a href="#change-{{ target_change_i }}">
+  [{{ target_change_i }}]&nbsp;
+  {%- if cur_change_i > target_change_i -%}
+  ↑
+  {%- else -%}
+  ↓
+  {%- endif-%}
+  </a>
+{% endmacro %}
+
 {# <div class="changes-data table-container">
     <table class="changes-table table table-sm">
       <thead class="thead-light">
@@ -25,11 +36,109 @@
 
 <div>
   <ol class="changes-list">
+    <li class="row header">
+      {# <div class="number desc"><span>номер</span></div> #}
+      <div class="col-md-2"><label>предыдущие и следующие изменения</label></div>
+      <div class="col-md-1"><label>уровень</label></div>
+      <div class="col-md-1"><label>годы вхождения</label></div>
+      <div class="col-md-2"><label>тип изменения</label></div>
+      {# <div class="col-md-2"><label>подтип изменения</label></div> #}
+      <div class="col-md-3"><label>морфосинтаксические теги</label></div>
+      <div class="col-md-3"><label>семантические теги</label></div>
+      {# <div class="col-md-7"><label>вхождения, первое (и последнее)</label></div> #}
+    </li>
+    <li class="row controls">
+      <div class="col-md-10 ps-3">
+        <span class="example-toggle">
+            <a 
+              {# class="btn btn-primary"  #}
+              data-bs-toggle="collapse"
+              href=".all-examples-collapse" role="button"
+              aria-expanded="false"
+              {# aria-controls="{{  }}" #}
+            >
+              Показать все примеры
+            </a>
+        </span>
+      </div>
+    </li>
   {% for change in chs %}
-    <li>
-      <span class="number" id="change-{{ change.id1 }}">
-        <a href="#change-{{ change.id1 }}">{{ change.id1 }}</a>
-      </span>
+    <li class="row">
+      {# <div class="col-md-1"> #}
+        <span class="number" id="change-{{ change.id1 }}">
+          <a href="#change-{{ change.id1 }}"># {{ change.id1 }}</a>
+        </span>
+      {# </div> #}
+      <div class="col-md-2 pl-3 changes-references">
+        <div class="col-md-12">
+          <label class="change-label">пред. <span class="arrow arrow-next">←</span></label>
+          <span>
+          {% for prev_ch in change.previous_changes %}
+          {{ format_change(change.id1, prev_ch.id1) }}
+          {% endfor %}
+          </span>
+        </div>
+        <div class="col-md-12">
+          <label class="change-label">след. <span class="arrow arrow-next">→</span></label>
+          <span>
+          {% for next_ch in change.next_changes %}
+          {{ format_change(change.id1, next_ch.id1) }}
+          {% endfor %}
+          </span>
+        </div>
+      </div>
+      <div class="col-md-1">{{ change.level }}</div>
+      <div class="col-md-1">
+        {{ "%s<br> — %s"|format(change.first_attested, change.last_attested)|safe }}
+      </div>
+      <div class="col-md-2 change-types-container">
+        <div class="change-types">
+          <label class="change-type type">тип</label>
+            <span class="change-type type">{{ change.type_of_change }}</span>
+          <label class="change-type subtype">подтип</label>
+            <span class="change-type subtype">{{ change.subtype_of_change }}</span>
+        </div>
+      </div>
+      <div class="col-md-3">
+        {{ change.morphosyntags }}
+      </div>
+      <div class="col-md-3">
+        {{ change.semantags }}
+      </div>
+      <div class="col-md-10 ps-3">
+        {% with examples_id = "change-examples-%s"|format(change.id1) %}
+          {# <p> #}
+            <span class="example-toggle">
+            <a 
+              {# class="btn btn-primary"  #}
+              data-bs-toggle="collapse"
+              href="#{{ examples_id }}" role="button"
+              aria-expanded="false" aria-controls="#{{ examples_id }}"
+            >
+              Показать примеры
+            </a>
+            </span>
+          {# </p> #}
+          <div class="col-md-12 ps-3 examples collapse all-examples-collapse"
+               id="{{ examples_id }}"
+          >
+            <p class="example example-first">
+              {{ change.first_example }}
+            </p>
+            <p class="example example-last">
+              {{ change.last_example }}
+            </p>
+          </div>
+        {% endwith %}
+      </div>
+      {# <div class="col-md-8 examples">
+        <div class="example example-first">
+          {{ change.first_example }}
+        </div>
+        <div class="example example-last">
+          {{ change.last_example }}
+        </div>
+      </div> #}
     </li>
   {% endfor %}
   </ol>
