@@ -73,7 +73,7 @@ def create_app(test_config_obj=None, remove_wsgi_logger=False):
         from werkzeug.debug import DebuggedApplication
         app.wsgi_app = DebuggedApplication(app.wsgi_app, evalex=True)
 
-    logging.disable()
+    # logging.disable()
 
     @app.route('/favicon.ico')
     def favicon():

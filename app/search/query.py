@@ -65,12 +65,12 @@ class QueryMeta(ABCMeta):
         mcls: type[T.Self], name: str, bases: tuple[type, ...],
         namespace: dict[str, T.Any], **kwargs: T.Any
     ) -> T.Self:
-        print(mcls)
-        print(name, bases, namespace)
+        # print(mcls)
+        # print(name, bases, namespace)
 
         new_cls = super().__new__(mcls, name, bases, namespace, **kwargs)
         new_cls.REGISTRY = mcls.REGISTRY
-        print(f"added registry to {name}")
+        # print(f"added registry to {name}")
 
         mcls.REGISTRY[name] = new_cls
 

@@ -129,20 +129,12 @@ def construction(index: int):
         # results = conn.execute(stmt).mappings().all()
         res_ = session.execute(stmt).scalars()
 
-        # session = current_app.db_session
-        # res_ = session.execute(stmt)
-
         logger.debug(f"found res: {res_}")
         print(res_)
 
         construction = res_.first() or abort(404)
         # construction = construction[0]
         print(type(construction), construction)
-        # print(vars(construction))
-        # print(construction.Construction)
-
-        # logger.debug(construction)
-        print(construction)
 
     title = (getattr(getattr(construction, "general_info", object), "name", None)
              or construction.formula)
@@ -155,34 +147,17 @@ def construction(index: int):
         networkJSON=None
     )
 
-    # title = f"Конструкция '{construction.general_info.name}'"
-    # print(title)
-
-    # res_id = construction.id
-    # print(res_id)
-
-    # context = dict(
-    #     title=title,
-    #     year=datetime.now().year,
-    #     res_id=res_id,
-    #     construction=construction,
-        # graphJSON=None,
-        # networkJSON=None,
-    # )
-    # context = dict(graphJSON=None, networkJSON=None)
-
-    print("preparing changes")
     try:
         print("preparing changes")
         changes_data = prepare_graph_data(construction.changes)
         
 
         logger.debug(f"{changes_data}")
-        print(changes_data)
+        # print(changes_data)
 
         if changes_data:
             graph = ConstructionChangesPlot.from_elements(changes_data)
-            print(graph.bars)
+            # print(graph.bars)
 
             graphJSON = str(graph.to_plotly_json())
             context.update(dict(graphJSON=graphJSON))
