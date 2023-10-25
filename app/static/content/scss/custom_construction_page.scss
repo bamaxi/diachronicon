@@ -231,12 +231,7 @@ $border-horizontal-percent: 90%;
 ol.changes-list {
     & > li {
         list-style: none;
-        @extend .border-start;
-
-        // & span:first-child {
-        //     border: 2px solid orange;
-        //     position: absolute;
-        // }
+        // @extend .border-start;
     }
 
     & > li.header {
@@ -244,7 +239,7 @@ ol.changes-list {
     }
 
     & > li + li {
-        @extend .pt-3;
+        @extend .pt-4;
 
         & {
             padding: auto;
@@ -253,9 +248,7 @@ ol.changes-list {
 
     & .number {
         position: absolute;
-        // @extend .ms-n5;
         margin-left: -3rem;
-        // width: auto;
         max-width: fit-content;
 
         &.desc {
@@ -341,6 +334,10 @@ li:has(.number:target) {
 
 .examples, .changes-references {
     font-size: smaller;
+
+    .arrow {
+        display: none;
+    }
 
     & > * + * {
         @include pad-changes-divs(0.5)
