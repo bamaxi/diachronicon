@@ -652,9 +652,9 @@ def safe_get(callable: T.Callable[[], T.Optional[T.List[str]]], default=None):
 
 
 class ConstructionForm(FlaskForm):
-    construction_id = BootstrapStringField(
-        label="id конструкции", name="construction_id",
-    )
+    # construction_id = BootstrapStringField(
+    #     label="id конструкции", name="construction_id",
+    # )
     formula = BootstrapStringField(
         label="Формула", name="formula",
     )
