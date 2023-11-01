@@ -22,7 +22,6 @@ def construction_page_loader(page_loader):
     return lambda id: page_loader("/construction/{id}/".format(id=id))
 
 
-# @pytest.fixture
 def ids():
     return find_unique(Construction, "id")
 

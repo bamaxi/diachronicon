@@ -661,12 +661,12 @@ class ConstructionForm(FlaskForm):
 
     _meaning_datalist_id = "meaning_values"
     # _meaning_values = safe_get(Construction.contemporary_meaning.unique) or MEANING_VALUES
-    _meaning_values = find_unique(Change, "type_of_change")
+    _meaning_values = find_unique(Construction, "contemporary_meaning")
     _meaning_datalist = DataList(
         id=_meaning_datalist_id,
         literal_options=_meaning_values)
-    meaning = BootstrapStringField(
-        label="Значение", name="meaning",
+    contemporary_meaning = BootstrapStringField(
+        label="Значение", name="contemporary_meaning",
         render_kw=dict(
             # label_extra_text = Markup('<span class="symbol symbol-form symbol-logic"></span>'),
             div_extra_contents = [_meaning_datalist],
@@ -708,7 +708,7 @@ class AnchorForm(FlaskForm):
         id=_synt_functions_datalist_id,
         literal_options=_synt_functions_anchor)
     
-    synt_functions_of_anchor = BootstrapStringField(
+    synt_function_of_anchor = BootstrapStringField(
         label="Синт. функция якоря", name="synt_function_of_anchor",
         render_kw=dict(div_extra_contents = [_synt_functions_datalist],
                        list=_synt_functions_datalist_id)
@@ -815,7 +815,7 @@ def search():
         return render_template("search_2.html", _form=form)
     
     print("rendering clean form")
-    return render_template('search_2.html', _form=form)
+    return render_template('search_2.html', _form=form, title="Продвинутый поиск")
 
     # a GET request with
     #   - no parameters or unfilled parameters
@@ -876,7 +876,7 @@ class SimpleSearchForm(FlaskForm):
     # submit = wtforms.SubmitField()
 
 
-@bp.route('/simple-search/')
+# @bp.route('/simple-search/')
 def simple_search():
     # try:
     #     with current_app.engine.connect() as conn:
@@ -907,7 +907,7 @@ def simple_search():
             _form=simple_form,
         )
 
-@bp.route('/simple-form', methods=["POST"])
+# @bp.route('/simple-form', methods=["POST"])
 def receive_simple():
     simple_form = SimpleSearchForm()
     print("in receive")

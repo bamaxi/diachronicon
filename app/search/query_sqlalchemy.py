@@ -1,5 +1,4 @@
 import typing as T
-from copy import deepcopy
 import re
 
 import sqlalchemy.sql.expression
@@ -63,6 +62,8 @@ input_wildcards_re = re.compile(r"|".join(re.escape(wc) for wc in INPUT_WILDCARD
 MAPPING = {
     "construction": Construction,
     "changes": Change,
+    # derived
+    "anchor": Construction,
 }
 
 _change = {
@@ -77,9 +78,13 @@ MODEL2RENAMES = {
 }
 
 
+def sub_wildcards(s: str):
+    return input_wildcards_re.sub(OUT_WILDCARD, s)
+
+
 def tokenize_formula_query(query: str):
     return [
-        input_wildcards_re.sub(OUT_WILDCARD, tok)
+        sub_wildcards(tok)
         for tok in query.split()
     ]
 
@@ -135,13 +140,26 @@ class SQLQueryMeta(QueryMeta):
 # class SQLConjunction(Conjunction, metaclass=SQLQueryMeta): ...
 
 class SQLStringPattern(StringPattern, metaclass=SQLQueryMeta):
-    def __init__(self, param: str, value: str) -> None:
+    def __init__(self, param: str, value: str, sql_model: DBModel=None, **kwargs) -> None:
+        value = self.process_value(value)
+        
         super().__init__(param, value)
         self.fields_queried = [param]
 
+        self.sql_model = sql_model
+
+    def process_value(self, value) -> str:
+        value = sub_wildcards(value)
+        if OUT_WILDCARD not in value:
+            value = f"{OUT_WILDCARD}{value}{OUT_WILDCARD}"
+        return value
+
     def query(self, stmt=None, model: T.Optional["SQLSubForm"]=None,
-              query_model: T.Optional[BaseQuery] = None, **kwargs):
-        return stmt.where(getattr(model, self.param).ilike(self.pattern))
+              query_model: T.Optional[BaseQuery] = None, 
+              sql_model = None,
+              **kwargs):
+        sql_model = sql_model or self.sql_model or model.sql_model
+        return stmt.where(getattr(sql_model, self.param).ilike(self.pattern))
 
 
 
@@ -245,7 +263,7 @@ class SQLTokensQuery(BaseQueryElement, metaclass=SQLQueryMeta):
                     )
                 )
 
-            stmt = tok.query(stmt, aliased_model)
+            stmt = tok.query(stmt, sql_model=aliased_model)
 
         return stmt
     
@@ -376,6 +394,8 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
         self.sql_models_queried: T.Set[DBModel] = set()
         self.sql_models_to_query: T.Set[DBModel] = set()
 
+        self.subforms_used: T.List[SQLSubForm] = []
+
     def _make_construction_stmt(self):
         """Make statement considered basic — a construction statement """
         self.sql_models_queried |= {Construction, GeneralInfo}
@@ -416,9 +436,8 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
             if key == "formula":
                 self.sql_models_to_query |= {FormulaElement}
                 return SQLTokensQuery(key, val, sql_model=FormulaElement)
-            # if key == "num_changes":
-            #     self.add_sql_model(Change)
-            #     return SQLNumChangesComparison(key, val)
+            elif key in ("anchor_schema", "anchor_ru"):
+                return SQLStringPattern(key, val)
 
         elif form_name == "change":
             if key == "stage":
@@ -426,7 +445,10 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
 
         return super().parse_val(form_name, key, val)
     
-    def derive_field(self, form: FormType | BasicFormType, form_name: str | None, field_derivation: ElementDerivation):
+    def derive_field(
+        self, form: FormType | BasicFormType, form_name: str | None,
+        field_derivation: ElementDerivation
+    ):
         maybe_derived_field = super().derive_field(form, form_name, field_derivation)
 
         print("derived a field:", maybe_derived_field)
@@ -434,6 +456,12 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
             self.add_sql_model(Change)
 
         return maybe_derived_field
+    
+    def parse_form_name(self, form_name: str) -> str:
+        if form_name == "anchor":
+            return "construction"
+
+        return super().parse_form_name(form_name)
 
     def query(self, stmt=None, subform=None):
         if stmt is None:

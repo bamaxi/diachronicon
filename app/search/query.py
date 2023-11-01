@@ -88,6 +88,14 @@ class BaseQueryElement(metaclass=QueryMeta):
     _BASE_INDENT = " " * 2
     INDENT = _BASE_INDENT
 
+    _extendable = False
+
+    def is_extendable(self):
+        return self._extendable
+
+    def extend(self, *args, **kwargs):
+        raise NotImplementedError(f"method not implemented for `{type(self)}`")
+
     def query(self, *args, **kwargs) -> T.Any:
         print(f"querying: {self}, {type(self)}")
         raise NotImplementedError(f"method not implemented for `{type(self)}`")
@@ -123,7 +131,7 @@ class Comparison(BaseQueryElement):
     def __init__(self, param: str, op: T.Union[Operators, OperatorsStr], value: _VT) -> None:
         self.param = param
 
-        print(f"op is : {op} (type={type(op)})")
+        # print(f"op is : {op} (type={type(op)})")
 
         if isinstance(op, str):
             actual_op = getattr(Operators, op, None)
@@ -202,8 +210,13 @@ class BinaryConnective(BaseQueryElement):
 
     self_repr: str
 
+    _extendable = True
+
     def __init__(self, items: T.List[BaseQueryElement]) -> None:
         self.items = items
+
+    def extend(self, new_items):
+        self.items.extend(new_items)
 
     def increase_indent(self, times=1):
         super().increase_indent()
@@ -247,6 +260,14 @@ class SubForm(BaseQueryElement):
         self.name = name
         self.content = content
 
+    def is_extendable(self):
+        return self.content.is_extendable()
+
+    def extend(self, elements: T.Union[T.List[BaseQueryElement], BaseQueryElement]) -> None:
+        if not self.content.is_extendable():
+            raise ValueError(f"Content, which is `{type(self.content)}` is not extendable")
+        self.content.extend(elements)
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name!r}, {self.content!r})"
     
@@ -263,12 +284,12 @@ class SubForm(BaseQueryElement):
 
 
 PrimitiveFormType: T.TypeAlias = T.Dict[str, _VT]
-BasicFormType = T.Union[PrimitiveFormType, T.List[PrimitiveFormType]]
-FormType = T.Union[T.Dict[str, T.Union['FormType', BasicFormType]], PrimitiveFormType]
+BasicFormType: T.TypeAlias = T.Union[PrimitiveFormType, T.List[PrimitiveFormType]]
+FormType: T.TypeAlias = T.Union[T.Dict[str, T.Union['FormType', BasicFormType]], PrimitiveFormType]
 
 class ElementDerivation(metaclass=QueryMeta):
     def __init__(self, *args, **kwargs) -> None: ...
-    def __call__(self, form: FormType) -> BaseQueryElement: ...
+    def __call__(self, form: FormType) -> T.Optional[BaseQueryElement]: ...
 
 
 class ValueWithSignDerivation(ElementDerivation):
@@ -323,7 +344,7 @@ class ValueBetweenDerivation(ElementDerivation):
         
         return cls(key_from, key_to, param=prefix1)
 
-    def __call__(self, form: FormType) -> BaseQueryElement:
+    def __call__(self, form: FormType) -> T.Optional[BaseQueryElement]:
         """Fetch `param` (if not known) and values (from and/or to) from form"""
         param = self.param
 
@@ -352,7 +373,9 @@ class BaseQuery(metaclass=QueryMeta):
         self, form2derivable_fields: T.Optional[T.Dict[str, T.List[ElementDerivation]]]=None
     ) -> None:
         self.form2derivable_fields = form2derivable_fields or {}
+
         self.subforms_used: T.List[SubForm] = []
+        self.used_subforms2name: T.Dict[str, SubForm] = {}
 
     def make_connective(
         self, form_name: T.Optional[str], elements: T.List[BaseQueryElement]
@@ -393,11 +416,17 @@ class BaseQuery(metaclass=QueryMeta):
     def parse_val(self, form_name: str, key: str, val: str) -> BaseQueryElement:
         """Parse a single value. This function may be overriden in child `Query`."""
         return self.REGISTRY[_COMPARISON](key, eq, val)
+    
+    def parse_form_name(self, form_name: str) -> str:
+        """Replace form name if needed"""
+        return form_name
 
     def parse(
         self, form: T.Union[FormType, BasicFormType], form_name: T.Optional[str]=None
     ) -> T.Union[T.List[BaseQueryElement], BaseQueryElement]:
-        
+        old_form_name = form_name
+        form_name = self.parse_form_name(form_name)
+        print(f"old name: `{old_form_name}`, new_name: `{form_name}`")
         print(form)
 
         elements = []
@@ -414,12 +443,20 @@ class BaseQuery(metaclass=QueryMeta):
                     elements.append(element)
                 elif isinstance(val, (list, dict)):
                     print(f"val is collection: {val}")
-                    val_parse = self.parse(val, form_name=key)
+                    form_name = self.parse_form_name(key)
+                    val_parse = self.parse(val, form_name=form_name)
                     if val_parse:
+                        # if form_name not in self.used_subforms2name:
                         subform = self.REGISTRY["SubForm"](
-                            key, self.make_connective(key, val_parse))
+                            form_name, self.make_connective(form_name, val_parse))
                         elements.append(subform)
                         self.subforms_used.append(subform)
+                        # self.used_subforms2name[form_name] = subform
+                        # else:
+                        #     subform = self.used_subforms2name[form_name]
+                        #     # if subform.is_extendable():
+                        #     subform.extend(val_parse)
+
                 elif not is_empty:
                     print("unknown connective")
 

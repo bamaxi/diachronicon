@@ -10,48 +10,31 @@ from app.search import query as q
 def base_query():
     return q.BaseQuery()
 
-@pytest.fixture
-def complex_form():
-    return {
-        'construction':
-            {'constructionId': '', 'formula': 'np*', 'meaning': 'minimizer',
-            'in_rus_constructicon': False, 'num_changes_sign': 'le', 'num_changes': 5,
-            'csrf_token': None},
-        'anchor': {'synt_functions_of_anchor': None, 'anchor_schema': '', 'anchor_ru': '',
-                'csrf_token': None},
-        'changes': [{'formula': '', 'stage_abs': None, 'level': '', 'type_of_change': '',
-                    'duration_sign': 'eq', 'duration': 5, 'first_attested': 1900, 
-                    'last_attested': None, 'csrf_token': None},
-                    {'formula': 'vp*', 'stage_abs': None, 'level': '', 'type_of_change': '',
-                    'duration_sign': '', 'duration': None, 'first_attested': None,
-                    'last_attested': None, 'csrf_token': None},
-                    {'formula': 'dp*', 'stage_abs': 2, 'level': '', 'type_of_change': '',
-                    'duration_sign': '', 'duration': None, 'first_attested': None,
-                    'last_attested': None, 'csrf_token': None}
-                ], 
-        'csrf_token': None
-    }
+
+# conftest.py
+# @pytest.fixture
+def complex_form(): ...
 
 
 @pytest.fixture
 def simple_form():
     return {'formula': 'np*', 'meaning': 'minimizer'}
 
-
-@pytest.fixture
-def derivable_form() -> T.Dict[str, str | int]:
-    return {"duration": 200, "duration_sign": "ge", "formula": "np*"}
-
-
-@pytest.fixture
-def construction_subform() -> T.Dict[str, T.Dict[str, str | int]]:
-    return {"construction": {"duration": 200, "duration_sign": "ge", "formula": "np*"}}
+# conftest.py
+# @pytest.fixture
+def derivable_form() -> T.Dict[str, str | int]: ...
 
 
-@pytest.fixture
-def two_subforms_form():
-    return {"construction": {"duration": 200, "duration_sign": "ge", "formula": "np*"},
-            "anchor": {"synt_functions_of_anchor": "Subject"}}
+# conftest.py
+# @pytest.fixture
+def construction_subform() -> T.Dict[str, T.Dict[str, str | int]]: ...
+
+
+# conftest.py
+# @pytest.fixture
+def two_subforms_form() -> T.Dict[str, T.Dict[str, str | int]]: ...
+    # return {"construction": {"duration": 200, "duration_sign": "ge", "formula": "np*"},
+    #         "anchor": {"synt_functions_of_anchor": "Subject"}}
 
 
 def test_comparison__init():
@@ -189,8 +172,16 @@ def duration_derivation():
     return q.ValueWithSignDerivation("duration", "duration_sign")
 
 
+# class BaseTestQuery:
+#     def test_creatable(self): ...
+#     def test_basic(self, query: q.BaseQuery, form): ...
+#     def test_subform(self, query: q.BaseQuery, subform): ...
+#     def test_two_subforms(self, query: q.BaseQuery, subform): ...
+#     def test__init__with_derivation(self, query: q.BaseQuery, ): ...
+#     def test_add_derivation(self, *args, **kwargs): ...
 
-class TestBaseQuery:
+
+class TestBaseQuery():
     def test_creatable(self):
         assert q.BaseQuery()
     
@@ -203,11 +194,6 @@ class TestBaseQuery:
     def test_subform(self, base_query: q.BaseQuery, construction_subform):
         result = base_query.parse_form(construction_subform)
 
-        # assert result == q.Conjunction([q.SubForm("construction", q.Conjunction(
-        #     [q.Comparison("duration", "eq", 200),
-        #      q.Comparison("duration_sign", "eq", "ge"), 
-        #      q.Comparison("formula", "eq", "np*")]
-        # ))])
         assert (type(result) == q.Conjunction and len(result.items) == 1
                 and result.items[0] == q.SubForm("construction", q.Conjunction(
                     [q.Comparison("duration", "eq", 200),
@@ -215,7 +201,23 @@ class TestBaseQuery:
                     q.Comparison("formula", "eq", "np*")])
                 )
         )
-            
+
+    def test_two_subforms(self, base_query: q.BaseQuery, two_subforms_form):
+        result = base_query.parse_form(two_subforms_form)
+
+        assert (type(result) == q.Conjunction and len(result.items) == 2
+                and result.items[0] == q.SubForm("construction", q.Conjunction(
+                    [q.Comparison("duration", "eq", 200),
+                    q.Comparison("duration_sign", "eq", "ge"), 
+                    q.Comparison("formula", "eq", "np*")])
+                )
+                and result.items[1] == q.SubForm("anchor", q.Conjunction(
+                    [q.Comparison("synt_functions_of_anchor", "eq", "Subject"),
+                     q.Comparison("anchor_schema", "eq", "part VP"),
+                     q.Comparison("anchor_ru", "eq", "хоть")])
+                )
+        )
+        
     def test__init__with_derivation(self, duration_derivation, construction_subform):
         base_query = q.BaseQuery({"construction": [duration_derivation]})
         result = base_query.parse_form(construction_subform)
@@ -225,7 +227,6 @@ class TestBaseQuery:
                  q.Comparison("formula", "eq", "np*")])
         )])
 
-
     def test_add_derivation(self, duration_derivation, construction_subform):
         base_query = q.BaseQuery()
         base_query.add_derivation("construction", duration_derivation)
@@ -234,15 +235,12 @@ class TestBaseQuery:
         assert result == q.Conjunction([
             q.SubForm("construction", q.Conjunction(
                 [q.Comparison("duration", "ge", 200), 
-                 q.Comparison("formula", "eq", "np*")])
-        )])
+                 q.Comparison("formula", "eq", "np*")]))
+        ])
 
 
 def test_simple_form(base_query, simple_form):
     result = base_query.parse(simple_form)
     assert result == [q.Comparison("formula", "eq", "np*"),
                       q.Comparison("meaning", "eq", "minimizer")]
-
-
-
 
