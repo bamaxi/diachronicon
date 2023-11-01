@@ -257,13 +257,19 @@ ol.changes-list {
     }
 }
 
+
+@keyframes target-higlight {
+    from {background-color: $purple-200}
+    to {background-color: white}
+  }
+
 .number:target {
     scroll-margin-top: 100px; 
 
-    li:target-within, & {
-        animation-name: target-higlight;
-        animation-duration: 2s;
-    }
+    // &, li:target-within {
+    animation-name: target-higlight;
+    animation-duration: 2s;
+    // }
 }
 
 li:has(.number:target) {
@@ -275,13 +281,6 @@ li:has(.number:target) {
 // .changes-references > * + * {
 //     @extend .pt-3
 // }
-
-@keyframes target-higlight {
-  from {background-color: $purple-200}
-  to {background-color: white}
-}
-
-
 
 .change-types {
     display: block;
@@ -332,7 +331,7 @@ li:has(.number:target) {
 //     @include pad-changes-divs(0.5)
 // }
 
-.examples, .changes-references {
+.changes-references {
     font-size: smaller;
 
     .arrow {
@@ -342,6 +341,10 @@ li:has(.number:target) {
     & > * + * {
         @include pad-changes-divs(0.5)
     }
+}
+
+.examples {
+    font-size: smaller;
 }
 
 .example-toggle {

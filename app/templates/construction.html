@@ -29,15 +29,15 @@
 
 {% block content %}
 <div class="row justify-content-center">
-   <article class="single-result col-10">
-       <section class="construction-title">
+   <div class="single-result col-10">
+       <div class="construction-title">
            <div class="construction-name">
                 <h1>{{ construction.general_info.name }}</h1>
                 {# {% for morph_tag in construction.morp %}
                 {% endfor %} #}
            </div>
-            <a class="data-link" href="#on-data-{{ res_id }}">О разметке конструкции</a>
-       </section>
+            {# <a class="data-link" href="#on-data-{{ res_id }}">О разметке конструкции</a> #}
+       </div>
 
        <section class="description-row pt-4 row">
            <div class="formula-data col-md-5 border-end">
@@ -99,70 +99,72 @@
            
        </section>
 
+        <section>
         <h2>Изменения</h2>
-       {% if construction.changes %}
-       {% with chs = construction.changes %}
-        <section class="description-row row">
-            <div class="num-changes-data col-md-4">
-                <label class="description-label label-num-changes">Количество изменений</label>
-                <span class="num-changes-num">{{ chs | length }}</span>
-                <span class="num-changes-desc">всего</span>
-                <span class="num-changes-num">{{ chs|selectattr("level", "eq", "synt")|list|length  }}</span>
-                <span class="num-changes-desc">(синт)</span>
-                <span class="num-changes-num">{{ chs|selectattr("level", "eq", "sem")|list|length }}</span>
-                <span class="num-changes-desc">(сем)</span>
-            </div>
-            <div class="earliest-change-data col-md-4">
-                <label class="description-label label-earliest-change">Самый ранний этап</label>
-                {% with earliest = chs | first %}
-                <span class="earliest-change-id">{{ "%s — %s"|format(earliest.first_attested,
-                    earliest.last_attested) }}</span>
-                <a class="earliest-change" href="#change-{{ earliest.id1 }}">{{ "[%s]"|format(earliest.id1) }}</a>
-                {% endwith %}
-            </div>
-            <div class="latest-change-data col-md-4">
-                <label class="description-label label-latest-change">Самый поздний этап</label>
-                {% with latest = construction.changes[-1] %}
-                <span class="latest-change-id">{{ "%s — %s"|format(latest.first_attested,
-                    latest.last_attested) }}</span>
-                <a class="latest-change" href="#change-{{ latest.id1 }}">{{ "[%s]"|format(latest.id1) }}</a>
-                {% endwith %}
-            </div>
-        </section>
-
-       <section class="changes-container">
-            <div class="changes-wrapper">
-                <div class="row">
-<!--                    <p>-->
-<!--                        <a class="changes-toggle" href="#changes-{{ res_id }}"-->
-<!--                          role="button" aria-expanded="false" aria-controls="changes-{{ res_id }}">-->
-<!--                                Show history data-->
-<!--                        </a>-->
-<!--                    </p>-->
+            {% if construction.changes %}
+            {% with chs = construction.changes %}
+            <section class="description-row row">
+                <div class="num-changes-data col-md-4">
+                    <label class="description-label label-num-changes">Количество изменений</label>
+                    <span class="num-changes-num">{{ chs | length }}</span>
+                    <span class="num-changes-desc">всего</span>
+                    <span class="num-changes-num">{{ chs|selectattr("level", "eq", "synt")|list|length  }}</span>
+                    <span class="num-changes-desc">(синт)</span>
+                    <span class="num-changes-num">{{ chs|selectattr("level", "eq", "sem")|list|length }}</span>
+                    <span class="num-changes-desc">(сем)</span>
                 </div>
-                <div class="row">
-                    <div class="changes collapse-show col-12" id="changes-{{ res_id }}">
-                        <p class="changes-chart-was-hidden-message">
-                            Здесь мог быть отображён график, но он не уместился на экране Вашего устройства.
-                            Вы можете скачать его <a href="#">по ссылке</a>.
-                        </p>
+                <div class="earliest-change-data col-md-4">
+                    <label class="description-label label-earliest-change">Самый ранний этап</label>
+                    {% with earliest = chs | first %}
+                    <span class="earliest-change-id">{{ "%s — %s"|format(earliest.first_attested,
+                        earliest.last_attested) }}</span>
+                    <a class="earliest-change" href="#change-{{ earliest.id1 }}">{{ "[%s]"|format(earliest.id1) }}</a>
+                    {% endwith %}
+                </div>
+                <div class="latest-change-data col-md-4">
+                    <label class="description-label label-latest-change">Самый поздний этап</label>
+                    {% with latest = construction.changes[-1] %}
+                    <span class="latest-change-id">{{ "%s — %s"|format(latest.first_attested,
+                        latest.last_attested) }}</span>
+                    <a class="latest-change" href="#change-{{ latest.id1 }}">{{ "[%s]"|format(latest.id1) }}</a>
+                    {% endwith %}
+                </div>
+            </section>
 
-                        <div class="changes-chart" id="changes-chart-{{ res_id }}">
-                            <p class="changes-chart-no-js">
-                                JavaScript недоступен, график отображён как картинка.
-                                Включение JavaScript сделает график интерактивным.
+        <section class="changes-container">
+                <div class="changes-wrapper">
+                    <div class="row">
+    <!--                    <p>-->
+    <!--                        <a class="changes-toggle" href="#changes-{{ res_id }}"-->
+    <!--                          role="button" aria-expanded="false" aria-controls="changes-{{ res_id }}">-->
+    <!--                                Show history data-->
+    <!--                        </a>-->
+    <!--                    </p>-->
+                    </div>
+                    <div class="row">
+                        <div class="changes collapse-show col-12" id="changes-{{ res_id }}">
+                            <p class="changes-chart-was-hidden-message">
+                                Здесь мог быть отображён график, но он не уместился на экране Вашего устройства.
+                                Вы можете скачать его <a href="#">по ссылке</a>.
                             </p>
-                            <img src="#" class="changes-chart-no-js" width="100%">
+
+                            <div class="changes-chart" id="changes-chart-{{ res_id }}">
+                                <p class="changes-chart-no-js">
+                                    JavaScript недоступен, график отображён как картинка.
+                                    Включение JavaScript сделает график интерактивным.
+                                </p>
+                                <img src="#" class="changes-chart-no-js" width="100%">
+                            </div>
+                                {% include '_changes_table.html' %}
                         </div>
-                            {% include '_changes_table.html' %}
                     </div>
                 </div>
-            </div>
+        </section>
+        {% endwith %}
+        {% endif %}
        </section>
-       {% endwith %}
-       {% endif %}
 
-       <section class="on-data" id="on-data-{{ res_id }}">
+       {# <section class="on-data" id="on-data-{{ res_id }}">
             <h2>О разметке</h2>
             <div class="author-data">
                 <label class="label-author">Разметчик</label>
@@ -187,8 +189,8 @@
                 .
             </span>
             {% endif %}
-       </section>
-   </article>
+       </section> #}
+   </div>
 </div>
 {% endblock %}
 

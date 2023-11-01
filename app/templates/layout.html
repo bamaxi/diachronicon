@@ -36,13 +36,17 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('main.main') }}">Главная</a>
                     </li>
-                    <li class="nav-item">
+                    {# <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('search.simple_search') }}">
                             Простой поиск</a>
-                    </li>
+                    </li> #}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('search.search') }}">
                             Продвинутый поиск</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.about') }}">
+                            О базе</a>
                     </li>
                 </ul>
             </div>

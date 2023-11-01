@@ -16,7 +16,7 @@
 
         {# {{ _form.construction.construction_id }} #}
         {{ _form.construction.formula }}
-        {{ _form.construction.meaning }}
+        {{ _form.construction.contemporary_meaning }}
         {# {{ _form.construction.in_rus_constructicon }} #}
 
         {{ _form.construction.num_changes.label }}
@@ -26,7 +26,7 @@
         <legend>Якорь</legend>
         {{ _form.anchor.csrf_tag }}
 
-        {{ _form.anchor.synt_functions_of_anchor }}
+        {{ _form.anchor.synt_function_of_anchor }}
         {{ _form.anchor.anchor_schema }}
         {{ _form.anchor.anchor_ru }}
     </fieldset>
@@ -47,7 +47,7 @@
         <fieldset name="changes" class="col-md-3"
             {# {% if loop.index > 1 %}{{ style="display: none" }}{% endif %} #}
         >
-            <legend>{{ "Изменения" if loop.index == 1 else "& изменения..." }}</legend>
+            <legend>{{ "Изменение" if loop.index == 1 else "& изменение..." }}</legend>
 
             {{ _change.formula }}
             {{ _change.stage_abs }}
