@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+
+{% macro fill_if_queried(param, query) -%}
+    {%- if query is defined and param in query and query[param] %}
+        value="{{ query[param] }}"
+    {% endif -%}
+{%- endmacro %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+<div class="col-10 pt-3">
+
+    <p>
+    В <i>Диахрониконе </i> конструкции русского языка показаны в исторической перспективе.
+    </p>
+
+    <ul>
+    <li>Что такое конструкции?</li>
+    <li>Как создаётся описание конструкций?</li>
+    </ul>
+
+    <form class="row justify-content-center" id="search-form" action="/simple-form" method="post">
+    {{ _form.csrf_tag }}
+    <div class="col-4">
+        {# <p>Выберите конструкцию, о которой хотите узнать.</p> #}
+        {{ _form.formula() }}
+        <button class="btn btn-primary" type="submit">Показать</button>
+        <div id="form-error feedback-invalid"></div>
+    </div>
+    </form>
+
+    {% include 'main_page_simple_search_result.html' %}
+
+</div>
+</div>
+
+{% endblock %}

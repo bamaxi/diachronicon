@@ -7,7 +7,8 @@ from sqlalchemy import (
     inspect,
     func,
     or_,
-    and_
+    and_,
+    distinct,
 )
 from sqlalchemy.orm import (
     aliased,
@@ -356,7 +357,7 @@ class SQLNumChangesComparison(Comparison):
         # TODO: special cases with <1, 0, -1 ... | <
 
         super().__init__(param, op, value)
-        self.fields_queried = [param]
+        self.fields_queried = []
 
     def query(self, stmt, subform: SubForm, query_model: BaseQuery, **kwargs) -> T.Any:
         # assume Construction.id is always selected
@@ -372,7 +373,7 @@ class SQLNumChangesComparison(Comparison):
 class SQLDurationComparison(Comparison):
     def __init__(self, param: str, op: OperatorsStr | Operators, value: _VT) -> None:
         super().__init__(param, op, value)
-        self.fields_queried = [param]
+        self.fields_queried = []
 
     def query(self, stmt, subform: SubForm, query_model: BaseQuery, **kwargs) -> T.Any:
         sql_model = subform.sql_model
@@ -401,7 +402,7 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
         self.sql_models_queried |= {Construction, GeneralInfo}
         return select(
             Construction.id, Construction.formula, GeneralInfo.name
-        ).join_from(Construction, GeneralInfo)
+        ).join_from(Construction, GeneralInfo)  #.distinct()
     
     def apply_join(self, stmt, maybe_left: DBModel, maybe_right: DBModel):
         print(f"attempting to join: {maybe_left} {maybe_right}")
@@ -424,6 +425,11 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
         print("showing fields queried:")
         for subform in self.subforms_used:
             print(subform.fields_queried)
+            for field in subform.fields_queried:
+                if field == "duration":
+                    stmt = stmt.add_columns(Change.first_attested, Change.last_attested)
+                elif field not in ("id", "formula", "name"):
+                    stmt = stmt.add_columns(getattr(subform.sql_model, field))
 
         return stmt
     

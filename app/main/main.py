@@ -45,6 +45,11 @@ from app.search.search_form import (
 from app.search.query_sqlalchemy import (
     default_sqlquery,
     SQLQuery,
+    SQLSubForm,
+    SQLTokensQuery,
+)
+from app.search.search2 import (
+    group_rows_by_construction,
 )
 from app.utils import (
     find_unique
@@ -53,14 +58,32 @@ from app.utils import (
 
 
 
+# class SimpleSearchForm(FlaskForm):
+#     _construction_values = find_unique(Construction, "formula")
+#     _construction_options, _selected = make_options_from_values(
+#         _construction_values, "конструкцию")
+#     formula = BoostrapSelectField(
+#         _construction_options[0][1], name="formula", 
+#         choices=_construction_options,
+#         render_kw=dict(selected=_selected))
+    
+
 class SimpleSearchForm(FlaskForm):
+    _constructions_datalist_id = "construction_values"
     _construction_values = find_unique(Construction, "formula")
-    _construction_options, _selected = make_options_from_values(
-        _construction_values, "конструкцию")
-    formula = BoostrapSelectField(
-        _construction_options[0][1], name="formula", 
-        choices=_construction_options,
-        render_kw=dict(selected=_selected))
+    _constructions_datalist = DataList(
+        id=_constructions_datalist_id,
+        literal_options=_construction_values
+    )
+
+    formula = BootstrapStringField(
+        label="Конструкция",
+        render_kw=dict(
+            div_extra_contents = [_constructions_datalist],
+            list = _constructions_datalist_id,
+        ),
+        # description="формула конструкции",
+    )
 
 
 # @bp.route('/simple-search/')
@@ -75,8 +98,15 @@ def simple_search():
     if simple_form.is_submitted():
         print(f'FORM SUBMITTED')
 
-        queried_formula = simple_form.data["formula"]
-        stmt = select(Construction).where(Construction.formula == queried_formula)
+        # queried_formula = simple_form.data["formula"]
+        queried_formula = simple_form.formula
+        print(queried_formula)
+        # stmt = select(Construction).where(Construction.formula == queried_formula)
+
+        SQLQuery()
+        query = SQLTokensQuery("formula", queried_formula, Construction)
+        stmt = query.query(select(Construction))
+        print(stmt)
         with current_app.engine.connect() as conn:
             results = conn.execute(stmt).mappings().all()
 
@@ -104,8 +134,13 @@ def main():
     if simple_form.is_submitted():
         print(f'FORM SUBMITTED')
 
-        queried_formula = simple_form.data["formula"]
-        stmt = select(Construction).where(Construction.formula == queried_formula)
+        # queried_formula = simple_form.data["formula"]
+        queried_formula = simple_form.formula
+        print(queried_formula)
+        # stmt = select(Construction).where(Construction.formula == queried_formula)
+        query = SQLTokensQuery("formula", queried_formula, Construction)
+        stmt = query.query(select(Construction))
+        print(stmt)
         with current_app.engine.connect() as conn:
             results = conn.execute(stmt).mappings().all()
 
@@ -128,12 +163,23 @@ def receive_simple():
     print(simple_form.is_submitted(), simple_form.validate_on_submit())
 
     queried_formula = simple_form.data["formula"]
-    stmt = select(Construction).where(Construction.formula == queried_formula)
+    # queried_formula = simple_form.formula
+    print(queried_formula)
+    # stmt = select(Construction).where(Construction.formula == queried_formula)
+    q = SQLQuery()
+    q.parse_form({"construction": {"formula": queried_formula}})
+    # query = SQLTokensQuery("formula", queried_formula, Construction)
+    # stmt = query.query(select(Construction, q, q))
+    stmt = q.query()
     print(stmt)
+    print(stmt.compile(compile_kwargs={"literal_binds": True}))
+
     with current_app.engine.connect() as conn:
         results = conn.execute(stmt).mappings().all()
 
     print(results)
+
+    results = sorted(set(results), key=lambda res: res["id"])
 
     return render_template(
         'main.html', title='Главная (результаты)',

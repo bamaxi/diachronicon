@@ -1,18 +1,42 @@
-<h3>Результаты</h3>
+<section>
+<h2>Результаты</h2>
 {%- if not results -%}
-<p>Ничего не найдено</p>
+    <p>Ничего не найдено</p>
 {%- endif -%}
 {%- if results -%}
-    {%- for _res in results -%}
-    <div class="row result py-2">
-        <div class="short">
-            <span class="text-primary">{{ loop.index }}</span>
-            <span>
-                <a href="{{ url_for('search.construction', index=_res.id) }}">
-                    {{ _res.formula or _res.name }}
-                </a>
-            </span>
-        </div>
+    <div class="results-report">
+        {% block results_report %}
+        <p>Результатов по искомым параметрам: {{ results|length }}
+           <span>(конструкций &mdash; {{ results_by_constr|length }})</span>
+        </p>
+        {% endblock %}
     </div>
-    {%- endfor -%}
+    <div class="results">
+        <ol>
+        {# {% if use_constr %}
+            {% set result_iter = results_by_constr %}
+        {% else %}
+            {% set result_iter = results %}
+        {% endif %}
+        {{ results_iter }} #}
+        {%- for _res in results -%}
+        <li>
+            <div class="row result py-2">
+                {# <div class="short col-12"> #}
+                    {# <span class="text-primary">{{ loop.index }}</span> #}
+                    <span>
+                        <a href="{{ url_for('search.construction', index=_res.id) }}">
+                            {{ _res.formula or _res.name }}
+                        </a>
+                    </span>
+                {# </div> #}
+                <div class="extended">
+                    {% block result_extended %}{% endblock %}
+                </div>
+            </div>
+        </li>
+        {%- endfor -%}
+        </ol>
+    </div>
 {% endif %}
+</section>

@@ -544,7 +544,7 @@ def reduce_rows(rows: Dict):
     for constr_id, results in rows.items():
         print(constr_id, results)
         one_res = results[0]
-        if len(one_res) == 2 and "id" in one_res and "formula" in one_res:
+        if len(one_res) == 3 and set(one_res) == {"id", "formula", "name"}:
             final_res[constr_id] = [one_res]
         else:
             final_res[constr_id] = results
@@ -861,7 +861,13 @@ def receive():
     for res in results:
         print(res)
 
-    return render_template("search_2.html", _form=form, results=results)
+    results_by_constr = group_rows_by_construction(results)
+    print(results_by_constr)
+
+    return render_template(
+        "search_2.html", _form=form, results=results, 
+        results_by_constr=results_by_constr, use_constr=True
+    )
 
 
 class SimpleSearchForm(FlaskForm):
