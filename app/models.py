@@ -48,6 +48,22 @@ SYNT_FUNCTION_OF_ANCHOR_VALUES = (
 
 Base = declarative_base()
 
+@declarative_mixin
+class ShallowEqMixin:
+    _comparable_args: T.List[str] = []
+
+    def get_comparable_args(self):
+        return self._comparable_args
+
+    def __shallow_eq__(self, other: T.Any) -> bool:
+        if not isinstance(other, type(self)):
+            return False
+        return all(getattr(self, _arg, None) == getattr(other, _arg, None)
+                   for _arg in self._comparable_args)
+    
+    def shallow_eq(self, other: T.Any) -> bool:
+        return self.__shallow_eq__(other)
+
 
 class GeneralInfo(Base):
     __tablename__ = 'general_info'
@@ -92,6 +108,7 @@ class ConstructionMixin:
 class Construction(ConstructionMixin, Base):
     __tablename__ = 'construction'
 
+    orig_id = Column(String(30))
     # id = Column(Integer, primary_key=True)
     #
     # # TODO: do we want to search by parts of formula or anchors?
@@ -190,6 +207,11 @@ class ConstructionVariant(ConstructionMixin, Base):
     construction_id = Column(Integer, ForeignKey(Construction.id))
     construction = relationship("Construction", back_populates="variants")
                                 # uselist=False)  # One-to-one
+    change_id = Column(Integer, ForeignKey("change.id"))
+
+    changes = relationship("Change", back_populates="variants")
+                            #  uselist=False)
+
     is_main = Column(Boolean)
 
     # formula = Column(String(200))
@@ -205,9 +227,9 @@ class ConstructionVariant(ConstructionMixin, Base):
                 f'{self.is_main!r})')
 
 
-class FormulaElement(Base):
-    # TODO: implement tests
+class FormulaElement(Base, ShallowEqMixin):
     __tablename__ = 'formula_element'
+    _comparable_args = ["value", "order", "depth", "is_optional", "has_variants"]
 
     id = Column(Integer, primary_key=True)
     formula_id = Column(Integer, unique=True)
@@ -287,9 +309,15 @@ class Change(Base):
     # textual comments
     comment = Column(String(500))
     frequency_trend = Column(String(400))
+    sources = Column(String(500))
 
     construction = relationship(
         "Construction", back_populates="changes",
+    )
+
+    variants = relationship(
+        "ConstructionVariant", back_populates="changes",
+        order_by="ConstructionVariant.id",
     )
 
     # Uni-directional one-to-many

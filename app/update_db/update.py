@@ -10,7 +10,7 @@ from typing import (
 from openpyxl import load_workbook
 
 from ..models import (
-    UKNOWN_SYNT_FUNCTION_OF_ANCHOR,
+    UNKNOWN_SYNT_FUNCTION_OF_ANCHOR,
     SYNT_FUNCTION_OF_ANCHOR_VALUES,
     Construction,
     ConstructionVariant,
@@ -83,7 +83,8 @@ SHEET2COLUMN2CORRECTION = {
 
 
 SHEET2MUSTHAVE_COLUMNS = {
-    "changes": {"construction_id", }
+    "general_info": {"construction_id"},
+    "changes": {"construction_id", "stage", "level"}
 }
 
 
@@ -93,6 +94,7 @@ SHEET2DISCARDED_COLUMNS = {
 
 
 CONSTRUCTION_ID2VARIANTSMET = {}
+# CONSTRUCTION_IDS 
 
 
 class EOF(object):
@@ -273,12 +275,25 @@ def fix_construction_id(
 id_to_change_object = {}
 
 
+class ChangesManager:
+    def __init__(self) -> None:
+        self.ids_construction2changes: T.Dict[int, T.List[int]] = {}
+
+    def add_construction(self, id_: int, obj: Construction):
+        self.ids_construction2changes.setdefault(id_, [])
+    
+    def add_change(self, id_: int, construction_id: int):
+        self.ids_construction2changes.setdefault(construction_id, []).append(id_)
+
+
+
 def fix_values(
     phrase_dict: Dict[str, Union[str, int, None]],
     model_class: Type[Union[Construction, GeneralInfo, Change, Constraint]]
 ):
     logger.debug(f"fixing values: {phrase_dict}, model: {model_class}")
     if model_class is Construction:
+        phrase_dict["orig_id"] = phrase_dict["id"]
         phrase_dict["id"] = fix_construction_id(phrase_dict["id"])
     elif "construction_id" in phrase_dict:
         phrase_dict["construction_id"] = fix_construction_id(phrase_dict["construction_id"])
@@ -320,6 +335,16 @@ def get_formula_element_variants(variation_val: str) -> Dict[str, List[str]]:
     return elem2variants
 
 
+def to_formula(
+    formula_s: str, element_model = FormulaElement,
+    formula_parser: Callable[[str], List[Dict[str, str]]]=parse_formula
+) -> None:
+    formula_elements = formula_parser(formula_s)
+    formula_elements_vals = [element_model(**el_data)
+                             for el_data in formula_elements]
+    return formula_elements_vals
+
+
 def process_construction(
     phrase_dict: Dict[str, Union[str, int]], constr: Construction,
     formula_parser: Callable[[str], List[Dict[str, str]]] = parse_formula,
@@ -338,11 +363,11 @@ def process_construction(
     logger.debug(f"function is: {synt_function}")
     if synt_function not in SYNT_FUNCTION_OF_ANCHOR_VALUES:
         if synt_function is None:
-            first_synt_function = UKNOWN_SYNT_FUNCTION_OF_ANCHOR
+            first_synt_function = UNKNOWN_SYNT_FUNCTION_OF_ANCHOR
         else:
             first_synt_function = synt_function.split()[0]
             if first_synt_function not in SYNT_FUNCTION_OF_ANCHOR_VALUES:
-                first_synt_function = UKNOWN_SYNT_FUNCTION_OF_ANCHOR
+                first_synt_function = UNKNOWN_SYNT_FUNCTION_OF_ANCHOR
         phrase_dict["synt_function_of_anchor"] = first_synt_function
         constr.synt_function_of_anchor = first_synt_function
         logger.debug(f"final function is: {first_synt_function}")
@@ -379,8 +404,26 @@ def process_construction(
     constr.variants.extend(construction_variants_vals)
 
 
+def process_change(
+    phrase_dict: Dict[str, Union[str, int]], change: Change,
+    formula_parser: Callable[[str], List[Dict[str, str]]] = parse_formula,
+    verbose=False
+) -> None:
+    """Parse stage formula and add it to construction variants"""
+    main_stage_variant = ConstructionVariant(is_main=True)
+    
+    stage = phrase_dict["stage"]
+    main_stage_variant.formula = stage
+    if stage not in {"entire_construction"}:
+        elements = to_formula(stage)
+        main_stage_variant.formula_elements = elements
+
+    change.variants.append(main_stage_variant)
+    
+
 extra_processing = {
-    Construction: process_construction
+    Construction: process_construction,
+    Change: process_change,
 }
 
 
@@ -390,7 +433,7 @@ RowDict = T.Dict[str, T.Any]
 def not_empty(collection: T.Iterable):
     return bool(collection)
 
-def get_dict_has_keys_checker(keys: T.List[str]) -> T.Callable[[RowDict], bool]:
+def make_has_dict_keys(keys: T.List[str]) -> T.Callable[[RowDict], bool]:
     def has_dict_keys(d: RowDict) -> str:
         return all(key in d for key in keys)
     return has_dict_keys
@@ -401,7 +444,7 @@ class BaseInputTable(abc.ABC):
 
     def __init__(self) -> None:
         self.row_filters = self.row_filters + [
-            get_dict_has_keys_checker(self.MUST_HAVE_COLS)
+            make_has_dict_keys(self.MUST_HAVE_COLS)
         ]
 
     def is_row_okay(self, row: RowDict) -> bool:
@@ -426,6 +469,8 @@ def parse(filename: str, use_old_sheet_names=True, verbose=False):
     # parse.idscorrection = {}
 
     data = []
+    print(wb.worksheets)
+
     for sheet in wb.worksheets:
         if not use_old_sheet_names:
             corrected_sheet_name = ORIG_SHEET_NAME2DB_TABLE_NAME.get(sheet.title)
@@ -476,24 +521,28 @@ def parse(filename: str, use_old_sheet_names=True, verbose=False):
             if discard_row:
                 continue
 
-            fix_values(phrase_dict, model_class)
+            try:
+                fix_values(phrase_dict, model_class)
 
-            if verbose:
-                print(model_class, phrase_dict)
-            logger.debug(f"about to add to `{model_class}` this: {phrase_dict}")
+                if verbose:
+                    print(model_class, phrase_dict)
+                logger.debug(f"about to add to `{model_class}` this: {phrase_dict}")
 
-            values = model_class(**phrase_dict)
-            if model_class is Change:
-                id_ = phrase_dict["id"]
-                if not id_ in id_to_change_object:
-                    id_to_change_object[id_] = values
-                else:
-                    raise ValueError(f"repeating change_id: {id_}")
+                values = model_class(**phrase_dict)
+                if model_class is Change:
+                    id_ = phrase_dict["id"]
+                    if not id_ in id_to_change_object:
+                        id_to_change_object[id_] = values
+                    else:
+                        raise ValueError(f"repeating change_id: {id_}")
 
-            if model_class in extra_processing:
-                extra_processing[model_class](phrase_dict, values, verbose=verbose)
+                if model_class in extra_processing:
+                    extra_processing[model_class](phrase_dict, values, verbose=verbose)
 
-            data.append(values)
+                data.append(values)
+            
+            except ValueError as e:
+                logger.warning(f"couldn't add {phrase_dict}: {e}")
 
     if verbose:
         for item in data:
@@ -515,6 +564,8 @@ if __name__ == "__main__":
                         help="an optional sqlalchemy uri to use a different database")
     # parser.add_argument("--database-name", type=str, default=None,
     #                     help="an optional name for the database with same scheme")
+    parser.add_argument("-d", "--old", action="store_true",
+                        help="use olD sheet names")
     parser.add_argument("-i", "--init", action="store_true",
                         help="whether to initialize user database")
     parser.add_argument("-v", "--verbose", action="store_true",
@@ -534,7 +585,7 @@ if __name__ == "__main__":
     if args.init:
         init_db(Base, engine)
 
-    data = parse(args.file, use_old_sheet_names=False, verbose=args.verbose)
+    data = parse(args.file, use_old_sheet_names=args.old, verbose=args.verbose)
     print(len(data))
 
     # db_session.add_all(data)
