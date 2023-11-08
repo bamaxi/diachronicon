@@ -56,18 +56,6 @@ from app.utils import (
 )
 
 
-
-
-# class SimpleSearchForm(FlaskForm):
-#     _construction_values = find_unique(Construction, "formula")
-#     _construction_options, _selected = make_options_from_values(
-#         _construction_values, "конструкцию")
-#     formula = BoostrapSelectField(
-#         _construction_options[0][1], name="formula", 
-#         choices=_construction_options,
-#         render_kw=dict(selected=_selected))
-    
-
 class SimpleSearchForm(FlaskForm):
     _constructions_datalist_id = "construction_values"
     _construction_values = find_unique(Construction, "formula")
@@ -86,63 +74,34 @@ class SimpleSearchForm(FlaskForm):
     )
 
 
-# @bp.route('/simple-search/')
-def simple_search():
-    # try:
-    #     with current_app.engine.connect() as conn:
-    #         all_formulas = conn.execute(select(Construction.formula)).scalars().all()
-    # except:
-    #     all_formulas = []
-    simple_form = SimpleSearchForm()
-
-    if simple_form.is_submitted():
-        print(f'FORM SUBMITTED')
-
-        # queried_formula = simple_form.data["formula"]
-        queried_formula = simple_form.formula
-        print(queried_formula)
-        # stmt = select(Construction).where(Construction.formula == queried_formula)
-
-        SQLQuery()
-        query = SQLTokensQuery("formula", queried_formula, Construction)
-        stmt = query.query(select(Construction))
-        print(stmt)
-        with current_app.engine.connect() as conn:
-            results = conn.execute(stmt).mappings().all()
-
-        return render_template(
-            'search_simple.html',
-            # '/errors/404.html',
-            # message="Page under construction"
-            _form=simple_form,
-            results=results,
-            # items=all_formulas,
-        )
-
-    return render_template(
-            'search_simple.html',
-            _form=simple_form,
-        )
-
-
-@bp.route('/')
-@bp.route('/index/')
-@bp.route('/main/')
+@bp.route('/', methods=["GET", "POST"])
+@bp.route('/index/', methods=["GET", "POST"])
 def main():
     simple_form = SimpleSearchForm()
 
     if simple_form.is_submitted():
         print(f'FORM SUBMITTED')
 
-        # queried_formula = simple_form.data["formula"]
-        queried_formula = simple_form.formula
+        queried_formula = simple_form.data["formula"]
         print(queried_formula)
         # stmt = select(Construction).where(Construction.formula == queried_formula)
-        query = SQLTokensQuery("formula", queried_formula, Construction)
-        stmt = query.query(select(Construction))
+        q = SQLQuery()
+        q.parse_form({"construction": {"formula": queried_formula}})
+        # query = SQLTokensQuery("formula", queried_formula, Construction)
+        # stmt = query.query(select(Construction, q, q))
+        stmt = q.query()
         print(stmt)
+        print(stmt.compile(compile_kwargs={"literal_binds": True}))
+
         with current_app.engine.connect() as conn:
             results = conn.execute(stmt).mappings().all()
+
+        print(results)
+
+        by_constr = group_rows_by_construction(results)
+        results = [constrs[0] for id_, constrs in by_constr.items()]
+
+        print(results)
 
         return render_template(
             'main.html', title='Главная',
@@ -153,39 +112,6 @@ def main():
     return render_template(
         'main.html', title='Главная',
         _form=simple_form,
-    )
-
-
-@bp.route('/simple-form', methods=["POST"])
-def receive_simple():
-    simple_form = SimpleSearchForm()
-    print("in receive")
-    print(simple_form.is_submitted(), simple_form.validate_on_submit())
-
-    queried_formula = simple_form.data["formula"]
-    # queried_formula = simple_form.formula
-    print(queried_formula)
-    # stmt = select(Construction).where(Construction.formula == queried_formula)
-    q = SQLQuery()
-    q.parse_form({"construction": {"formula": queried_formula}})
-    # query = SQLTokensQuery("formula", queried_formula, Construction)
-    # stmt = query.query(select(Construction, q, q))
-    stmt = q.query()
-    print(stmt)
-    print(stmt.compile(compile_kwargs={"literal_binds": True}))
-
-    with current_app.engine.connect() as conn:
-        results = conn.execute(stmt).mappings().all()
-
-    print(results)
-
-    results = sorted(set(results), key=lambda res: res["id"])
-
-    return render_template(
-        'main.html', title='Главная (результаты)',
-        _form=simple_form,
-        results=results,
-        query=simple_form,
     )
 
 
