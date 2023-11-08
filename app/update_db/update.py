@@ -410,8 +410,10 @@ def process_change(
     verbose=False
 ) -> None:
     """Parse stage formula and add it to construction variants"""
-    main_stage_variant = ConstructionVariant(is_main=True)
-    
+    main_stage_variant = ConstructionVariant(
+        construction_id=change.construction_id, is_main=True
+    )
+
     stage = phrase_dict["stage"]
     main_stage_variant.formula = stage
     if stage not in {"entire_construction"}:
@@ -419,7 +421,7 @@ def process_change(
         main_stage_variant.formula_elements = elements
 
     change.variants.append(main_stage_variant)
-    
+
 
 extra_processing = {
     Construction: process_construction,

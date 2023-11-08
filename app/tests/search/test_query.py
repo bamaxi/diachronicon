@@ -190,7 +190,7 @@ class TestBaseQuery():
         assert result == q.Conjunction([q.Comparison("duration", "eq", 200),
                                         q.Comparison("duration_sign", "eq", "ge"), 
                                         q.Comparison("formula", "eq", "np*")])
-        
+
     def test_subform(self, base_query: q.BaseQuery, construction_subform):
         result = base_query.parse_form(construction_subform)
 
@@ -217,7 +217,7 @@ class TestBaseQuery():
                      q.Comparison("anchor_ru", "eq", "хоть")])
                 )
         )
-        
+
     def test__init__with_derivation(self, duration_derivation, construction_subform):
         base_query = q.BaseQuery({"construction": [duration_derivation]})
         result = base_query.parse_form(construction_subform)

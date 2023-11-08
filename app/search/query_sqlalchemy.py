@@ -234,6 +234,27 @@ def make_aliases(
     return [sql_model] + aliases
 
 
+def make_restriction_formula_of(
+    formula_element: FormulaElement, of_constr: bool, of_change: bool, 
+):
+    if of_constr and of_change:
+        return True
+    elif of_constr:
+        variant: ConstructionVariant = formula_element.construction_variant
+        return (variant.construction.construction_id.is_not(None)
+                and variant.construction.change_id.is(None))
+    elif of_change:
+        variant: ConstructionVariant = formula_element.construction_variant
+        return (variant.construction.construction_id.is(None)
+                and variant.construction.change_id.is_not(None))
+        
+
+def get_restriction_maker(of_constr: bool, of_change: bool):
+    def make_restriction(elem):
+        return make_restriction_formula_of(elem, of_constr, of_change)
+    return make_restriction
+
+
 class SQLTokensQuery(BaseQueryElement, metaclass=SQLQueryMeta):
     def __init__(self, param: str, value: str, sql_model: DBModel=None, **kwargs) -> None:
         super().__init__()
@@ -254,11 +275,13 @@ class SQLTokensQuery(BaseQueryElement, metaclass=SQLQueryMeta):
         tokens = self.tokens
         sql_model = self.sql_model or model.sql_model
 
+        # restriction_maker = get_restriction_maker(**kwargs)
         model_aliases = make_aliases(sql_model, len(tokens), query_model.add_sql_model)
         for i, (tok, aliased_model) in enumerate(zip(tokens, model_aliases)):
             if i != 0:
                 stmt = stmt.where(
                     aliased_model.construction_id == model_aliases[0].construction_id,
+                    # restriction_maker(aliased_model),
                     or_(
                         aliased_model.order == model_aliases[i-1].order + 1,
                     )
@@ -447,7 +470,9 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
 
         elif form_name == "change":
             if key == "stage":
-                return SQLStringPattern(key, value)
+                # return SQLStringPattern(key, value)
+                self.sql_models_to_query |= {FormulaElement}
+                return SQLTokensQuery(key, val, sql_model=FormulaElement)
 
         return super().parse_val(form_name, key, val)
     
