@@ -26,8 +26,6 @@ from app.models import (
 from app.search import bp
 from app.search.plotting import (
     NO_DATE,
-    new_plot_single_const_changes,
-    super_new_plot_single_const_changes,
     ConstructionChangesPlot,
     ConstructionSequentialChangesPlot,
 )
@@ -161,8 +159,6 @@ def construction(index: int):
 
             graphJSON = str(graph.to_plotly_json())
             context.update(dict(graphJSON=graphJSON))
-            # graphJSON = new_plot_single_const_changes(changes_data)
-            # graphJSON = super_new_plot_single_const_changes(changes_data)
 
         if construction.changes:
             network = ConstructionSequentialChangesPlot.from_elements(construction.changes)
@@ -180,3 +176,9 @@ def construction(index: int):
 
     page = render_template('construction.html',  **context)
     return page
+
+
+# @bp.route('/item/<int:index>/plot.png')
+# @bp.route('/construction/<int:index>/plot.png')
+# # def plot_only
+
