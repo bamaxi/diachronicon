@@ -242,10 +242,10 @@ def make_restriction_formula_of(
     elif of_constr:
         variant: ConstructionVariant = formula_element.construction_variant
         return (variant.construction.construction_id.is_not(None)
-                and variant.construction.change_id.is(None))
+                and variant.construction.change_id.is_(None))
     elif of_change:
         variant: ConstructionVariant = formula_element.construction_variant
-        return (variant.construction.construction_id.is(None)
+        return (variant.construction.construction_id.is_(None)
                 and variant.construction.change_id.is_not(None))
         
 
