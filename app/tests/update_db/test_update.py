@@ -63,6 +63,10 @@ TEST_NAME2FORM_TOKS = {
                                           'val': [{'val': 'N-Nom'}, {'val': 'x'}]},
                                          {'val': 'Cop'}]},
           {'val': 'xx'}]
+         ),
+    'test_alt_spans':
+        ("ни души (NP-Gen/не VP)",
+         [],
          )
 }
 
@@ -125,6 +129,10 @@ class TokenizeFormulaTestCase(unittest.TestCase):
         formula, tokens = TEST_NAME2FORM_TOKS['test_nested_spans']
         assert tokenize_formula(formula) == tokens
 
+    def test_alt_spans(self):
+        formula, tokens = TEST_NAME2FORM_TOKS["test_alt_spans"]
+        assert not tokenize_formula(formula)
+
 
 class TokenizeSpanFlattenTestCase(unittest.TestCase):
     def test_optional(self):
@@ -145,6 +153,9 @@ class TokenizeSpanFlattenTestCase(unittest.TestCase):
         assert flatten_span(tokens) == formula_elems
         assert flatten_span(tokenize_formula("((N-Nom _) Cop)")[0]['val']) \
                == formula_elems
+        
+    # def test_alt_spans(self):
+        
 
 
 

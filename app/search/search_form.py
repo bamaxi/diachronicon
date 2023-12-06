@@ -368,7 +368,24 @@ class BootstrapStringWidget:
         div_contents += [error_div, "</div>"]
 
         return Markup(f"\n{INDENT}".join(div_contents[:-1]) + f"\n{div_contents[-1]}")
-    
+
+
+# class TwoValsWidget:
+#     def __init__(self, use_placeholder=True) -> None:
+#         self.use_placeholder = use_placeholder
+
+#     def __str__(self) -> str: return self.__call__()
+#     def __html__(self) -> str: return self.__call__()
+
+#     def __call__(
+#         self, field1: Field, field2: Field, label_extra_text=None,
+#         div_extra_contents: T.Optional[T.List[T.Union[str, Markup, Field, Widget]]] = None,
+#         **kwargs
+#     ) -> Markup:
+#         for field in (field1, field2):
+
+
+
 
 class BoostrapSelectField(wtforms.SelectField):
     widget = BootstrapSelectWidget()

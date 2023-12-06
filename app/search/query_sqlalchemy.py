@@ -40,11 +40,13 @@ from app.search.query import (
     BaseQueryElement,
     SubForm,
     Comparison,
+    BetweenComparison,
     StringPattern,
     BinaryConnective,
     Conjunction,
     ConjunctionCopies,
     ValueWithSignDerivation,
+    ValueBetweenDerivation,
     form,
     deriv,
 )
@@ -355,6 +357,14 @@ class SQLConjunctionCopies(ConjunctionCopies, metaclass=SQLQueryMeta):
         return stmt
 
 
+def compare_sql_with_op(param, op: Operators, value: _VT):
+    return op(param, value)
+
+
+def compare_sql_between(param, value_from: _VT, value_to: _VT):
+    return param.between(value_from, value_to)
+
+
 class SQLComparison(Comparison, metaclass=SQLQueryMeta):
     def __init__(self, param: str, op: OperatorsStr | Operators, value: _VT) -> None:
         super().__init__(param, op, value)
@@ -369,7 +379,33 @@ class SQLComparison(Comparison, metaclass=SQLQueryMeta):
         final_param = self.param
         # final_param = MODEL2RENAMES.get(subform.name, {}).get(param, param)
         try:
-            return stmt.where(self.op(getattr(sql_entity, final_param), self.value))
+            # return stmt.where(self.op(getattr(sql_entity, final_param), self.value))
+            return stmt.where(
+                compare_sql_with_op(getattr(sql_entity, final_param), self.op, self.value)
+            )
+        except AttributeError as e:
+            print(f"skipping {self}")
+            return stmt
+        
+
+class SQLBetweenComparison(BetweenComparison):
+    def __init__(self, param: str, value_from: _VT, value_to: _VT) -> None:
+        super().__init__(param, value_from, value_to)
+
+        self.fields_queried = [param]
+
+    def query(self, stmt, subform: SQLSubForm, query_model: BaseQuery, **kwargs):
+        print(self, '', subform, sep="\n")
+        sql_entity = getattr(self, "sql_model", None) or subform.sql_model
+        print(sql_entity)
+
+        final_param = self.param
+        # final_param = MODEL2RENAMES.get(subform.name, {}).get(param, param)
+        try:
+            # return stmt.where(getattr(sql_entity, final_param).between(value_from, value_to))
+            return stmt.where(
+                compare_sql_between(getattr(sql_entity, final_param), value_from, value_to)
+            )
         except AttributeError as e:
             print(f"skipping {self}")
             return stmt
@@ -388,7 +424,7 @@ class SQLNumChangesComparison(Comparison):
             self.op(func.count(Construction.changes), self.value)
         )
         return stmt
-    
+
     def __str__(self) -> str:
         return f"count(construction.changes) {self.op2sign(self.op)} {self.value}"
 
@@ -503,6 +539,7 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
     
 
 num_changes_deriv = ValueWithSignDerivation("num_changes", "num_changes_sign", SQLNumChangesComparison)
+# num_changes_deriv = ValueBetweenDerivation.from_ends_keys("num_changes__from", "num_changes__to")
 dur_deriv = ValueWithSignDerivation("duration", "duration_sign", SQLDurationComparison)
 deriv = {"construction": [num_changes_deriv], "changes": [dur_deriv]}
 

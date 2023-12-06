@@ -13,16 +13,27 @@
 {% block content %}
 
 <div class="row justify-content-center">
+
+<div class="col-10 pt-5 justify-content-center main-description">
+    <h1 id="name">Диахроникон</h1>
+    {# <br> #}
+    <span class="main-description-text">
+        описывает <mark id="construction">конструкции</mark> русского языка<br>
+        в <mark id="history">исторической</mark> перспективе.
+    </span>
+</div>
+
+
 <div class="col-10 pt-3">
 
-    <p>
+    {# <p>
     В <i>Диахрониконе </i> конструкции русского языка показаны в исторической перспективе.
     </p>
 
     <ul>
     <li>Что такое конструкции?</li>
     <li>Как создаётся описание конструкций?</li>
-    </ul>
+    </ul> #}
 
     <form class="row justify-content-center" id="search-form" action="/" method="post">
     {{ _form.csrf_tag }}
@@ -39,4 +50,9 @@
 </div>
 </div>
 
+{% endblock %}
+
+
+{% block scripts %}
+<script src="/static/scripts/navbar_main.js"></script>
 {% endblock %}

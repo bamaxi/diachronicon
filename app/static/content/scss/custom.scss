@@ -61,6 +61,27 @@ a {
     }
 }
 
+mark::before,
+mark::after {
+  clip-path: inset(100%);
+  clip: rect(1px, 1px, 1px, 1px);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+
+mark::before {
+    content: " [highlight start]\00a0";
+  }
+  
+  mark::after {
+    content: "\00a0[highlight end]";
+  }
+  
+
 // leave some space after scroll
 
 // :target::before {
@@ -71,3 +92,51 @@ a {
 //     // // z-index: 0;
 // }
 
+
+.main-description {
+    > #name {
+        font-size: calc(1.25rem + 1vw);
+        font-weight: 600;
+        display: inline;
+    }
+    > span {
+        font-size: calc(1.1rem + 1vw);
+    }
+    mark {
+        // display: inline-block;
+        // line-height: 0em;
+        // padding-bottom: 0.5em;
+
+        &#construction {
+            // background-color: gainsboro;
+            background: linear-gradient(180deg, rgba(255,255,255,0) 60%, #FFD0AE 70%);
+        }
+
+        &#history {
+            // background-color: gold;
+            background: linear-gradient(180deg, rgba(255,255,255,0) 60%, gold 70%);
+        }
+    }   
+}
+
+
+dl.glosses {
+    display: flex;
+    flex-flow: row wrap;
+    // border: solid #333;
+    // border-width: 1px 1px 0 0;
+  }
+  dt {
+    flex-basis: 20%;
+    padding: 2px 4px;
+    // background: #333;
+    text-align: right;
+    // color: #fff;
+  }
+  dd {
+    flex-basis: 70%;
+    flex-grow: 1;
+    margin: 0;
+    padding: 2px 4px;
+    // border-bottom: 1px solid #333;
+  }

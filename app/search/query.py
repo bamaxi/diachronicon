@@ -298,6 +298,8 @@ class ValueWithSignDerivation(ElementDerivation):
         self.param = param
         self.op_key = op_key
         self.comparison = comparison_model or self.REGISTRY[_COMPARISON]
+
+        print(self.comparison)
     
     def __call__(self, form: PrimitiveFormType) -> T.Optional[Comparison]:
         """Fetch `op` and value from form"""   
@@ -328,21 +330,28 @@ class ValueWithSignDerivation(ElementDerivation):
 class ValueBetweenDerivation(ElementDerivation):
     do_strict_comparison = BETWEEN_COMPARISON_STRICT
 
-    def __init__(self, key_from: str, key_to: str, param_key=None, param=None) -> None:
+    def __init__(
+        self, key_from: str, key_to: str, param_key=None, param=None,
+        comparison_model: Comparison=None, comparison_between_model: Comparison=None
+    ) -> None:
         self.key_from = key_from
         self.key_to = key_to
         self.param_key = param_key
         self.param = param
+        self.comparison = comparison_model or self.REGISTRY[_COMPARISON]
+        self.comparison_between = comparison_between_model or self.REGISTRY[_BETWEEN_COMPARISON]
+
+        print(self.comparison, self.comparison_between)
 
     @classmethod
-    def from_ends_keys(cls, full_key_from: str, full_key_to: str, sep: str="_"):
+    def from_ends_keys(cls, full_key_from: str, full_key_to: str, sep: str="__", **kwargs):
         """Initialize from `key_from` and `key_to` that share a common prefix — param"""
-        prefix1, key_from = full_key_from.split(sep)
-        prefix2, key_to = full_key_to.split(sep)
+        prefix1, _ = full_key_from.split(sep)
+        prefix2, _ = full_key_to.split(sep)
         if prefix1 != prefix2:
             raise ValueError(f"prefixes don't match for keys: `{full_key_from}`, `{full_key_to}`")
         
-        return cls(key_from, key_to, param=prefix1)
+        return cls(full_key_from, full_key_to, param=prefix1, **kwargs)
 
     def __call__(self, form: FormType) -> T.Optional[BaseQueryElement]:
         """Fetch `param` (if not known) and values (from and/or to) from form"""
@@ -350,16 +359,22 @@ class ValueBetweenDerivation(ElementDerivation):
 
         value_from = form.get(self.key_from)
         value_to = form.get(self.key_to)
+
+        print(param, self.key_from, value_from, self.key_to, value_to)
         if (param or form.get(self.param_key)) and (value_from or value_to):
+            for key in (self.key_from, self.key_to, self.param_key):
+                if key in form:
+                    form.pop(key)
+
             param = param or form.get(self.param_key)
             if value_from and value_to:
-                return self.REGISTRY[_BETWEEN_COMPARISON](param, value_from, value_to)
+                return self.comparison_between(param, value_from, value_to)
             elif value_from:
                 op = OP_G_BY_STRICT[self.do_strict_comparison]
-                return self.REGISTRY[_COMPARISON](param, op, value_from)
+                return self.comparison(param, op, value_from)
             elif value_to:
                 op = OP_L_BY_STRICT[self.do_strict_comparison]
-                return self.REGISTRY[_COMPARISON](param, op, value_from)
+                return self.comparison(param, op, value_from)
         else:
             print(f"{form} doesn't have `{param_key}` or one of (`{self.key_from}`, `{self.key_to}`)")
             return None

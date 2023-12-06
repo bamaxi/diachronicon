@@ -74,6 +74,11 @@ class SimpleSearchForm(FlaskForm):
     )
 
 
+def clean_formula(formula: str):
+    # fixes search for whole construction as suggested by datalist
+    return " ".join([elem.strip("()") for elem in formula.split()])
+
+
 @bp.route('/', methods=["GET", "POST"])
 @bp.route('/index/', methods=["GET", "POST"])
 def main():
@@ -84,9 +89,13 @@ def main():
 
         queried_formula = simple_form.data["formula"]
         print(queried_formula)
+        final_formula = clean_formula(queried_formula)
+
+        print(f"clean formula: {final_formula}")
+
         # stmt = select(Construction).where(Construction.formula == queried_formula)
         q = SQLQuery()
-        q.parse_form({"construction": {"formula": queried_formula}})
+        q.parse_form({"construction": {"formula": final_formula}})
         # query = SQLTokensQuery("formula", queried_formula, Construction)
         # stmt = query.query(select(Construction, q, q))
         stmt = q.query()
@@ -118,7 +127,10 @@ def main():
 @bp.route("/about")
 def about():
     return render_template(
-        '/errors/404.html',
-        message="Page under construction"
+        # '/errors/404.html',
+        "about.html",
+        # message="Page under construction"
+        title='Описание',
+        year=datetime.now().year,
     )   
 

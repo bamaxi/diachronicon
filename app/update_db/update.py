@@ -97,8 +97,9 @@ CONSTRUCTION_ID2VARIANTSMET = {}
 # CONSTRUCTION_IDS 
 
 
-class EOF(object):
-    ...
+class EOF(object): ...
+
+VARIANTS_SEPS: T.Tuple[str, str] = ("/", "|")
 
 
 def read_until(
@@ -112,13 +113,16 @@ def read_until(
         res.append(next_)
 
 
+# TODO: parse alternatives
 def tokenize_formula(
     formula: str, elems_sep: str = " ",
     span_start: str = "(", span_end: str = ")",
+    variants_seps: T.Tuple[str, ...] = VARIANTS_SEPS, 
     are_span_symbs_optionality_symb=True,
 ) -> List[Dict]:
     """Tokenizes formula into word or span"""
-    SPECIAL = [elems_sep, span_start, span_end, EOF]
+    SPECIAL = [elems_sep, span_start, span_end, *variants_seps, EOF]
+    # SPECIAL = [elems_sep, span_start, span_end, EOF]
 
     parts = cur_part = []
     queue = [parts]
@@ -128,6 +132,7 @@ def tokenize_formula(
 
     while True:
         symbol, prev = next(formula_it, EOF), symbol
+        # is_span_open = False
 
         # print("after read", symbol, prev, cur_part, parts, queue, sep="\n  ")
 
@@ -139,19 +144,38 @@ def tokenize_formula(
 
         if symbol == span_start:
             cur_part = []
+            # is_span_open = True
             queue.append(cur_part)
         elif symbol == span_end:
             # print("span_end before append", symbol, prev, cur_part, parts, queue, sep="\n  ")
             # parts.append({"type": "maybe_span", "parts": queue.pop()})
             cur_result = {"type": "maybe_span", "val": queue.pop()}
+            # is_span_open = False
             cur_part = queue[-1]
             cur_part.append(cur_result)
             # print("span_end after append and cur_part", symbol, prev, cur_part, parts, queue, sep="\n  ")
+        # elif symbol in variants_seps:
+        #     is_cur_result_type_span = len(queue[-1]) > 1
+            
+        #     cur_result = {"val": queue.pop()}
+        #     if is_cur_result_type_span:
+        #         cur_result["type"] = "maybe_span"
+            
+            
         elif symbol is EOF:
             # print("EOF", symbol, prev, cur_part, parts, queue, sep="\n  ")
             break
 
     return parts
+
+
+def find_alternatives(
+    val: str, variants_seps: T.Tuple[str, ...] = VARIANTS_SEPS
+) -> T.Optional[T.List[str]]:
+    for sep in variants_seps:
+        if sep in val:
+            return val.split(sep)
+    return None
 
 
 def flatten_span(

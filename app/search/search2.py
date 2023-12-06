@@ -688,13 +688,21 @@ class ConstructionForm(FlaskForm):
     )
 
 
-    _num_changes_sign_options, selected = make_sign_options_for_param("Количество")
-    num_changes_sign = BoostrapSelectField(
-        _num_changes_sign_options[0][1], name="num_changes_sign", 
-        choices=_num_changes_sign_options,
-        render_kw=dict(selected=selected))
-    num_changes = BootstrapIntegerField(
-        label="Количество изменений", name="num_changes",
+    # _num_changes_sign_options, selected = make_sign_options_for_param("Количество")
+    # num_changes_sign = BoostrapSelectField(
+    #     _num_changes_sign_options[0][1], name="num_changes_sign", 
+    #     choices=_num_changes_sign_options,
+    #     render_kw=dict(selected=selected))
+    # num_changes = BootstrapIntegerField(
+    #     label="Количество изменений", name="num_changes",
+    #     validators=[wtforms.validators.Optional(strip_whitespace=True)]
+    # )
+    num_changes__from = BootstrapIntegerField(
+        label="количество изменений (от)",
+        validators=[wtforms.validators.Optional(strip_whitespace=True)]
+    )
+    num_changes__to = BootstrapIntegerField(
+        label="количество изменений (до)",
         validators=[wtforms.validators.Optional(strip_whitespace=True)]
     )
 
