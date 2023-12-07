@@ -159,8 +159,13 @@ class Comparison(BaseQueryElement):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.param}, {self.op}, {self.value})"
     
-    def __str__(self) -> str:
-        return f"{self.param}{self.op2sign(self.op)}{self.value}"
+
+    def _str(self, param: T.Optional[str]=None) -> str:
+        param = param or self.param
+        return f"{param}{self.op2sign(self.op)}{self.value}"
+
+    def __str__(self, param: T.Optional[str]=None) -> str:
+        return self._str()
     
     def __tree_repr__(self) -> str:
         """Tree representation of comparison. Defaults to `self.__str__()`"""
@@ -180,8 +185,13 @@ class BetweenComparison(BaseQueryElement):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.param}, {self.value_from}, {self.value_to})"
     
-    def __str__(self) -> str:
-        return f"{self.param}-between({self.value_from}, {self.value_to})"
+
+    def _str(self, param: T.Optional[str]=None) -> str:
+        param = param or self.param
+        return f"{param}-between({self.value_from}, {self.value_to})"
+
+    def __str__(self, param: T.Optional[str]=None) -> str:
+        return self._str()        
     
     def __tree_repr__(self) -> str:
         return self.__str__()
@@ -376,7 +386,7 @@ class ValueBetweenDerivation(ElementDerivation):
                 op = OP_L_BY_STRICT[self.do_strict_comparison]
                 return self.comparison(param, op, value_from)
         else:
-            print(f"{form} doesn't have `{param_key}` or one of (`{self.key_from}`, `{self.key_to}`)")
+            print(f"{form} doesn't have `param_key` or one of (`{self.key_from}`, `{self.key_to}`)")
             return None
 
 

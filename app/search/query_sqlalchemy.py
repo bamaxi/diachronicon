@@ -114,7 +114,7 @@ class SQLQueryMeta(QueryMeta):
 
         # print(name, bases, namespace)
         # print(parent_cls_name, allowed_base_classes_names)
-        # print(cls_name, parent_cls_name, maybe_prefix)
+        print(cls_name, parent_cls_name, maybe_prefix)
 
         
         if not any(base_cls in allowed_base_classes for base_cls in bases):
@@ -371,6 +371,9 @@ class SQLComparison(Comparison, metaclass=SQLQueryMeta):
 
         self.fields_queried = [param]
 
+    def _query(self, param):
+        return compare_sql_with_op(param, self.op, self.value)
+
     def query(self, stmt, subform: SQLSubForm, query_model: BaseQuery, **kwargs):
         print(self, '', subform, sep="\n")
         sql_entity = getattr(self, "sql_model", None) or subform.sql_model
@@ -381,7 +384,7 @@ class SQLComparison(Comparison, metaclass=SQLQueryMeta):
         try:
             # return stmt.where(self.op(getattr(sql_entity, final_param), self.value))
             return stmt.where(
-                compare_sql_with_op(getattr(sql_entity, final_param), self.op, self.value)
+                self._query(getattr(sql_entity, final_param), self.op, self.value)
             )
         except AttributeError as e:
             print(f"skipping {self}")
@@ -394,6 +397,9 @@ class SQLBetweenComparison(BetweenComparison):
 
         self.fields_queried = [param]
 
+    def _query(self, param):
+        return compare_sql_between(param, self.value_from, self.value_to)
+
     def query(self, stmt, subform: SQLSubForm, query_model: BaseQuery, **kwargs):
         print(self, '', subform, sep="\n")
         sql_entity = getattr(self, "sql_model", None) or subform.sql_model
@@ -404,7 +410,10 @@ class SQLBetweenComparison(BetweenComparison):
         try:
             # return stmt.where(getattr(sql_entity, final_param).between(value_from, value_to))
             return stmt.where(
-                compare_sql_between(getattr(sql_entity, final_param), value_from, value_to)
+                self._query(
+                    getattr(sql_entity, final_param),
+                    self.value_from, self.value_to
+                )
             )
         except AttributeError as e:
             print(f"skipping {self}")
@@ -429,6 +438,41 @@ class SQLNumChangesComparison(Comparison):
         return f"count(construction.changes) {self.op2sign(self.op)} {self.value}"
 
 
+class SQLNumChangesComparison2(BaseQueryElement):
+    def __init__(self, method: Comparison) -> None:
+        self.fields_queried = []
+        self.method = method
+
+    def query(self, stmt, subform: SubForm, query_model: BaseQuery, **kwargs) -> T.Any:
+        # assume Construction.id is always selected
+        stmt = stmt.group_by(Construction.formula).having(
+            # self.op(func.count(Construction.changes), self.value)
+            self.method._query(func.count(Construction.changes))
+        )
+        return stmt
+    
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.method!r})"
+
+    def __str__(self) -> str:
+        return self.method._str(param="count(construction.changes)")
+    
+    def __tree_repr__(self) -> str:
+        return self.__str__()
+
+
+class SQLNumChangesDerivation(ElementDerivation):
+    def __init__(self, comparison_derivation: ElementDerivation) -> None:
+        self.comparison_derivation = comparison_derivation
+            
+    def __call__(self, form: FormType) -> BaseQueryElement | None:
+        print(f"calling `comparison_derivation` from {self.__class__.__name__}")
+        comparison: Comparison = self.comparison_derivation(form)
+        if comparison:
+            return SQLNumChangesComparison2(comparison)
+        return None
+
+
 class SQLDurationComparison(Comparison):
     def __init__(self, param: str, op: OperatorsStr | Operators, value: _VT) -> None:
         super().__init__(param, op, value)
@@ -440,9 +484,21 @@ class SQLDurationComparison(Comparison):
             self.op((sql_model.last_attested - sql_model.first_attested), self.value) 
         )
         return stmt
-    
+
     def __str__(self) -> str:
         return f"(last_attested - first_attested) {self.op2sign(self.op)} {self.value}"
+
+
+class SQLDurationDerivation(ElementDerivation):
+    def __init__(self, comparison_derivation: ElementDerivation) -> None:
+        self.comparison_derivation = comparison_derivation
+            
+    def __call__(self, form: FormType) -> BaseQueryElement | None:
+        print(f"calling `comparison_derivation` from {self.__class__.__name__}")
+        comparison: Comparison = self.comparison_derivation(form)
+        if comparison:
+            return SQLDurationComparison2(comparison)
+        return None
 
 
 class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
@@ -516,10 +572,14 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
         self, form: FormType | BasicFormType, form_name: str | None,
         field_derivation: ElementDerivation
     ):
+        print(f"`{form_name}`, deriving `{field_derivation}`")
         maybe_derived_field = super().derive_field(form, form_name, field_derivation)
 
         print("derived a field:", maybe_derived_field)
-        if isinstance(maybe_derived_field, SQLNumChangesComparison):
+        if isinstance(
+            maybe_derived_field,
+            (SQLNumChangesComparison, SQLNumChangesComparison2)
+        ):
             self.add_sql_model(Change)
 
         return maybe_derived_field
@@ -538,24 +598,19 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
         return self.form.query(stmt, subform, self)
     
 
-num_changes_deriv = ValueWithSignDerivation("num_changes", "num_changes_sign", SQLNumChangesComparison)
-# num_changes_deriv = ValueBetweenDerivation.from_ends_keys("num_changes__from", "num_changes__to")
-dur_deriv = ValueWithSignDerivation("duration", "duration_sign", SQLDurationComparison)
+class SQLValueBetweenDerivation(ValueBetweenDerivation, metaclass=SQLQueryMeta): ...
+
+# num_changes_deriv = ValueWithSignDerivation("num_changes", "num_changes_sign", SQLNumChangesComparison)
+num_changes_deriv = SQLNumChangesDerivation(
+    SQLValueBetweenDerivation.from_ends_keys(
+        "num_changes__from", "num_changes__to",
+        comparison_model = SQLComparison,
+        comparison_between_model = SQLBetweenComparison
+    )
+)
+# dur_deriv = ValueWithSignDerivation("duration", "duration_sign", SQLDurationComparison)
+dur_deriv = 
 deriv = {"construction": [num_changes_deriv], "changes": [dur_deriv]}
 
 def default_sqlquery():
     return SQLQuery(deriv)
-
-# from pprint import pprint
-
-# pprint(form)
-
-# q = SQLQuery(deriv)
-# res = q.parse_form(deepcopy(form), do_extra_processing=True)
-
-# # pprint(res)
-
-# print(res.__tree_repr__())
-
-# final_stmt = q.query()
-# print(final_stmt)
