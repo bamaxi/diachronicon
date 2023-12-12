@@ -725,6 +725,15 @@ class AnchorForm(FlaskForm):
     anchor_schema = BootstrapStringField(label="Схема якоря", name="anchor_schema")
     anchor_ru = BootstrapStringField(label="Якорь (рус.)", name="anchor_ru")
 
+    anchor_length__from = BootstrapIntegerField(
+        label="Длина якоря (от)",
+        validators=[wtforms.validators.Optional(strip_whitespace=True)]
+    )
+    anchor_length__to = BootstrapIntegerField(
+        label="Длина якоря (до)",
+        validators=[wtforms.validators.Optional(strip_whitespace=True)]
+    )
+
     
 class ChangeForm(FlaskForm):
     # number of changes
@@ -778,14 +787,23 @@ class ChangeForm(FlaskForm):
                        list=_subtype_of_change_datalist_id)
     )
 
-    _duration_sign_options, selected = make_sign_options_for_param("Длительность")
-    duration_sign = BoostrapSelectField(
-        _duration_sign_options[0][1], name="duration_sign", 
-        choices=_duration_sign_options,
-        render_kw=dict(selected=selected))
-    duration = BootstrapIntegerField(
-        "Длительность периода", name="duration", 
-        validators=[wtforms.validators.Optional(strip_whitespace=True)])
+    # _duration_sign_options, selected = make_sign_options_for_param("Длительность")
+    # duration_sign = BoostrapSelectField(
+    #     _duration_sign_options[0][1], name="duration_sign", 
+    #     choices=_duration_sign_options,
+    #     render_kw=dict(selected=selected))
+    # duration = BootstrapIntegerField(
+    #     "Длительность периода", name="duration", 
+    #     validators=[wtforms.validators.Optional(strip_whitespace=True)])
+    
+    duration__from = BootstrapIntegerField(
+        label="Длительность (от)",
+        validators=[wtforms.validators.Optional(strip_whitespace=True)]
+    )
+    duration__to = BootstrapIntegerField(
+        label="Длительность (до)",
+        validators=[wtforms.validators.Optional(strip_whitespace=True)]
+    )
 
     first_attested = BootstrapIntegerField(
         "Первое вхождение в таком виде", name="first_attested",
@@ -866,8 +884,8 @@ def receive():
         # return 0
         results = _results.mappings().all()
 
-    for res in results:
-        print(res)
+    # for res in results:
+    #     print(res)
 
     results_by_constr = group_rows_by_construction(results)
     print(results_by_constr)

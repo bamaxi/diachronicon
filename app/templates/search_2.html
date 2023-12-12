@@ -31,6 +31,9 @@
         {{ _form.anchor.synt_function_of_anchor }}
         {{ _form.anchor.anchor_schema }}
         {{ _form.anchor.anchor_ru }}
+
+        {{ _form.anchor.anchor_length__from }}
+        {{ _form.anchor.anchor_length__to }}
     </fieldset>
     
     {#
@@ -56,8 +59,10 @@
             {{ _change.level }}
             {{ _change.type_of_change }}
             {{ _change.subtype_of_change }}
-            {{ _change.duration_sign }}
-            {{ _change.duration }}
+            {# {{ _change.duration_sign }}
+            {{ _change.duration }} #}
+            {{ _change.duration__from }}
+            {{ _change.duration__to }}
             {{ _change.first_attested }}
             {{ _change.last_attested }}
         

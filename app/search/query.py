@@ -46,7 +46,7 @@ Operator2Name = {
 _VT: T.TypeAlias = T.Union[str, int, T.Type[None]]
 VT = (str, int, type(None))
 
-BETWEEN_COMPARISON_STRICT: bool = True
+BETWEEN_COMPARISON_STRICT: bool = False
 OP_L_BY_STRICT = {True: "lt", False: "le"}
 OP_G_BY_STRICT = {True: "gt", False: "ge"}
 
@@ -380,11 +380,11 @@ class ValueBetweenDerivation(ElementDerivation):
             if value_from and value_to:
                 return self.comparison_between(param, value_from, value_to)
             elif value_from:
-                op = OP_G_BY_STRICT[self.do_strict_comparison]
-                return self.comparison(param, op, value_from)
+                op_greater = OP_G_BY_STRICT[self.do_strict_comparison]
+                return self.comparison(param, op_greater, value_from)
             elif value_to:
-                op = OP_L_BY_STRICT[self.do_strict_comparison]
-                return self.comparison(param, op, value_from)
+                op_less = OP_L_BY_STRICT[self.do_strict_comparison]
+                return self.comparison(param, op_less, value_to)
         else:
             print(f"{form} doesn't have `param_key` or one of (`{self.key_from}`, `{self.key_to}`)")
             return None

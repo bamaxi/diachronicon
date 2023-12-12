@@ -20,7 +20,8 @@
             {% set result_iter = results %}
         {% endif %}
         {{ results_iter }} #}
-        {%- for _res in results -%}
+        {%- for _id, results in results_by_constr.items() -%}
+        {% with _res = results|first %}
         <li>
             <div class="row result py-2">
                 {# <div class="short col-12"> #}
@@ -36,6 +37,7 @@
                 </div>
             </div>
         </li>
+        {% endwith %}
         {%- endfor -%}
         </ol>
     </div>

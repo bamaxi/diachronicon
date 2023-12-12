@@ -229,7 +229,7 @@ def make_aliases(
     """Makes a list of `n` aliases with the model itself used in place of first alias
     
     This prevents `cartesian product` — proliferation of unneeded columns"""
-    aliases = [aliased(sql_model) for i in range(n)]
+    aliases = [aliased(sql_model) for i in range(n-1)]
     if alias_adder:
         for alias in aliases:
             alias_adder(alias)
@@ -345,10 +345,21 @@ class SQLConjunctionCopies(ConjunctionCopies, metaclass=SQLQueryMeta):
 
         # print(subform)
 
+        
         model_aliases = make_aliases(subform.sql_model, len(items),
                                      query_model.add_sql_model)
-        for alias in model_aliases:
-            query_model.add_sql_model(alias)
+        print(f"{self.__class__.__name__} aliases: {model_aliases}")
+        # below has no effect since _base_statement is already made at this point
+        # for alias in model_aliases:
+        #     print(f"{self.__class__.__name__} adding {alias}")
+        #     query_model.add_sql_model(alias)
+
+
+        # TODO: fix, make better call(back)s
+        # [1:] because this is Change that is already joined in SQLQuery...
+        for alias in model_aliases[1:]:
+            print(f"{self.__class__.__name__} joining {alias}")
+            stmt = stmt.join_from(Construction, alias)
         
         for item, alias in zip(items, model_aliases):
             subform.sql_model = alias
@@ -384,7 +395,7 @@ class SQLComparison(Comparison, metaclass=SQLQueryMeta):
         try:
             # return stmt.where(self.op(getattr(sql_entity, final_param), self.value))
             return stmt.where(
-                self._query(getattr(sql_entity, final_param), self.op, self.value)
+                self._query(getattr(sql_entity, final_param))
             )
         except AttributeError as e:
             print(f"skipping {self}")
@@ -438,11 +449,37 @@ class SQLNumChangesComparison(Comparison):
         return f"count(construction.changes) {self.op2sign(self.op)} {self.value}"
 
 
-class SQLNumChangesComparison2(BaseQueryElement):
-    def __init__(self, method: Comparison) -> None:
+class SQLComplexQuery(BaseQueryElement, metaclass=SQLQueryMeta):
+    def __init__(self, method: SQLComparison) -> None:
         self.fields_queried = []
         self.method = method
+    
+    def query(self, stmt, subform: SubForm, query_model: BaseQuery, **kwargs) -> T.Any: ...
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({self.method!r})"
+    
+    def __tree_repr__(self) -> str:
+        return self.__str__()
+
+
+class ComplexFieldDerivation(ElementDerivation):
+    def __init__(
+            self, comparison_derivation: ElementDerivation,
+            result_type: T.Type[SQLComplexQuery]
+    ) -> None:
+        self.comparison_derivation = comparison_derivation
+        self.result_type = result_type
+
+    def __call__(self, form: FormType) -> BaseQueryElement | None:
+        print(f"calling `comparison_derivation` from {self.__class__.__name__}")
+        comparison: SQLComparison = self.comparison_derivation(form)
+        if comparison:
+            return self.result_type(comparison)
+        return None
+
+
+class SQLNumChangesQuery(SQLComplexQuery):
     def query(self, stmt, subform: SubForm, query_model: BaseQuery, **kwargs) -> T.Any:
         # assume Construction.id is always selected
         stmt = stmt.group_by(Construction.formula).having(
@@ -451,26 +488,26 @@ class SQLNumChangesComparison2(BaseQueryElement):
         )
         return stmt
     
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.method!r})"
-
     def __str__(self) -> str:
         return self.method._str(param="count(construction.changes)")
-    
-    def __tree_repr__(self) -> str:
-        return self.__str__()
 
 
-class SQLNumChangesDerivation(ElementDerivation):
-    def __init__(self, comparison_derivation: ElementDerivation) -> None:
-        self.comparison_derivation = comparison_derivation
+# class SQLNumChangesDerivation(ElementDerivation):
+#     def __init__(self, comparison_derivation: ElementDerivation) -> None:
+#         self.comparison_derivation = comparison_derivation
             
-    def __call__(self, form: FormType) -> BaseQueryElement | None:
-        print(f"calling `comparison_derivation` from {self.__class__.__name__}")
-        comparison: Comparison = self.comparison_derivation(form)
-        if comparison:
-            return SQLNumChangesComparison2(comparison)
-        return None
+#     def __call__(self, form: FormType) -> BaseQueryElement | None:
+#         print(f"calling `comparison_derivation` from {self.__class__.__name__}")
+#         comparison: Comparison = self.comparison_derivation(form)
+#         if comparison:
+#             return SQLNumChangesComparison2(comparison)
+#         return None
+
+class SQLNumChangesDerivation2(ComplexFieldDerivation):
+    def __init__(self, comparison_derivation: ElementDerivation,
+                 result_type: T.Optional[T.Type[SQLComplexQuery]]=None) -> None:
+        result_type = result_type or SQLNumChangesQuery
+        super().__init__(comparison_derivation, result_type)
 
 
 class SQLDurationComparison(Comparison):
@@ -487,6 +524,20 @@ class SQLDurationComparison(Comparison):
 
     def __str__(self) -> str:
         return f"(last_attested - first_attested) {self.op2sign(self.op)} {self.value}"
+    
+
+class SQLDurationQuery(SQLComplexQuery):
+    def query(self, stmt, subform: SubForm, query_model: BaseQuery, **kwargs) -> T.Any:
+        sql_model = subform.sql_model
+        stmt = stmt.where(
+            self.method._query(
+                sql_model.last_attested - sql_model.first_attested
+            )
+        )
+        return stmt
+    
+    def __str__(self) -> str:
+        return self.method._str(param="(last_attested - first_attested)")
 
 
 class SQLDurationDerivation(ElementDerivation):
@@ -499,6 +550,52 @@ class SQLDurationDerivation(ElementDerivation):
         if comparison:
             return SQLDurationComparison2(comparison)
         return None
+    
+
+class SQLDurationDerivation2(ComplexFieldDerivation):
+    def __init__(self, comparison_derivation: ElementDerivation,
+                 result_type: T.Optional[T.Type[SQLComplexQuery]]=None) -> None:
+        result_type = result_type or SQLDurationQuery
+        super().__init__(comparison_derivation, result_type)
+
+
+class SQLAnchorLengthQuery(SQLComplexQuery):
+    def query(self, stmt, subform: SubForm, query_model: BaseQuery, **kwargs) -> T.Any:
+        print("stmt before anchor length: ", stmt)
+        
+        label = "anchor_length"
+        # assume Construction.id is always selected
+        subq = select(
+            FormulaElement.construction_id,
+            # FormulaElement.value
+            func.count(FormulaElement.value).label(f"{label}")
+        ).where(
+            FormulaElement.value >= 'А',  # cyrillic A
+        ).group_by(FormulaElement.construction_id).subquery()     
+
+        print("subquery:\n", subq)
+        print("stmt before:\n", stmt)
+        print("count subquery:\n", self.method._query(func.count(subq)))
+
+        stmt = stmt.add_columns(
+            getattr(subq.c, label)
+        ).join(subq).where(
+            self.method._query(getattr(subq.c, label))
+        )
+        return stmt
+    
+    def __str__(self) -> str:
+        return self.method._str(param="count(FormulaElement.value >= 'А')")
+    
+
+class SQLAnchorLengthDerivation(ComplexFieldDerivation):
+    def __init__(
+        self, comparison_derivation: ElementDerivation,
+        result_type: T.Optional[T.Type[SQLComplexQuery]]=None
+    ) -> None:
+        result_type = result_type or SQLAnchorLengthQuery
+        super().__init__(comparison_derivation, result_type)
+        
 
 
 class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
@@ -540,7 +637,8 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
         print("showing fields queried:")
         for subform in self.subforms_used:
             print(subform.fields_queried)
-            for field in subform.fields_queried:
+            reduced_fields = set(subform.fields_queried)
+            for field in reduced_fields:
                 if field == "duration":
                     stmt = stmt.add_columns(Change.first_attested, Change.last_attested)
                 elif field not in ("id", "formula", "name"):
@@ -550,7 +648,9 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
     
     def add_sql_model(self, model: DBModel):
         print(f"adding model: {model}")
+        print(f"before adding: {self.sql_models_to_query}")
         self.sql_models_to_query |= {model}
+        print(f"after adding: {self.sql_models_to_query}")
 
     def parse_val(self, form_name: str, key: str, val: str) -> BaseQueryElement:
         if form_name == "construction":
@@ -578,7 +678,8 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
         print("derived a field:", maybe_derived_field)
         if isinstance(
             maybe_derived_field,
-            (SQLNumChangesComparison, SQLNumChangesComparison2)
+            # (SQLNumChangesComparison, SQLNumChangesComparison2)
+            (SQLNumChangesComparison, SQLNumChangesQuery)
         ):
             self.add_sql_model(Change)
 
@@ -601,7 +702,7 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
 class SQLValueBetweenDerivation(ValueBetweenDerivation, metaclass=SQLQueryMeta): ...
 
 # num_changes_deriv = ValueWithSignDerivation("num_changes", "num_changes_sign", SQLNumChangesComparison)
-num_changes_deriv = SQLNumChangesDerivation(
+num_changes_deriv = SQLNumChangesDerivation2(
     SQLValueBetweenDerivation.from_ends_keys(
         "num_changes__from", "num_changes__to",
         comparison_model = SQLComparison,
@@ -609,8 +710,24 @@ num_changes_deriv = SQLNumChangesDerivation(
     )
 )
 # dur_deriv = ValueWithSignDerivation("duration", "duration_sign", SQLDurationComparison)
-dur_deriv = 
-deriv = {"construction": [num_changes_deriv], "changes": [dur_deriv]}
+# dur_deriv = SQLDurationDerivation2(
+#     ValueWithSignDerivation("duration", "duration_sign", SQLComparison)
+# )
+dur_deriv = SQLDurationDerivation2(
+    SQLValueBetweenDerivation.from_ends_keys(
+        "duration__from", "duration__to",
+        comparison_model = SQLComparison,
+        comparison_between_model = SQLBetweenComparison
+    )
+)
+anchor_length_deriv = SQLAnchorLengthDerivation(
+    SQLValueBetweenDerivation.from_ends_keys(
+        "anchor_length__from", "anchor_length__to",
+        comparison_model = SQLComparison,
+        comparison_between_model = SQLBetweenComparison
+    )
+)
+deriv = {"construction": [num_changes_deriv, anchor_length_deriv], "changes": [dur_deriv]}
 
 def default_sqlquery():
     return SQLQuery(deriv)
