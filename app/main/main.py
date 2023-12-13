@@ -69,6 +69,7 @@ class SimpleSearchForm(FlaskForm):
         render_kw=dict(
             div_extra_contents = [_constructions_datalist],
             list = _constructions_datalist_id,
+            autocomplete = "off"
         ),
         # description="формула конструкции",
     )
@@ -116,6 +117,7 @@ def main():
             'main.html', title='Главная',
             _form=simple_form,
             results=results,
+            results_by_constr=by_constr
         )
     
     return render_template(

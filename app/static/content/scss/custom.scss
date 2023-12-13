@@ -61,6 +61,10 @@ a {
     }
 }
 
+form#search-form {
+    legend {font-size: 1.3rem;}
+}
+
 mark::before,
 mark::after {
   clip-path: inset(100%);
@@ -74,11 +78,11 @@ mark::after {
 
 
 mark::before {
-    content: " [highlight start]\00a0";
+    content: "[highlight start]";
   }
   
   mark::after {
-    content: "\00a0[highlight end]";
+    content: "[highlight end]";
   }
   
 

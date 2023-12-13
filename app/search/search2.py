@@ -755,7 +755,7 @@ class ChangeForm(FlaskForm):
     )
 
     level = BoostrapSelectField(
-        label="Тип изменения", name="level",
+        label="Уровень изменения", name="level",
         choices=[("", "Уровень изменения?"), ("synt", "Синтаксическое"),
                  ("sem", "Семантическое")]
     )

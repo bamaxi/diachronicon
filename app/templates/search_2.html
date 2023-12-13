@@ -52,7 +52,7 @@
         <fieldset name="changes" class="col-md-3"
             {# {% if loop.index > 1 %}{{ style="display: none" }}{% endif %} #}
         >
-            <legend>{{ "Изменение" if loop.index == 1 else "& изменение..." }}</legend>
+            <legend>{{ "Этап в истории конструкции" if loop.index == 1 else "& этап в истории конструкции" }}</legend>
 
             {{ _change.formula }}
             {{ _change.stage_abs }}
