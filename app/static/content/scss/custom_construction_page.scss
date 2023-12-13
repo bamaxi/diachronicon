@@ -343,11 +343,27 @@ li:has(.number:target) {
     }
 }
 
+.controls {
+    ul.menu {
+        padding-left: 0rem;
+        li {
+            display: inline;
+            list-style: none;
+            
+            &:not(:last-child)::after {
+                font-size: 0.8rem;
+                content: " \2022";
+            }
+        }
+        
+    }
+}
+
 .examples {
     font-size: smaller;
 }
 
-.example-toggle {
+.toggle {
     font-size: smaller
 }
 

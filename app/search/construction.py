@@ -3,9 +3,13 @@ from typing import Tuple, List, Dict, Union, Type, Optional
 
 from datetime import datetime
 import logging
+import re
 
 from flask import current_app
 from flask import render_template, abort, request, redirect
+from markupsafe import (
+    Markup
+)
 from sqlalchemy import (
     select,
 )
@@ -98,6 +102,30 @@ def prepare_graph_data(changes, skip_empty=True):
 #             for item in val:
                 
 
+def add_examples_highlight(
+    example_text: str, orig_hl_symb = "*", orig_hl_symb_n_repeat = 2,
+    opening_token = r'<mark class="construction">',
+    closing_token = r"</mark>"
+):
+    orig_hl_str = orig_hl_symb * orig_hl_symb_n_repeat
+    orig_hl_str_re = re.escape(orig_hl_str)
+
+    # def add_mark(match: re.Match[str]) -> str:
+    #     text = match.group(2)
+    #     print(text, match.group(0))
+    #     return f"{opening_token}{text}{closing_token}"
+
+
+    result = re.sub(
+        rf"({orig_hl_str_re})(.+?)({orig_hl_str_re})",
+        # add_mark,
+        rf"{opening_token}\2{closing_token}",
+        example_text,
+        re.M
+    )
+
+    return result
+
 
 @bp.route('/item/<int:index>/')
 @bp.route('/construction/<int:index>/')
@@ -136,6 +164,14 @@ def construction(index: int):
 
     title = (getattr(getattr(construction, "general_info", object), "name", None)
              or construction.formula)
+    
+    for change in construction.changes:
+        for kind in ("first_example", "last_example"):
+            setattr(change, f"{kind}_html", Markup(
+                    add_examples_highlight(getattr(change, kind))
+                )
+            )
+
     context = dict(
         title=f"Конструкция '{title}'",
         year=datetime.now().year,

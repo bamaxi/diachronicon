@@ -49,17 +49,34 @@
     </li>
     <li class="row controls">
       <div class="col-md-10 ps-3">
-        <span class="example-toggle">
-            <a 
-              {# class="btn btn-primary"  #}
-              data-bs-toggle="collapse"
-              href=".all-examples-collapse" role="button"
-              aria-expanded="false"
-              {# aria-controls="{{  }}" #}
-            >
-              Показать примеры для каждого этапа
-            </a>
-        </span>
+        <ul class="menu">
+          <li>
+            <span class="toggle menu-toggle example-toggle">
+                <a 
+                  {# class="btn btn-primary"  #}
+                  data-bs-toggle="collapse"
+                  href=".all-examples-collapse" role="button"
+                  aria-expanded="false"
+                  {# aria-controls="{{  }}" #}
+                >
+                  Показать примеры для каждого этапа
+                </a>
+            </span>
+          </li>
+          <li>
+            <span class="toggle menu-toggle comment-toggle">
+                <a 
+                  {# class="btn btn-primary"  #}
+                  data-bs-toggle="collapse"
+                  href=".all-comments-collapse" role="button"
+                  aria-expanded="false"
+                  {# aria-controls="{{  }}" #}
+                >
+                  Показать комментарий для каждого этапа
+                </a>
+            </span>
+          </li>
+        </ul>
       </div>
     </li>
   {% for change in chs %}
@@ -105,10 +122,32 @@
       <div class="col-md-3">
         {{ change.semantags }}
       </div>
+      <div class="col-md-10 ps-3 pt-1">
+      {% with comment_id = "change-comment-%s"|format(change.id1) %}
+        <span class="toggle comment-toggle">
+            <a 
+              data-bs-toggle="collapse"
+              href="#{{ comment_id }}" role="button"
+              aria-expanded="false" aria-controls="#{{ examples_id }}"
+            >
+            Показать комментарий
+            </a>
+        </span>
+        
+          <div class="col-md-12 ps-3 comment-container collapse all-comments-collapse"
+               id="{{ comment_id }}"
+          >
+            <p class="comment">
+              {{ change.comment }}
+            </p>
+          
+          </div>
+      {% endwith %}
+      </div>
       <div class="col-md-10 ps-3">
         {% with examples_id = "change-examples-%s"|format(change.id1) %}
           {# <p> #}
-            <span class="example-toggle">
+            <span class="toggle example-toggle">
             <a 
               {# class="btn btn-primary"  #}
               data-bs-toggle="collapse"
@@ -123,10 +162,10 @@
                id="{{ examples_id }}"
           >
             <p class="example example-first">
-              {{ change.first_example }}
+              {{ change.first_example_html }}
             </p>
             <p class="example example-last">
-              {{ change.last_example }}
+              {{ change.last_example_html }}
             </p>
           </div>
         {% endwith %}

@@ -2,6 +2,7 @@
 import argparse
 from collections import defaultdict
 import logging
+from functools import wraps
 import typing as T
 from typing import (
     Type, Tuple, List, Dict, Union, Callable, Iterator,
@@ -294,6 +295,16 @@ def fix_construction_id(
     else:
         print(main_id_part)
         raise ValueError
+    
+
+
+def fix_construction_id_wrapper(phrase_dict, id_key="construction_id"):
+    orig_id = phrase_dict[id_key]
+    maybe_id = fix_construction_id(phrase_dict[id_key])
+    print("constr ids:", orig_id, maybe_id)
+    if str(orig_id) == str(maybe_id):
+        maybe_id = int(str(maybe_id) + phrase_dict.get("group_number", "000"))
+    phrase_dict[id_key] == maybe_id
 
 
 id_to_change_object = {}
@@ -318,6 +329,7 @@ def fix_values(
     logger.debug(f"fixing values: {phrase_dict}, model: {model_class}")
     if model_class is Construction:
         phrase_dict["orig_id"] = phrase_dict["id"]
+        # fix_construction_id_wrapper(phrase_dict, id_key="id")
         phrase_dict["id"] = fix_construction_id(phrase_dict["id"])
     elif "construction_id" in phrase_dict:
         phrase_dict["construction_id"] = fix_construction_id(phrase_dict["construction_id"])
