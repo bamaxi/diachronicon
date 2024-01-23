@@ -1,5 +1,14 @@
 import pytest
 import typing as T
+from pathlib import Path
+
+from sqlalchemy import create_engine
+from app.models import *
+
+
+# basedir = os.path.abspath(os.path.dirname(__file__))
+basedir = Path("./tmp/")
+SQLALCHEMY_TEST_DATABASE_URI = 'sqlite:///' + str(Path(basedir) / 'test_diachronicon.db').
 
 
 @pytest.fixture
@@ -45,4 +54,18 @@ def two_subforms_form() -> T.Dict[str, T.Dict[str, str | int]]:
     return {"construction": {"duration": 200, "duration_sign": "ge", "formula": "np*"},
             "anchor": {"synt_functions_of_anchor": "Subject",
                        'anchor_schema': 'part VP', 'anchor_ru': 'хоть'}}
+
+
+@pytest.fixture
+def empty_db_engine():
+    engine = create_engine(SQLALCHEMY_TEST_DATABASE_URI, echo="debug", future=True)
+    return engine
+
+
+@pytest.fixture
+def init_db(empty_db_engine):
+    from app.models import Base
+    Base.metadata.create_all()
+
+    return empty_db_engine
 

@@ -19,6 +19,9 @@ $hide_chart_min_width: $changes_chart_min_width * (1 + 0.1);
 
 $table-bg-scale: -95%;
 
+$input-max-width: 280px;
+$form-multi-inputs-gutter: 0.4rem;
+
 body {
     padding-top: 0
 }
@@ -61,8 +64,41 @@ a {
     }
 }
 
+input, select, textarea {
+    max-width: $input-max-width;
+}
+
 form#search-form {
-    legend {font-size: 1.3rem;}
+    legend {font-size: 1.1rem;}
+
+    .multi-inputs {
+        display: flex;
+        justify-content: space-between;
+        max-width: $input-max-width;
+
+        // > *:not(:last-child) {
+        //     margin-right: $form-multi-inputs-gutter;
+        // }
+        & >* {
+            flex-basis: 49%;
+        }   
+
+        input {
+            // padding-left: 0.2rem;
+            // padding-right: 0.2rem;
+            // height: calc(3.5rem + 2px);
+
+            & +label {
+                // padding-left: 0.5rem;
+                // padding-right: 0.2rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        &.num_changes input {
+            height: calc(3.7rem + 2px);
+        }
+    }
 }
 
 mark::before,

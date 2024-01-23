@@ -58,7 +58,8 @@ from app.utils import (
 
 class SimpleSearchForm(FlaskForm):
     _constructions_datalist_id = "construction_values"
-    _construction_values = find_unique(Construction, "formula")
+    # _construction_values = find_unique(Construction, "formula")
+    _construction_values = find_unique(GeneralInfo, "name")
     _constructions_datalist = DataList(
         id=_constructions_datalist_id,
         literal_options=_construction_values
@@ -75,9 +76,14 @@ class SimpleSearchForm(FlaskForm):
     )
 
 
-def clean_formula(formula: str):
+def get_first_alternative(s: str) -> str:
+    return s.split("/")[0]
+
+
+def clean_formula(formula: str, choose_first_alt: bool=True):
     # fixes search for whole construction as suggested by datalist
-    return " ".join([elem.strip("()") for elem in formula.split()])
+    conversion = (lambda x: x) if not choose_first_alt else get_first_alternative
+    return " ".join([conversion(elem.strip("()")) for elem in formula.split()])
 
 
 @bp.route('/', methods=["GET", "POST"])
@@ -96,7 +102,8 @@ def main():
 
         # stmt = select(Construction).where(Construction.formula == queried_formula)
         q = SQLQuery()
-        q.parse_form({"construction": {"formula": final_formula}})
+        # q.parse_form({"construction": {"formula": final_formula}})
+        q.parse_form({"general_info": {"name": queried_formula}})
         # query = SQLTokensQuery("formula", queried_formula, Construction)
         # stmt = query.query(select(Construction, q, q))
         stmt = q.query()
@@ -112,6 +119,8 @@ def main():
         results = [constrs[0] for id_, constrs in by_constr.items()]
 
         print(results)
+
+        return redirect(url_for("search.construction", index=results[0]["id"]))
 
         return render_template(
             'main.html', title='Главная',

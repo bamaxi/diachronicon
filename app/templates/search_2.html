@@ -22,9 +22,11 @@
         {# {{ _form.construction.num_changes.label }} #}
         {# {{ _form.construction.num_changes_sign }}
         {{ _form.construction.num_changes }} #}
-        {{ _form.construction.num_changes__from }}
-        {{ _form.construction.num_changes__to }}
-        
+        <div class="multi-inputs num_changes">
+            {{ _form.construction.num_changes__from }}
+            {{ _form.construction.num_changes__to }}
+        </div>
+
         <legend>Якорь</legend>
         {{ _form.anchor.csrf_tag }}
 
@@ -61,8 +63,8 @@
             {{ _change.subtype_of_change }}
             {# {{ _change.duration_sign }}
             {{ _change.duration }} #}
-            {{ _change.duration__from }}
-            {{ _change.duration__to }}
+            {# {{ _change.duration__from }}
+            {{ _change.duration__to }} #}
             {{ _change.first_attested }}
             {{ _change.last_attested }}
         

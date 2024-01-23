@@ -63,6 +63,7 @@ input_wildcards_re = re.compile(r"|".join(re.escape(wc) for wc in INPUT_WILDCARD
 
 
 MAPPING = {
+    "general_info": GeneralInfo,
     "construction": Construction,
     "changes": Change,
     # derived
@@ -658,7 +659,8 @@ class SQLQuery(BaseQuery, metaclass=SQLQueryMeta):
                 self.sql_models_to_query |= {FormulaElement}
                 return SQLTokensQuery(key, val, sql_model=FormulaElement)
             elif key in ("anchor_schema", "anchor_ru"):
-                return SQLStringPattern(key, val)
+                # return SQLStringPattern(key, val)
+                return SQLTokensQuery
 
         elif form_name == "change":
             if key == "stage":
