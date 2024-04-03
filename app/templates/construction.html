@@ -27,6 +27,10 @@
 <link rel="canonical" href="/construction/{{ construction.id }}" />
 {% endblock %}
 
+{# {% block before_content %}
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"></svg>
+{% endblock %} #}
+
 {% block content %}
 <div class="row justify-content-center">
    <div class="single-result col-10">
@@ -195,6 +199,8 @@
 {% endblock %}
 
 {% block scripts %}
+{{ super() }}
+<script src="/static/scripts/arrows.js"></script>
 <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
 <script src="/static/scripts/plots_extra.js"></script>
 <script type='text/javascript'>

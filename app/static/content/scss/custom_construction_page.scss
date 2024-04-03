@@ -239,7 +239,8 @@ $border-horizontal-percent: 90%;
     }
 
     & > li + li {
-        @extend .pt-4;
+        @extend .pt-2;
+        @extend .mt-5;
 
         & {
             padding: auto;
