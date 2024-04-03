@@ -170,3 +170,19 @@ span.source-change {
   /* ul.tree li:last-child:before {
     border-left: thin solid #e8e8e8;
   } */
+
+
+.arrow {
+    pointer-events: none;
+  }
+  
+  .arrow__path {
+    stroke: #000;
+    fill: transparent;
+    stroke-dasharray: 4 2;
+  }
+  
+  .arrow__head line {
+    stroke: #000;
+    stroke-width: 1px;
+  }
