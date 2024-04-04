@@ -238,7 +238,7 @@ $border-horizontal-percent: 90%;
         font-weight: bold;
     }
 
-    & > li + li {
+    & > li:not(.controls) + li {
         @extend .pt-2;
         @extend .mt-5;
 
@@ -261,89 +261,193 @@ $border-horizontal-percent: 90%;
 }
 
 
-/* Alt style for changes */
+$sem-color: red;
+$synt-color: blue;
 
-$child_list_indent: 1.0rem;
+$start-color: green;
+$final-color: yellow;
 
-$leaf-width: 0.75rem;
+$base-size: 1rem;
+$index-width: 15%;
 
-// body {
-//     font-size: 100%;
-// }
-
-p.tree,
-ul.tree,
-ul.tree ul {
+ol.changes-list > li {
     list-style: none;
-    margin: 0;
-    padding: 0;
-}
 
-ul.tree ul {
-    margin-left: $child_list_indent;
-    margin-top: 1.5rem;
+    &.start {
+        //  {
+        //     border-image: linear-gradient(0deg,blue 20%,#0000 0 80%,blue 0) 10;
+        //     /* border: 10px solid #0000; */
+        //     /* background: linear-gradient(180deg, rgba(255, 255, 255, 0) 60%, gold 70%); */
+        //     border-width: 4px;
+        //     border-style: solid;
+        //     /* border-image: linear-gradient(to right, darkblue, darkorchid) 1; */
+        //     border-radius: 90px;
+        // }    
 
-    & > li > *:not(ul) {
-        margin-top: -0.5rem;
-    }
-}
-
-.tree-intro,
-ul.tree li {
-    position: relative;
-
-    margin-left: 0;
-    padding-left: $child_list_indent;
-    margin-top: 0rem;
-    margin-bottom: 0;
-
-    border-left: 1.5px solid #e8e8e8;
-}
-
-ul.tree li:last-child:not(:has(ul)) {
-    border-left: none;
-}
-
-ul.tree {
-    & li::before {
-        position: absolute;
-        top: 0;
-        left: 0;
+        // border-image: linear-gradient(180deg,green 20%,#0000 0 100%) 10;
+        // /* border: 10px solid #0000; */
+        // /* background: linear-gradient(180deg, rgba(255, 255, 255, 0) 60%, gold 70%); */
+        // border-width: 3px;
+        // border-style: dashed;
+        /* border-image: linear-gradient(to right, darkblue, darkorchid) 1; */
+        // border-radius: 90px;
         
-        width: $leaf-width;
-        height: 0.5rem;
-        vertical-align: top;
-
-        border-bottom: 1.5px solid #e8e8e8;
-
-        content: "";
-        display: inline-block;
+        background-image: linear-gradient(180deg,green 20%,#0000 0 100%) 10;
+        // background-size: 3px 100%;
+        // background-repeat: no-repeat;
     }
 
-    & li:first-child::before {
-        width: calc(2 * $child_list_indent + $leaf-width);  /* width of horizontal line */
-        height: 0rem;                  /* vertical position of line */
-        margin-left: calc(-2 * $child_list_indent - 0.05rem);
+    &.final {
+        // background-image:
+        //     repeating-linear-gradient(0deg, $final-color, $final-color 20px, transparent 20px, transparent 30px, $final-color 30px),
+        //     repeating-linear-gradient(90deg, $final-color, $final-color 20px, transparent 20px, transparent 30px, $final-color 30px),
+        //     repeating-linear-gradient(180deg, $final-color, $final-color 20px, transparent 20px, transparent 30px, $final-color 30px),
+        //     repeating-linear-gradient(270deg, $final-color, $final-color 20px, transparent 20px, transparent 30px, $final-color 30px);
+        // background-size: 3px 100%, 40% 3px, 3px 100%, 100% 3px;
+        // background-position: 0 0, 0 0, 100% 0, 0 100%;
+        // background-repeat: no-repeat;
     }
 
-    & > :is(li::before, li:first-child::before) {
-        width: $leaf-width;
-        margin-left: 0;
+    & label {
+        color: gray;
+        font-size: small;
+    }
+        
+    // @extend .border-start;
+    // & .brief-block {
+
+    // }
+
+    & .main {
+        line-height: 0.4rem;
+        & .title {
+            line-height: initial;
+        }
+
+        & .index {
+            display: inline-block;
+            font-size: small;
+            color: gray;
+            width: $index-width;
+            // float: left;
+            text-align: left;
+        }
+        & .stage {
+            display: inline-block;
+            &:not(label) {
+                font-size: 2 * $base-size;
+                width: calc(100% - $index-width);
+            }
+            &:is(label) {
+                font-size: x-small;
+                padding-left: 15%;
+                display: inline-block;
+            }
+        }
+    }
+
+    & .kinds {
+        @extend .pt-2;
+
+        & .level-sem {
+            & *:not(label), *:not(label)::before {
+                color: $sem-color
+            } 
+        }
+        
+        & .level-synt {
+            & *:not(label), *:not(label)::before {
+                color: $synt-color
+            } 
+        }
+    }
+
+    & .text-block {
+        line-height: 2.25rem;
+
+        & > *:first-child {
+            margin-top: 1.5 * $base-size;
+        }
+
+        & span.years {
+            width: 10rem;
+            display: inline-block;
+        }
+
+        
+        & .comment {
+            line-height: 0.4rem;
+
+            & .comment-content {
+                line-height: initial;
+                &::after {
+                    content: "\a";
+                    white-space: pre
+                }
+            }
+        }
+
+        & .examples {
+            line-height: initial;
+        }
+    }
+
+    & .references {
+        font-size: small;
+        @extend .pt-2;
+
+        & .next {
+            text-align: right;
+        }
+
+        & span {
+            font-weight: initial;
+        }
     }
 }
 
-ul.tree li:last-child:before {
-    border-left: 1.5px solid #e8e8e8;
+
+.arrow {
+    pointer-events: none;
+    // pointer-events: stroke;
+
+    // &:hover * {
+    //     stroke: black;
+    // }
+
+    &:is(.to-sem) {
+        & .arrow__path {
+            stroke: $sem-color;
+            fill: transparent;
+            stroke-dasharray: 4 2;
+        }
+        & .arrow__head line {
+            stroke: $sem-color;
+            stroke-width: 1px;
+        }
+    }
+
+    &:is(.to-synt) {
+        .arrow__path {
+            stroke: $synt-color;
+            fill: transparent;
+            // stroke-dasharray: 4 2;
+        }
+
+        & .arrow__head line {
+            stroke: $synt-color;
+            stroke-width: 1px;
+        }
+    }
+    
 }
-
-
 
 @keyframes target-higlight {
     from {background-color: $purple-200}
     to {background-color: white}
   }
 
-.number:target {
+.index:target {
     scroll-margin-top: 100px; 
 
     // &, li:target-within {
@@ -352,75 +456,9 @@ ul.tree li:last-child:before {
     // }
 }
 
-li:has(.number:target) {
+li:has(.index:target) {
     animation-name: target-higlight;
     animation-duration: 2s;
-}
-
-
-// .changes-references > * + * {
-//     @extend .pt-3
-// }
-
-.change-types {
-    display: block;
-    // padding-left: 0.5rem;
-    & > * {
-        // @include make-hanging-indent(.5)
-        width: 100%;
-    }
-
-    & > label {
-        float: left;
-        // width: 40%;
-        @extend .text-secondary;
-        line-height: $line-height-sm;
-    }
-    // & > span {
-    //     width: 60%;
-    // }
-    
-    & > label ~ label {
-        padding-top: 0.4rem;
-    }
-
-    & > :not(label) {
-        display: inline-block;
-        @include make-hanging-indent(.75, 1);
-
-        & ~ :not(label) {
-            padding-top: 0.2rem;
-        }
-    }
-
-    // & *:not(label).change-type {
-    //     white-space: pre;
-    //     & ~ &::before { content: "\a"; white-space: pre}
-    // }
-
-}
-
-
-
-
-@mixin pad-changes-divs($rem) {
-    padding-top: $rem*1rem;
-} 
-
-// .changes-references > * + * {
-//     @include pad-changes-divs(0.5)
-// }
-
-.changes-references {
-    font-size: smaller;
-
-    .arrow {
-        display: none;
-    }
-
-    & > * + * {
-        @include pad-changes-divs(0.5)
-    }
 }
 
 .controls {
