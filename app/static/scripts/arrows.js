@@ -16,6 +16,9 @@
     // document.body.appendChild(arrow.node);
 
     window.addEventListener('load', function(){
+        const translation_from_base_x = -0.5
+        const translation_to_base_x = -1.5
+
         const changes = Array.from(document.querySelectorAll('.row-change'))
         const mainNode = document.querySelector('main')
 
@@ -36,6 +39,8 @@
             console.log(change_i, change, next_changes)
 
             for (next_change of next_changes){
+                multiplier = (next_change - change_i)
+
                 if (next_change === change_i + 1){
                     console.log("next change is consecutive")
                     // directions = [DIRECTION.BOTTOM, DIRECTION.TOP]
@@ -44,7 +49,10 @@
                 } else {
                     // directions = [DIRECTION.LEFT, DIRECTION.LEFT]
                     directions = ['left', 'left'];
-                    translations = [[-2, 0], [-5, 0]];
+                    translations = [
+                        [translation_from_base_x * multiplier, 0],
+                        [translation_to_base_x * multiplier, -0.1]
+                    ];
                 }
 
                 from_node = change
