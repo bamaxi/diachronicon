@@ -228,7 +228,7 @@ $border-horizontal-percent: 90%;
 
 /* Table with data on changes of construction */
 
-ol.changes-list {
+.changes-list {
     & > li {
         list-style: none;
         // @extend .border-start;
@@ -247,8 +247,10 @@ ol.changes-list {
     }
 
     & .number {
-        position: absolute;
-        margin-left: -3rem;
+        position: sticky;
+        top: 20px;
+        // margin-left: -3rem;
+        left: 3rem;
         max-width: fit-content;
 
         &.desc {
@@ -256,6 +258,83 @@ ol.changes-list {
         }
     }
 }
+
+
+/* Alt style for changes */
+
+$child_list_indent: 1.0rem;
+
+$leaf-width: 0.75rem;
+
+// body {
+//     font-size: 100%;
+// }
+
+p.tree,
+ul.tree,
+ul.tree ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+ul.tree ul {
+    margin-left: $child_list_indent;
+    margin-top: 1.5rem;
+
+    & > li > *:not(ul) {
+        margin-top: -0.5rem;
+    }
+}
+
+.tree-intro,
+ul.tree li {
+    position: relative;
+
+    margin-left: 0;
+    padding-left: $child_list_indent;
+    margin-top: 0rem;
+    margin-bottom: 0;
+
+    border-left: 1.5px solid #e8e8e8;
+}
+
+ul.tree li:last-child:not(:has(ul)) {
+    border-left: none;
+}
+
+ul.tree {
+    & li::before {
+        position: absolute;
+        top: 0;
+        left: 0;
+        
+        width: $leaf-width;
+        height: 0.5rem;
+        vertical-align: top;
+
+        border-bottom: 1.5px solid #e8e8e8;
+
+        content: "";
+        display: inline-block;
+    }
+
+    & li:first-child::before {
+        width: calc(2 * $child_list_indent + $leaf-width);  /* width of horizontal line */
+        height: 0rem;                  /* vertical position of line */
+        margin-left: calc(-2 * $child_list_indent - 0.05rem);
+    }
+
+    & > :is(li::before, li:first-child::before) {
+        width: $leaf-width;
+        margin-left: 0;
+    }
+}
+
+ul.tree li:last-child:before {
+    border-left: 1.5px solid #e8e8e8;
+}
+
 
 
 @keyframes target-higlight {

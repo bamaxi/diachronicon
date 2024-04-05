@@ -158,7 +158,7 @@ def construction(index: int):
         logger.debug(f"found res: {res_}")
         print(res_)
 
-        construction = res_.first() or abort(404)
+        construction: Construction = res_.first() or abort(404)
         # construction = construction[0]
         print(type(construction), construction)
 

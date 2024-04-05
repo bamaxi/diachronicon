@@ -13,12 +13,15 @@ from openpyxl import load_workbook
 from ..models import (
     UNKNOWN_SYNT_FUNCTION_OF_ANCHOR,
     SYNT_FUNCTION_OF_ANCHOR_VALUES,
+    SEMANTICS_TAG,
+    MORPHOSYNTAX_TAG,
     Construction,
     ConstructionVariant,
     GeneralInfo,
     Change,
     Constraint,
-    FormulaElement
+    FormulaElement,
+    GeneralTag,
 )
 
 
@@ -94,7 +97,8 @@ SHEET2DISCARDED_COLUMNS = {
 }
 
 
-CONSTRUCTION_ID2VARIANTSMET = {}
+CONSTRUCTION_ID2VARIANTS_MET = {}
+CONSTRUCTION_ID2GENERAL_INFO_MET = {}
 # CONSTRUCTION_IDS 
 
 
@@ -276,7 +280,7 @@ def fix_construction_id(
     else:
         main_id_part, variant_id = construction_id, ""
 
-    variants_met = CONSTRUCTION_ID2VARIANTSMET
+    variants_met = CONSTRUCTION_ID2VARIANTS_MET
 
     # variant_id, prev_variant_id = len(variants_met), variant_id
     # variants_met.append(variant_id)
@@ -381,6 +385,45 @@ def to_formula(
     return formula_elements_vals
 
 
+MORPHOSYNTAX_TAG_KEY = "morphosyntags"
+MORPHOSYNTAX_TAG_FINAL_KEY = "morphosyntax_tags"
+SEMANTICS_TAG_KEY = "semantags"
+SEMANTICS_FINAL_TAG_KEY = "semantic_tags"
+FINAL_KEYS = {
+    MORPHOSYNTAX_TAG_KEY: MORPHOSYNTAX_TAG_FINAL_KEY,
+    SEMANTICS_TAG_KEY: SEMANTICS_FINAL_TAG_KEY,
+}
+
+TagRegistry: T.Dict[T.Tuple[str, str], GeneralTag] = {}
+
+
+def parse_tags(
+    phrase_dict: Dict[str, Union[str, int]],
+    morphosyntax_tag_key: str=MORPHOSYNTAX_TAG_KEY,
+    semantics_tag_key: str=SEMANTICS_TAG_KEY,
+) -> Dict[str, T.Optional[T.List[str]]]:
+    result = {}
+    for key in [morphosyntax_tag_key, semantics_tag_key]:
+        kind = SEMANTICS_TAG if key == semantics_tag_key else MORPHOSYNTAX_TAG
+        if key in phrase_dict:
+            tags = []
+            for t in (phrase_dict[key] or "").split(","):
+                if t:
+                    name = t.strip().strip("''")
+                    tag_id = (name, kind)
+                    if tag_id in TagRegistry:
+                        tag = TagRegistry[tag_id]
+                    else:
+                        tag = GeneralTag(name=t.strip(), kind=kind)
+                        TagRegistry[tag_id] = tag
+
+                    tags.append(tag)
+
+            result[key] = tags
+
+    return result
+
+
 def process_construction(
     phrase_dict: Dict[str, Union[str, int]], constr: Construction,
     formula_parser: Callable[[str], List[Dict[str, str]]] = parse_formula,
@@ -407,6 +450,16 @@ def process_construction(
         phrase_dict["synt_function_of_anchor"] = first_synt_function
         constr.synt_function_of_anchor = first_synt_function
         logger.debug(f"final function is: {first_synt_function}")
+
+        # name2tags = parse_tags(phrase_dict)
+        # for key in (MORPHOSYNTAX_TAG_KEY, SEMANTICS_TAG_KEY):
+        #     value = []
+        #     if key in name2tags:
+        #         value = name2tags[key]
+
+        #     print(value)
+            
+        #     getattr(constr, FINAL_KEYS[key], []).extend(value)
 
     formula_elements = formula_parser(phrase_dict["formula"])
     formula_elements_vals = [FormulaElement(**el_data)
@@ -458,10 +511,26 @@ def process_change(
 
     change.variants.append(main_stage_variant)
 
+    name2tags = parse_tags(phrase_dict)
+    for key in (MORPHOSYNTAX_TAG_KEY, SEMANTICS_TAG_KEY):
+        value = []
+        if key in name2tags:
+            value = name2tags[key]
+
+        print(value)
+        
+        getattr(change, FINAL_KEYS[key], []).extend(value)
+
+
+# def process_general_info(
+#     phrase_dict: Dict[str, Union[str, int]], general_info: GeneralInfo,
+# )
+
 
 extra_processing = {
     Construction: process_construction,
     Change: process_change,
+    # GeneralInfo: process_general_info,
 }
 
 
@@ -551,10 +620,17 @@ def parse(filename: str, use_old_sheet_names=True, verbose=False):
 
             if model_class is Construction:
                 id_ = phrase_dict["id"]
-                if id_ in CONSTRUCTION_ID2VARIANTSMET:
+                if id_ in CONSTRUCTION_ID2VARIANTS_MET:
                     discard_row = True
                 else:
-                    CONSTRUCTION_ID2VARIANTSMET[id_] = True
+                    CONSTRUCTION_ID2VARIANTS_MET[id_] = True
+
+            if model_class is GeneralInfo:
+                id_ = phrase_dict["construction_id"]
+                if id_ in CONSTRUCTION_ID2GENERAL_INFO_MET:
+                    discard_row = True
+                else:
+                    CONSTRUCTION_ID2GENERAL_INFO_MET[id_] = True
 
             if discard_row:
                 continue
@@ -579,12 +655,13 @@ def parse(filename: str, use_old_sheet_names=True, verbose=False):
 
                 data.append(values)
             
-            except ValueError as e:
+            except (ValueError, AttributeError) as e:
                 logger.warning(f"couldn't add {phrase_dict}: {e}")
 
     if verbose:
         for item in data:
-            print(item, end="\n\n")
+            if isinstance(item, Construction):
+                print(item, end="\n")
 
     return data
 
