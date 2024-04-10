@@ -1,3 +1,6 @@
+@use 'sass:color';
+@use "sass:map";
+
 @import "functions";
 
 // 3. Include remainder of required Bootstrap stylesheets
@@ -60,6 +63,13 @@ a {
         color: #dcdcdc;
     }
 }
+
+// font-awesome
+.fa-fw {
+    width: 1.25rem!important;
+    text-align: center;
+}
+
 
 form#search-form {
     legend {font-size: 1.3rem;}

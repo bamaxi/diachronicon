@@ -65,19 +65,6 @@
                   </a>
               </span>
             </li>
-            <li>
-              <span class="toggle menu-toggle comment-toggle">
-                  <a 
-                    {# class="btn btn-primary"  #}
-                    data-bs-toggle="collapse"
-                    href=".all-comments-collapse" role="button"
-                    aria-expanded="false"
-                    {# aria-controls="{{  }}" #}
-                  >
-                    Показать комментарий для каждого этапа
-                  </a>
-              </span>
-            </li>
           </ul>
         </div>
       </li>
@@ -88,15 +75,19 @@
           data-prev-id="{{ change.previous_changes|map(attribute='id1')|join(' ')  }}"
           data-next-id="{{ change.next_changes|map(attribute='id1')|join(' ')  }}"
       >
-        <div class="col-md-4 brief-block">
-          <div class="col-md-12 main">
+        <div class="col-md-4 main">
+
+          {# <div class="col-md-4"> #}
             <div class="col-md-12 title">
               <span class="index" id="change-{{ change.id1 }}">
                 <a href="#change-{{ change.id1 }}"># {{ change.id1 }}</a>
               </span><span class="stage {{ change.level }}">{{ change.stage }}</span>
             </div>
             <label class="stage">изменяющаяся часть</label>
-          </div>
+          {# </div> #}
+        </div>
+        <div class="w-100"></div>
+        <div class="col-md-4 brief-block">
           <div class="col-md-12 kinds">
             <div class="col-md-12 level level-{{ change.level }}">
               <i class="fa fa-fw fa-solid fa-layer-group"></i>
@@ -114,6 +105,19 @@
               <label class="type">подтип изменения</label>
             </div>
           </div>
+          {% if change.morphosyntax_tags or change.semantic_tags %}
+          <div class="col-md-12 tags">
+            <i class="fa fa-fw fa-solid fa-tags"></i>
+            <label class="tag">тэги</label>
+            {% for tag in change.morphosyntax_tags %}
+            <span class="badge rounded-pill {{ tag.kind }}">{{ tag.name }}</span>
+            {% endfor %}
+            {% for tag in change.semantic_tags %}
+              <span class="badge rounded-pill {{ tag.kind }}">{{ tag.name }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
         </div>
         <div class="col-md-8 text-block">
           <div class="col-md-12 years">
@@ -124,7 +128,7 @@
           <div class="col-md-12 comment">
             <i class="fa fa-fw fa-solid fa-comment-dots"></i>
             <span class="comment-content">{{ change.comment }}</span>
-            <i class="fa fa-fw"></i>
+            {# <i class="fa fa-fw"></i> #}
             <label>описание изменения</label>
           </div>
           <div class="col-md-12">

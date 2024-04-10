@@ -183,10 +183,13 @@ $border-horizontal-percent: 90%;
 
 
 
-// .changes-chart {
-//     width: $changes_chart_min_width;
-//     height: $changes_chart_min_height;
+.changes-chart {
+    // width: $changes_chart_min_width;
+    // height: $changes_chart_min_height;
     
+    @include media-breakpoint-down(md) {
+        display: none;
+    }
 //     @media screen and (max-width: $hide_chart_min_width) {
 //         display: none;
 //         /* content: "Your device is too small"; */
@@ -209,7 +212,7 @@ $border-horizontal-percent: 90%;
 //         width: $changes_chart_min_width * 1.7;
 //         height: $changes_chart_min_height * 1.7;
 //     }
-// }
+}
 
 .changes-chart-was-hidden-message {
     @media (min-width: $hide_chart_min_width) {
@@ -261,8 +264,15 @@ $border-horizontal-percent: 90%;
 }
 
 
+$kinds: synt, sem;
+
 $sem-color: red;
 $synt-color: blue;
+
+$kind2color: (
+    "sem": $sem-color,
+    "synt": $synt-color,
+);  
 
 $start-color: green;
 $final-color: yellow;
@@ -309,7 +319,7 @@ ol.changes-list > li {
     }
 
     & label {
-        color: gray;
+        @extend .text-secondary;
         font-size: small;
     }
         
@@ -317,6 +327,10 @@ ol.changes-list > li {
     // & .brief-block {
 
     // }
+
+    & .brief-block > *, & .text-block > .comment {
+        text-indent: calc(1.25rem + 0.6ch) hanging;
+    }
 
     & .main {
         line-height: 0.4rem;
@@ -362,18 +376,27 @@ ol.changes-list > li {
         }
     }
 
+    & .fa-tags {
+        background: linear-gradient(90deg, $synt-color 45%, $sem-color 45%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
     & .text-block {
         line-height: 2.25rem;
 
-        & > *:first-child {
-            margin-top: 1.5 * $base-size;
+
+        @include media-breakpoint-up(md) {
+            & > *:first-child {
+                margin-top: -1.5 * $base-size;
+            }
         }
 
         & span.years {
             width: 10rem;
             display: inline-block;
         }
-
         
         & .comment {
             line-height: 0.4rem;
@@ -404,6 +427,17 @@ ol.changes-list > li {
             font-weight: initial;
         }
     }
+
+
+    & .tags .badge {
+        @each $kind in $kinds {
+            &.#{$kind} {
+                background-color: color.scale(
+                    map-get($map: $kind2color, $key: $kind), $alpha: -45%
+                );
+            }
+        } 
+    }
 }
 
 
@@ -415,31 +449,23 @@ ol.changes-list > li {
     //     stroke: black;
     // }
 
-    &:is(.to-sem) {
-        & .arrow__path {
-            stroke: $sem-color;
-            fill: transparent;
-            stroke-dasharray: 4 2;
-        }
-        & .arrow__head line {
-            stroke: $sem-color;
-            stroke-width: 1px;
+    @each $kind in $kinds {
+        &:is(.to-#{$kind}) {
+            & .arrow__path {
+                stroke: map-get($map: $kind2color, $key: $kind);
+                fill: transparent
+            }
+
+            & .arrow__head line {
+                stroke: map-get($map: $kind2color, $key: $kind);
+                stroke-width: 1px;
+            }
         }
     }
 
-    &:is(.to-synt) {
-        .arrow__path {
-            stroke: $synt-color;
-            fill: transparent;
-            // stroke-dasharray: 4 2;
-        }
-
-        & .arrow__head line {
-            stroke: $synt-color;
-            stroke-width: 1px;
-        }
+    &:is(.to-sem) .arrow__path {
+        stroke-dasharray: 4 2;
     }
-    
 }
 
 @keyframes target-higlight {

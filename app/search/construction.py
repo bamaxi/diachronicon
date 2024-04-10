@@ -139,6 +139,8 @@ def construction(index: int):
         selectinload("*"),
         selectinload(Change.previous_changes),
         selectinload(Change.next_changes),
+        selectinload(Change.morphosyntax_tags),
+        selectinload(Change.semantic_tags),
     ).where(
             Construction.id == index
     )
@@ -209,6 +211,10 @@ def construction(index: int):
           construction.changes[-1], construction.changes[-1].previous_changes,
           sep="\n"
     )
+
+    for change in construction.changes:
+        print(*[tag.name for tag in change.morphosyntax_tags], end="\t|\t")
+        print(*[tag.name for tag in change.semantic_tags], end="\n\n")
 
     page = render_template('construction.html',  **context)
     return page
