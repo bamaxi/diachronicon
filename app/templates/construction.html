@@ -110,12 +110,14 @@
             <section class="description-row row">
                 <div class="num-changes-data col-md-4">
                     <label class="description-label label-num-changes">Количество изменений</label>
-                    <span class="num-changes-num">{{ chs | length }}</span>
-                    <span class="num-changes-desc">всего</span>
-                    <span class="num-changes-num">{{ chs|selectattr("level", "eq", "synt")|list|length  }}</span>
-                    <span class="num-changes-desc">(синт)</span>
-                    <span class="num-changes-num">{{ chs|selectattr("level", "eq", "sem")|list|length }}</span>
-                    <span class="num-changes-desc">(сем)</span>
+                    <div class="num-changes">
+                        <span class="num-changes-num">{{ chs | length }}</span>
+                        <label class="num-changes-desc">всего</label>
+                        <span class="num-changes-num">{{ chs|selectattr("level", "eq", "synt")|list|length  }}</span>
+                        <label class="num-changes-desc">(синтаксических)</label>
+                        <span class="num-changes-num">{{ chs|selectattr("level", "eq", "sem")|list|length }}</span>
+                        <label class="num-changes-desc">(семантических)</label>
+                    </div>
                 </div>
                 <div class="earliest-change-data col-md-4">
                     <label class="description-label label-earliest-change">Самый ранний этап</label>

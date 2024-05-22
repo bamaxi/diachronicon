@@ -75,7 +75,7 @@
           data-prev-id="{{ change.previous_changes|map(attribute='id1')|join(' ')  }}"
           data-next-id="{{ change.next_changes|map(attribute='id1')|join(' ')  }}"
       >
-        <div class="col-md-4 main">
+        <div class="col-md-9 main">
 
           {# <div class="col-md-4"> #}
             <div class="col-md-12 title">
@@ -123,7 +123,7 @@
           <div class="col-md-12 years">
             <i class="fa fa-fw fa-regular fa-calendar-days"></i>
             <span class="years">{{ "%s — %s"|format(change.first_attested, change.last_attested)|safe }}</span>
-            <label class="years">годы вхождений, первого и последнего</label>
+            <label class="years">годы первого и последнего вхождений</label>
           </div>
           <div class="col-md-12 comment">
             <i class="fa fa-fw fa-solid fa-comment-dots"></i>
@@ -158,20 +158,25 @@
             </div>
             {% endwith %}
           </div>
-          
         </div>
 
-        <div class="col-md-12 references d-flex justify-content-between">
-          <div class="col-md-4 previous">
-            <label class="change-label"><span class="arrow arrow-prev">←</span> предыдущие</label>
+        <div class="col-md-12 references d-flex justify-content-center">
+          <div class="col-md-3 previous">
+            <label class="change-label">
+              {# <span class="arrow arrow-prev">←</span>  #}
+            предыдущие</label>
             <span>
             {% for prev_ch in change.previous_changes %}
             {{ format_change(change.id1, prev_ch.id1) }}
             {% endfor %}
             </span>
           </div>
-          <div class="col-md-4 next">
-            <label class="change-label">следующие <span class="arrow arrow-next">→</span></label>
+          <div class="col-md-2 title"><label>связанные этапы</label></div>
+          <div class="col-md-3 next">
+            <label class="change-label">
+              следующие
+              {# <span class="arrow arrow-next">→</span> #}
+            </label>
             <span>
             {% for next_ch in change.next_changes %}
             {{ format_change(change.id1, next_ch.id1) }}

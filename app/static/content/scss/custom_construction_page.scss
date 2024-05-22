@@ -171,15 +171,28 @@ $border-horizontal-percent: 90%;
 
 
 .num-changes-data {
+    // & .num-changes-num {
+    //     padding-left: 1rem;
+    //     width: 2rem;
+    //     display: inline-block;
+    // }
+    $num-width: 15%;
+    &::before {
+        content: none;
+    }
+
     & .num-changes-num {
-        padding-left: 1rem;
-        display: inline block;
+        float: left;
+        width: $num-width;
+    }
+    & .num-changes-desc {
+        width: calc(100% - $num-width);
     }
 }
 
-.num-changes-num ~ .num-changes-num {
-    &::before { content: "\a"; white-space: pre}
-}
+// .num-changes-num ~ .num-changes-num {
+//     &::before { content: "\a"; white-space: pre}
+// }
 
 
 
@@ -278,7 +291,7 @@ $start-color: green;
 $final-color: yellow;
 
 $base-size: 1rem;
-$index-width: 15%;
+$index-width: 5%;
 
 ol.changes-list > li {
     list-style: none;
@@ -354,7 +367,7 @@ ol.changes-list > li {
             }
             &:is(label) {
                 font-size: x-small;
-                padding-left: 15%;
+                padding-left: $index-width;
                 display: inline-block;
             }
         }
@@ -387,11 +400,11 @@ ol.changes-list > li {
         line-height: 2.25rem;
 
 
-        @include media-breakpoint-up(md) {
-            & > *:first-child {
-                margin-top: -1.5 * $base-size;
-            }
-        }
+        // @include media-breakpoint-up(md) {
+        //     & > *:first-child {
+        //         margin-top: -1.5 * $base-size;
+        //     }
+        // }
 
         & span.years {
             width: 10rem;
@@ -399,7 +412,7 @@ ol.changes-list > li {
         }
         
         & .comment {
-            line-height: 0.4rem;
+            line-height: 1rem;
 
             & .comment-content {
                 line-height: initial;
@@ -419,8 +432,20 @@ ol.changes-list > li {
         font-size: small;
         @extend .pt-2;
 
-        & .next {
+        & * {
+            white-space: initial;
+        }
+
+        & .previous {
             text-align: right;
+        }
+
+        & .title {
+            text-align: center;
+        }
+
+        & .next {
+            text-align: left;
         }
 
         & span {
