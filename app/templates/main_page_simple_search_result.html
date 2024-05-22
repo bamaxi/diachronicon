@@ -1,5 +1,40 @@
-{% extends "_simple_search_result.html" %}
+{# {% extends "_simple_search_result.html" %}
 
 {% block results_report %}
 <p>Найдено конструкций: {{ results|length }}</p>
-{% endblock %}
+{% endblock %} #}
+
+{% if results %}
+<h2>Результаты</h2>
+
+<div class="results">
+        <ol>
+        {# {% if use_constr %}
+            {% set result_iter = results_by_constr %}
+        {% else %}
+            {% set result_iter = results %}
+        {% endif %}
+        {{ results_iter }} #}
+        {%- for _id, results in results_by_constr.items() -%}
+        {% with _res = results|first %}
+        <li>
+            <div class="row result py-2">
+                {# <div class="short col-12"> #}
+                    {# <span class="text-primary">{{ loop.index }}</span> #}
+                    <span>
+                        <a href="{{ url_for('search.construction', index=_res.id) }}">
+                            {{ _res.formula or _res.name }}
+                        </a>
+                    </span>
+                {# </div> #}
+                <div class="extended">
+                    {% block result_extended %}{% endblock %}
+                </div>
+            </div>
+        </li>
+        {% endwith %}
+        {%- endfor -%}
+        </ol>
+    </div>
+
+{% endif %}
