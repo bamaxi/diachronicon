@@ -83,7 +83,7 @@
                 <a href="#change-{{ change.id1 }}"># {{ change.id1 }}</a>
               </span><span class="stage {{ change.level }}">{{ change.stage }}</span>
             </div>
-            <label class="stage">изменяющаяся часть</label>
+            {# <label class="stage">изменяющаяся часть</label> #}
           {# </div> #}
         </div>
         <div class="w-100"></div>
@@ -129,7 +129,7 @@
             <i class="fa fa-fw fa-solid fa-comment-dots"></i>
             <span class="comment-content">{{ change.comment }}</span>
             {# <i class="fa fa-fw"></i> #}
-            <label>описание изменения</label>
+            {# <label>описание изменения</label> #}
           </div>
           <div class="col-md-12">
             {% with examples_id = "change-examples-%s"|format(change.id1) %}
@@ -160,11 +160,13 @@
           </div>
         </div>
 
+        <hr class="border-primary border-3 opacity-50 mt-2 mb-1">
+
         <div class="col-md-12 references d-flex justify-content-center">
           <div class="col-md-3 previous">
-            <label class="change-label">
+            <label class="change-link-label">
               {# <span class="arrow arrow-prev">←</span>  #}
-            предыдущие</label>
+            предыдущие этапы</label>
             <span>
             {% for prev_ch in change.previous_changes %}
             {{ format_change(change.id1, prev_ch.id1) }}
@@ -173,8 +175,8 @@
           </div>
           <div class="col-md-2 title"><label>связанные этапы</label></div>
           <div class="col-md-3 next">
-            <label class="change-label">
-              следующие
+            <label class="change-link-label">
+              следующие этапы
               {# <span class="arrow arrow-next">→</span> #}
             </label>
             <span>

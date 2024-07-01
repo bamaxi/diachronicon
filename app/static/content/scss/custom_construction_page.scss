@@ -115,6 +115,10 @@ $border-horizontal-percent: 90%;
     @extend .border-start
 }
 
+.description-row .num-changes {
+    display: inline;
+}
+
 .anchors {
     display: block;
     // padding-left: 0.5rem;
@@ -332,8 +336,13 @@ ol.changes-list > li {
     }
 
     & label {
-        @extend .text-secondary;
-        font-size: small;
+        &:not(.change-link-label){
+            @extend .text-secondary;
+            font-size: small;
+        }
+        &:not(.references *) {
+            display: none;
+        }
     }
         
     // @extend .border-start;
@@ -407,7 +416,7 @@ ol.changes-list > li {
         // }
 
         & span.years {
-            width: 10rem;
+            // width: 10rem;
             display: inline-block;
         }
         
@@ -430,7 +439,7 @@ ol.changes-list > li {
 
     & .references {
         font-size: small;
-        @extend .pt-2;
+        // @extend .pt-2;
 
         & * {
             white-space: initial;
