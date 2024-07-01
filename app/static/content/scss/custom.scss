@@ -22,6 +22,8 @@ $hide_chart_min_width: $changes_chart_min_width * (1 + 0.1);
 
 $table-bg-scale: -95%;
 
+$element-focus-color: #86b7fe;
+
 body {
     padding-top: 0
 }
@@ -131,6 +133,41 @@ mark::before {
             background: linear-gradient(180deg, rgba(255,255,255,0) 60%, gold 70%);
         }
     }   
+}
+
+
+// .div-wrapper {
+//     width:300px;
+//     border:solid 1px #000;
+// }
+
+.to-hide {
+    max-height: 10000em;
+    &.hidden{
+        // max-height: 100px;
+        max-height: 30vh;
+        transition: max-height 0.5s cubic-bezier(0, 1, 0, 1);
+        & *:not(h1, h2, h3, h4, h5, h6) {
+            -webkit-mask-image: linear-gradient(to bottom, white, transparent);
+            mask-image: linear-gradient(to bottom, white, transparent);
+        }
+
+        &:hover {
+            cursor: pointer;
+            @extend .shadow;
+        }
+    }
+    &:not(.hidden) {
+        border-color: $element-focus-color;
+        box-shadow: 0 0 0 0.3rem lightblue;
+    }
+
+    height: auto;
+    // transition: ease-in-out all 0.4s;
+    transition: max-height 1s ease-in-out;
+    overflow: hidden;
+
+    
 }
 
 

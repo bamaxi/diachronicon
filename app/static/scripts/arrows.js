@@ -15,7 +15,7 @@
     // */
     // document.body.appendChild(arrow.node);
 
-    window.addEventListener('load', function(){
+        {
         const translation_from_base_x = -0.5
         const translation_to_base_x = -1.5
 
@@ -24,7 +24,7 @@
 
         console.log(arrows)
         console.log(arrows.DIRECTION)
-
+            
         console.log(changes)
     
         for (change of changes){
@@ -78,7 +78,7 @@
                 console.log(arrowProps)
     
                 arrow = arrows.arrowCreate(arrowProps)
-                element = arrow.node.firstChild
+                ele ment = arrow.node.firstChild
 
                 element.classList.add(`from-${from_node.getAttribute("data-level")}`)
                 element.classList.add(`to-${to_node.getAttribute("data-level")}`)

@@ -94,10 +94,10 @@
                 {%- if construction.in_rus_constructicon -%}
                 {% if construction.rus_constructicon_id %}
                     <span class="constructicon-id">{{ construction.rus_constructicon_id }}</span>
-                    <a class="sup" href="https://constructicon.ruscorpora.ru">Constructicon</a>
+                    (<a class="constructicon-link" href="https://constructicon.ruscorpora.ru/construction/{{construction.rus_constructicon_id}}">Constructicon</a>)
                     {% endif %}
                 {% else %}
-                    <span class="no-rus-constructicon">Конструкция отсутствует</span>
+                    <span class="no-rus-constructicon">Нет связанной страницы</span>
                 {% endif %}
             </div>
            
@@ -167,6 +167,8 @@
                 </div>
         </section>
         {% endwith %}
+        {% else %}
+        Изменения ещё описываются, о них можно будет прочитать немного позже.
         {% endif %}
        </section>
 
