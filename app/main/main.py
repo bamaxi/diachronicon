@@ -55,6 +55,9 @@ from app.utils import (
     find_unique
 )
 
+# STRIPABLE = "()/[],."
+STRIPABLE = "()"
+
 
 class SimpleSearchForm(FlaskForm):
     _constructions_datalist_id = "construction_values"
@@ -74,10 +77,9 @@ class SimpleSearchForm(FlaskForm):
         # description="формула конструкции",
     )
 
-
 def clean_formula(formula: str):
     # fixes search for whole construction as suggested by datalist
-    return " ".join([elem.strip("()") for elem in formula.split()])
+    return " ".join([elem.split("/")[0].strip(STRIPABLE) for elem in formula.split()])
 
 
 @bp.route('/', methods=["GET", "POST"])

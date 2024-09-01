@@ -8,7 +8,10 @@ from typing import (
     Type, Tuple, List, Dict, Union, Callable, Iterator,
     Literal, Any)
 
+import openpyxl
 from openpyxl import load_workbook
+import openpyxl.worksheet
+import openpyxl.worksheet.worksheet
 
 from ..models import (
     UNKNOWN_SYNT_FUNCTION_OF_ANCHOR,
@@ -79,6 +82,7 @@ SHEET2COLUMN2CORRECTION = {
     "changes": StrLoweringDict({
         "change_id": "id",
         "part_of_construction_changed": "stage",
+        "formula_of_the_change": "stage",
         "first_entry": "first_attested",
         "last_entry": "last_attested",
         "frequency_(trend)": "frequency_trend",
@@ -570,7 +574,27 @@ def convert_column_title(orig_title: str) -> str:
     return orig_title.replace(" ", "_").lower()
 
 
-def parse(filename: str, use_old_sheet_names=True, verbose=False):
+def get_sheets(
+    wb: openpyxl.Workbook, final_names: T.Iterable[str]=tuple(SHEET_TO_CLASS),
+    names_to_final_mapper: T.Optional[T.Dict[str, str]] = None
+) -> T.Dict[str, openpyxl.worksheet.worksheet.Worksheet]:
+    name_to_sheet = {}
+    if names_to_final_mapper:
+        for sheet in wb.worksheets:
+            title = names_to_final_mapper.get(sheet.title)
+            if title:
+                name_to_sheet[title] = sheet
+            else:
+                continue
+    else:
+        for sheet in wb.worksheets:
+            title = sheet.title
+            name_to_sheet[title] = sheet
+
+    return name_to_sheet
+
+
+def parse(filename: str, use_old_sheet_names=False, verbose=False):
     wb = load_workbook(filename, data_only=True)
 
     # parse.idscorrection = {}
@@ -578,12 +602,14 @@ def parse(filename: str, use_old_sheet_names=True, verbose=False):
     data = []
     print(wb.worksheets)
 
-    for sheet in wb.worksheets:
-        if not use_old_sheet_names:
-            corrected_sheet_name = ORIG_SHEET_NAME2DB_TABLE_NAME.get(sheet.title)
-        else:
-            corrected_sheet_name = sheet.title
-        model_class = SHEET_TO_CLASS.get(corrected_sheet_name)
+    if not use_old_sheet_names:
+        name_to_sheet = get_sheets(wb, names_to_final_mapper=ORIG_SHEET_NAME2DB_TABLE_NAME)
+    else:
+        name_to_sheet = get_sheets(wb)
+    print(name_to_sheet)
+
+    for sheet_name, sheet in name_to_sheet.items():
+        model_class = SHEET_TO_CLASS.get(sheet_name)
         if model_class is None:
             continue
 
@@ -593,14 +619,14 @@ def parse(filename: str, use_old_sheet_names=True, verbose=False):
         title_row = next(rows_iter)
         title_row_values = [convert_column_title(cell.value)
                             for cell in title_row if cell.value]
-        this_sheet_corrections = SHEET2COLUMN2CORRECTION.get(corrected_sheet_name, {})
+        this_sheet_corrections = SHEET2COLUMN2CORRECTION.get(sheet_name, {})
         logger.debug(f"this sheet corrections: {this_sheet_corrections}")
 
         title_row_values = [
             this_sheet_corrections.get(value, value)
             for value in title_row_values
         ]
-        print("title is", sheet.title, model_class, corrected_sheet_name,
+        print("title is", sheet.title, model_class, sheet_name,
               this_sheet_corrections.get("change_id"),
               title_row_values)
 
@@ -611,9 +637,10 @@ def parse(filename: str, use_old_sheet_names=True, verbose=False):
                 continue
 
             phrase_dict = dict(zip(title_row_values, cell_values))
+            # print(phrase_dict)
 
             discard_row = False
-            for col in SHEET2MUSTHAVE_COLUMNS.get(corrected_sheet_name, ()):
+            for col in SHEET2MUSTHAVE_COLUMNS.get(sheet_name, ()):
                 if not phrase_dict.get(col):
                     discard_row = True
                     break
@@ -655,7 +682,7 @@ def parse(filename: str, use_old_sheet_names=True, verbose=False):
 
                 data.append(values)
             
-            except (ValueError, AttributeError) as e:
+            except (ValueError, AttributeError, TypeError) as e:
                 logger.warning(f"couldn't add {phrase_dict}: {e}")
 
     if verbose:
