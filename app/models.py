@@ -96,6 +96,41 @@ class GeneralInfo(Base):
 
 
 @declarative_mixin
+class TagMixin:
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100))
+
+
+SEMANTICS_TAG = "sem"
+MORPHOSYNTAX_TAG = "synt"
+
+class GeneralTag(TagMixin, Base):
+    __tablename__ = "tag"
+    kind = Column(Enum(
+        *(SEMANTICS_TAG, MORPHOSYNTAX_TAG), name='tag_kind',
+        create_constraint=True
+    ))
+
+    def __repr__(self):
+        return (f'GeneralTag({self.id!r}, {self.name!r}, {self.kind!r})')
+
+
+construction_to_tags = Table(
+    "construction_to_tags",
+    Base.metadata,
+    Column("construction_id", Integer, ForeignKey("construction.id"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("tag.id"), primary_key=True),
+)
+
+change_to_tags = Table(
+    "change_to_tags",
+    Base.metadata,
+    Column("change_id", Integer, ForeignKey("change.id"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("tag.id"), primary_key=True),
+)
+
+
+@declarative_mixin
 class ConstructionMixin:
     id = Column(Integer, primary_key=True)
 
@@ -136,6 +171,21 @@ class Construction(ConstructionMixin, Base):
     # TODO: normalize these into another table
     morphosyntags = Column(String(200))
     semantags = Column(String(200))
+    morphosyntax_tags = relationship(
+        "GeneralTag",
+        secondary=construction_to_tags,
+        # primaryjoin=id == construction_to_tags.c.construction_id,
+        primaryjoin=f"and_(Construction.id==construction_to_tags.c.construction_id, GeneralTag.kind=='{MORPHOSYNTAX_TAG}')",
+        # secondaryjoin=id == change_to_previous_changes.c.previous_change_id,
+    )
+    semantic_tags = relationship(
+        "GeneralTag",
+        secondary=construction_to_tags,
+        # primaryjoin=id == construction_to_tags.c.construction_id,
+        primaryjoin=f"and_(Construction.id==construction_to_tags.c.construction_id, GeneralTag.kind=='{SEMANTICS_TAG}')",
+        # secondaryjoin=id == change_to_previous_changes.c.previous_change_id,
+    )
+    
 
     general_info = relationship("GeneralInfo", back_populates="construction",
                                 uselist=False)  # One-to-one
@@ -198,7 +248,8 @@ class Construction(ConstructionMixin, Base):
                 f'{self.contemporary_meaning!r}, {self.variation!r}, '
                 f'{self.in_rus_constructicon!r}, {self.rus_constructicon_id!r}, '
                 f'{self.synt_function_of_anchor!r}, {self.anchor_schema!r}, '
-                f'{self.anchor_ru!r}, {self.anchor_eng!r})')
+                f'{self.anchor_ru!r}, {self.anchor_eng!r}, '
+                f'{self.morphosyntax_tags!r}, {self.semantic_tags!r})')
 
 
 class ConstructionVariant(ConstructionMixin, Base):
@@ -298,6 +349,17 @@ class Change(Base):
     # TODO: normalize these into another table with Construction tags
     morphosyntags = Column(String(200))
     semantags = Column(String(200))
+    morphosyntax_tags = relationship(
+        "GeneralTag",
+        secondary=change_to_tags,
+        primaryjoin=f"and_(Change.id==change_to_tags.c.change_id, GeneralTag.kind=='{MORPHOSYNTAX_TAG}')",
+    )
+    semantic_tags = relationship(
+        "GeneralTag",
+        secondary=change_to_tags,
+        primaryjoin=f"and_(Change.id==change_to_tags.c.change_id, GeneralTag.kind=='{SEMANTICS_TAG}')",
+    )
+
 
     # TODO: datetime or int?
     first_attested = Column(Integer)
@@ -364,7 +426,8 @@ class Change(Base):
                 f'{self.stage!r}, {self.level!r}, {self.type_of_change!r} '
                 f'{self.first_attested!r}, {self.last_attested!r}, '
                 f'{self.first_example!r:.{REPR_CHAR_LIM}}, '
-                f'{self.last_example!r:.{REPR_CHAR_LIM}})')
+                f'{self.last_example!r:.{REPR_CHAR_LIM}}, '
+                f'{self.morphosyntax_tags!r}, {self.semantic_tags!r})')
 
 
 class Constraint(Base):

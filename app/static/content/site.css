@@ -78,11 +78,6 @@ audio {
   background-color: white;
 }
 
-span.years {
-  width: 12em;
-  display: inline-block;
-}
-
 span.source-change {
   color: #5aa832;
 }

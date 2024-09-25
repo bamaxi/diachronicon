@@ -55,6 +55,9 @@ from app.utils import (
     find_unique
 )
 
+# STRIPABLE = "()/[],."
+STRIPABLE = "()"
+
 
 class SimpleSearchForm(FlaskForm):
     _constructions_datalist_id = "construction_values"
@@ -66,7 +69,7 @@ class SimpleSearchForm(FlaskForm):
     )
 
     formula = BootstrapStringField(
-        label="Конструкция",
+        label="Выберите конструкцию",
         render_kw=dict(
             div_extra_contents = [_constructions_datalist],
             list = _constructions_datalist_id,

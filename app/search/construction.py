@@ -139,6 +139,8 @@ def construction(index: int):
         selectinload("*"),
         selectinload(Change.previous_changes),
         selectinload(Change.next_changes),
+        selectinload(Change.morphosyntax_tags),
+        selectinload(Change.semantic_tags),
     ).where(
             Construction.id == index
     )
@@ -150,27 +152,37 @@ def construction(index: int):
     # )
     # logger.debug(f"built query: {stmt}")
     print(f"built query: {stmt}")
+    construction_only_stmt = select(Construction).options(
+        selectinload("*")
+    ).where(
+        Construction.id == index
+    )
+    kind_stmts = [("construction+changes", stmt), ("construction", construction_only_stmt)]
 
     with Session(current_app.engine) as session:
         # results = conn.execute(stmt).mappings().all()
-        res_ = session.execute(stmt).scalars()
 
-        logger.debug(f"found res: {res_}")
-        print(res_)
+        for kind, stmt in kind_stmts:
+            res_ = session.execute(stmt).scalars()
+        
+            logger.debug(f"found res ({kind})")
 
-        construction = res_.first() or abort(404)
-        # construction = construction[0]
-        print(type(construction), construction)
+            construction: Construction = res_.first()
+            if construction:
+                print(type(construction), construction)
+                break
+        else:
+            abort(404)
 
     title = (getattr(getattr(construction, "general_info", object), "name", None)
              or construction.formula)
     
     for change in construction.changes:
         for kind in ("first_example", "last_example"):
-            setattr(change, f"{kind}_html", Markup(
-                    add_examples_highlight(getattr(change, kind))
-                )
-            )
+            change_kind = getattr(change, kind)
+            
+            markup = Markup(add_examples_highlight(change_kind)) if change_kind else ""
+            setattr(change, f"{kind}_html", markup)
 
     context = dict(
         title=f"Конструкция '{title}'",
@@ -205,10 +217,15 @@ def construction(index: int):
     print(f"about to render `{index}`")
 
     construction.set_changes_one_based()
-    print(construction.changes, construction.changes[0], construction.changes[0].next_changes,
-          construction.changes[-1], construction.changes[-1].previous_changes,
-          sep="\n"
-    )
+    if construction.changes:
+        print(construction.changes, construction.changes[0], construction.changes[0].next_changes,
+            construction.changes[-1], construction.changes[-1].previous_changes,
+            sep="\n"
+        )
+
+    # for change in construction.changes:
+    #     print(*[tag.name for tag in change.morphosyntax_tags], end="\t|\t")
+    #     print(*[tag.name for tag in change.semantic_tags], end="\n\n")
 
     page = render_template('construction.html',  **context)
     return page

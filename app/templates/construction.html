@@ -27,6 +27,10 @@
 <link rel="canonical" href="/construction/{{ construction.id }}" />
 {% endblock %}
 
+{# {% block before_content %}
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"></svg>
+{% endblock %} #}
+
 {% block content %}
 <div class="row justify-content-center">
    <div class="single-result col-10">
@@ -90,10 +94,10 @@
                 {%- if construction.in_rus_constructicon -%}
                 {% if construction.rus_constructicon_id %}
                     <span class="constructicon-id">{{ construction.rus_constructicon_id }}</span>
-                    <a class="sup" href="https://constructicon.ruscorpora.ru">Constructicon</a>
+                    (<a class="constructicon-link" href="https://constructicon.ruscorpora.ru/construction/{{construction.rus_constructicon_id}}">Constructicon</a>)
                     {% endif %}
                 {% else %}
-                    <span class="no-rus-constructicon">Конструкция отсутствует</span>
+                    <span class="no-rus-constructicon">Нет связанной страницы</span>
                 {% endif %}
             </div>
            
@@ -106,12 +110,14 @@
             <section class="description-row row">
                 <div class="num-changes-data col-md-4">
                     <label class="description-label label-num-changes">Количество изменений</label>
-                    <span class="num-changes-num">{{ chs | length }}</span>
-                    <span class="num-changes-desc">всего</span>
-                    <span class="num-changes-num">{{ chs|selectattr("level", "eq", "synt")|list|length  }}</span>
-                    <span class="num-changes-desc">(синт)</span>
-                    <span class="num-changes-num">{{ chs|selectattr("level", "eq", "sem")|list|length }}</span>
-                    <span class="num-changes-desc">(сем)</span>
+                    <div class="num-changes">
+                        <span class="num-changes-num">{{ chs | length }}</span>
+                        <label class="num-changes-desc">всего</label>
+                        <span class="num-changes-num">{{ chs|selectattr("level", "eq", "synt")|list|length  }}</span>
+                        <label class="num-changes-desc">(синтаксических)</label>
+                        <span class="num-changes-num">{{ chs|selectattr("level", "eq", "sem")|list|length }}</span>
+                        <label class="num-changes-desc">(семантических)</label>
+                    </div>
                 </div>
                 <div class="earliest-change-data col-md-4">
                     <label class="description-label label-earliest-change">Самый ранний этап</label>
@@ -161,6 +167,8 @@
                 </div>
         </section>
         {% endwith %}
+        {% else %}
+        Изменения ещё описываются, о них можно будет прочитать немного позже.
         {% endif %}
        </section>
 
@@ -195,6 +203,8 @@
 {% endblock %}
 
 {% block scripts %}
+{{ super() }}
+<script src="/static/scripts/arrows.js"></script>
 <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
 <script src="/static/scripts/plots_extra.js"></script>
 <script type='text/javascript'>
@@ -203,5 +213,9 @@
       var config = {responsive: true}
       Plotly.plot('changes-chart-{{ res_id }}',changes_graph_{{ res_id }},{}, config);
   }
+</script>
+<script type="text/javascript">
+const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl, {customClass: "bordered"}))
 </script>
 {% endblock %}

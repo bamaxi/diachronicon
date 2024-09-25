@@ -115,6 +115,10 @@ $border-horizontal-percent: 90%;
     @extend .border-start
 }
 
+.description-row .num-changes {
+    display: inline;
+}
+
 .anchors {
     display: block;
     // padding-left: 0.5rem;
@@ -171,22 +175,38 @@ $border-horizontal-percent: 90%;
 
 
 .num-changes-data {
+    // & .num-changes-num {
+    //     padding-left: 1rem;
+    //     width: 2rem;
+    //     display: inline-block;
+    // }
+    $num-width: 15%;
+    &::before {
+        content: none;
+    }
+
     & .num-changes-num {
-        padding-left: 1rem;
-        display: inline block;
+        float: left;
+        width: $num-width;
+    }
+    & .num-changes-desc {
+        width: calc(100% - $num-width);
     }
 }
 
-.num-changes-num ~ .num-changes-num {
-    &::before { content: "\a"; white-space: pre}
-}
+// .num-changes-num ~ .num-changes-num {
+//     &::before { content: "\a"; white-space: pre}
+// }
 
 
 
-// .changes-chart {
-//     width: $changes_chart_min_width;
-//     height: $changes_chart_min_height;
+.changes-chart {
+    // width: $changes_chart_min_width;
+    // height: $changes_chart_min_height;
     
+    @include media-breakpoint-down(md) {
+        display: none;
+    }
 //     @media screen and (max-width: $hide_chart_min_width) {
 //         display: none;
 //         /* content: "Your device is too small"; */
@@ -209,7 +229,7 @@ $border-horizontal-percent: 90%;
 //         width: $changes_chart_min_width * 1.7;
 //         height: $changes_chart_min_height * 1.7;
 //     }
-// }
+}
 
 .changes-chart-was-hidden-message {
     @media (min-width: $hide_chart_min_width) {
@@ -228,7 +248,7 @@ $border-horizontal-percent: 90%;
 
 /* Table with data on changes of construction */
 
-ol.changes-list {
+.changes-list {
     & > li {
         list-style: none;
         // @extend .border-start;
@@ -238,8 +258,9 @@ ol.changes-list {
         font-weight: bold;
     }
 
-    & > li + li {
-        @extend .pt-4;
+    & > li:not(.controls) + li {
+        @extend .pt-2;
+        @extend .mt-5;
 
         & {
             padding: auto;
@@ -247,8 +268,10 @@ ol.changes-list {
     }
 
     & .number {
-        position: absolute;
-        margin-left: -3rem;
+        position: sticky;
+        top: 20px;
+        // margin-left: -3rem;
+        left: 3rem;
         max-width: fit-content;
 
         &.desc {
@@ -258,12 +281,233 @@ ol.changes-list {
 }
 
 
+$kinds: synt, sem;
+
+$sem-color: red;
+$synt-color: blue;
+
+$kind2color: (
+    "sem": $sem-color,
+    "synt": $synt-color,
+);  
+
+$start-color: green;
+$final-color: yellow;
+
+$base-size: 1rem;
+$index-width: 5%;
+
+ol.changes-list > li {
+    list-style: none;
+
+    &.start {
+        //  {
+        //     border-image: linear-gradient(0deg,blue 20%,#0000 0 80%,blue 0) 10;
+        //     /* border: 10px solid #0000; */
+        //     /* background: linear-gradient(180deg, rgba(255, 255, 255, 0) 60%, gold 70%); */
+        //     border-width: 4px;
+        //     border-style: solid;
+        //     /* border-image: linear-gradient(to right, darkblue, darkorchid) 1; */
+        //     border-radius: 90px;
+        // }    
+
+        // border-image: linear-gradient(180deg,green 20%,#0000 0 100%) 10;
+        // /* border: 10px solid #0000; */
+        // /* background: linear-gradient(180deg, rgba(255, 255, 255, 0) 60%, gold 70%); */
+        // border-width: 3px;
+        // border-style: dashed;
+        /* border-image: linear-gradient(to right, darkblue, darkorchid) 1; */
+        // border-radius: 90px;
+        
+        background-image: linear-gradient(180deg,green 20%,#0000 0 100%) 10;
+        // background-size: 3px 100%;
+        // background-repeat: no-repeat;
+    }
+
+    &.final {
+        // background-image:
+        //     repeating-linear-gradient(0deg, $final-color, $final-color 20px, transparent 20px, transparent 30px, $final-color 30px),
+        //     repeating-linear-gradient(90deg, $final-color, $final-color 20px, transparent 20px, transparent 30px, $final-color 30px),
+        //     repeating-linear-gradient(180deg, $final-color, $final-color 20px, transparent 20px, transparent 30px, $final-color 30px),
+        //     repeating-linear-gradient(270deg, $final-color, $final-color 20px, transparent 20px, transparent 30px, $final-color 30px);
+        // background-size: 3px 100%, 40% 3px, 3px 100%, 100% 3px;
+        // background-position: 0 0, 0 0, 100% 0, 0 100%;
+        // background-repeat: no-repeat;
+    }
+
+    & label {
+        &:not(.change-link-label){
+            @extend .text-secondary;
+            font-size: small;
+        }
+        &:not(.references *) {
+            display: none;
+        }
+    }
+        
+    // @extend .border-start;
+    // & .brief-block {
+
+    // }
+
+    & .brief-block > *, & .text-block > .comment {
+        text-indent: calc(1.25rem + 0.6ch) hanging;
+    }
+
+    & .main {
+        line-height: 0.4rem;
+        & .title {
+            line-height: initial;
+        }
+
+        & .index {
+            display: inline-block;
+            font-size: small;
+            color: gray;
+            width: $index-width;
+            // float: left;
+            text-align: left;
+        }
+        & .stage {
+            display: inline-block;
+            &:not(label) {
+                font-size: 2 * $base-size;
+                width: calc(100% - $index-width);
+            }
+            &:is(label) {
+                font-size: x-small;
+                padding-left: $index-width;
+                display: inline-block;
+            }
+        }
+    }
+
+    & .kinds {
+        @extend .pt-2;
+
+        & .level-sem {
+            & *:not(label), *:not(label)::before {
+                color: $sem-color
+            } 
+        }
+        
+        & .level-synt {
+            & *:not(label), *:not(label)::before {
+                color: $synt-color
+            } 
+        }
+    }
+
+    & .fa-tags {
+        background: linear-gradient(90deg, $synt-color 45%, $sem-color 45%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    & .text-block {
+        line-height: 2.25rem;
+
+
+        // @include media-breakpoint-up(md) {
+        //     & > *:first-child {
+        //         margin-top: -1.5 * $base-size;
+        //     }
+        // }
+
+        & span.years {
+            // width: 10rem;
+            display: inline-block;
+        }
+        
+        & .comment {
+            line-height: 1rem;
+
+            & .comment-content {
+                line-height: initial;
+                &::after {
+                    content: "\a";
+                    white-space: pre
+                }
+            }
+        }
+
+        & .examples {
+            line-height: initial;
+        }
+    }
+
+    & .references {
+        font-size: small;
+        // @extend .pt-2;
+
+        & * {
+            white-space: initial;
+        }
+
+        & .previous {
+            text-align: right;
+        }
+
+        & .title {
+            text-align: center;
+        }
+
+        & .next {
+            text-align: left;
+        }
+
+        & span {
+            font-weight: initial;
+        }
+    }
+
+
+    & .tags .badge {
+        @each $kind in $kinds {
+            &.#{$kind} {
+                background-color: color.scale(
+                    map-get($map: $kind2color, $key: $kind), $alpha: -45%
+                );
+            }
+        } 
+    }
+}
+
+
+.arrow {
+    pointer-events: none;
+    // pointer-events: stroke;
+
+    // &:hover * {
+    //     stroke: black;
+    // }
+
+    @each $kind in $kinds {
+        &:is(.to-#{$kind}) {
+            & .arrow__path {
+                stroke: map-get($map: $kind2color, $key: $kind);
+                fill: transparent
+            }
+
+            & .arrow__head line {
+                stroke: map-get($map: $kind2color, $key: $kind);
+                stroke-width: 1px;
+            }
+        }
+    }
+
+    &:is(.to-sem) .arrow__path {
+        stroke-dasharray: 4 2;
+    }
+}
+
 @keyframes target-higlight {
     from {background-color: $purple-200}
     to {background-color: white}
   }
 
-.number:target {
+.index:target {
     scroll-margin-top: 100px; 
 
     // &, li:target-within {
@@ -272,75 +516,9 @@ ol.changes-list {
     // }
 }
 
-li:has(.number:target) {
+li:has(.index:target) {
     animation-name: target-higlight;
     animation-duration: 2s;
-}
-
-
-// .changes-references > * + * {
-//     @extend .pt-3
-// }
-
-.change-types {
-    display: block;
-    // padding-left: 0.5rem;
-    & > * {
-        // @include make-hanging-indent(.5)
-        width: 100%;
-    }
-
-    & > label {
-        float: left;
-        // width: 40%;
-        @extend .text-secondary;
-        line-height: $line-height-sm;
-    }
-    // & > span {
-    //     width: 60%;
-    // }
-    
-    & > label ~ label {
-        padding-top: 0.4rem;
-    }
-
-    & > :not(label) {
-        display: inline-block;
-        @include make-hanging-indent(.75, 1);
-
-        & ~ :not(label) {
-            padding-top: 0.2rem;
-        }
-    }
-
-    // & *:not(label).change-type {
-    //     white-space: pre;
-    //     & ~ &::before { content: "\a"; white-space: pre}
-    // }
-
-}
-
-
-
-
-@mixin pad-changes-divs($rem) {
-    padding-top: $rem*1rem;
-} 
-
-// .changes-references > * + * {
-//     @include pad-changes-divs(0.5)
-// }
-
-.changes-references {
-    font-size: smaller;
-
-    .arrow {
-        display: none;
-    }
-
-    & > * + * {
-        @include pad-changes-divs(0.5)
-    }
 }
 
 .controls {
