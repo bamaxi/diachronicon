@@ -81,7 +81,8 @@
             <div class="col-md-12 title">
               <span class="index" id="change-{{ change.id1 }}">
                 <a href="#change-{{ change.id1 }}"># {{ change.id1 }}</a>
-              </span><span class="stage {{ change.level }}">{{ change.stage }}</span>
+              </span><span class="stage {{ change.level }}" data-bs-toggle="tooltip"
+                           data-bs-title="изменяющаяся часть">{{ change.stage }}</span>
             </div>
             {# <label class="stage">изменяющаяся часть</label> #}
           {# </div> #}
@@ -91,17 +92,17 @@
           <div class="col-md-12 kinds">
             <div class="col-md-12 level level-{{ change.level }}">
               <i class="fa fa-fw fa-solid fa-layer-group"></i>
-              <span class="level">{{ change.level }}</span>
+              <span class="level" data-bs-toggle="tooltip" data-bs-title="уровень изменения">{{ change.level }}</span>
               <label class="level">уровень изменения</label>
             </div>
             <div class="col-md-12 type">
               <i class="fa fa-fw fa-solid fa-book"></i>
-              <span class="type">{{ change.type_of_change }}</span>
+              <span class="type" data-bs-toggle="tooltip" data-bs-title="тип изменения">{{ change.type_of_change }}</span>
               <label class="type">тип изменения</label>
             </div>
             <div class="col-md-12 subtype">
               <i class="fa fa-fw fa-solid fa-book-open"></i>
-              <span class="type">{{ change.subtype_of_change }}</span>
+              <span class="type" data-bs-toggle="tooltip" data-bs-title="подтип изменения">{{ change.subtype_of_change }}</span>
               <label class="type">подтип изменения</label>
             </div>
           </div>
@@ -110,10 +111,10 @@
             <i class="fa fa-fw fa-solid fa-tags"></i>
             <label class="tag">тэги</label>
             {% for tag in change.morphosyntax_tags %}
-            <span class="badge rounded-pill {{ tag.kind }}">{{ tag.name }}</span>
+            <span class="badge rounded-pill {{ tag.kind }}" data-bs-toggle="tooltip" data-bs-title="морфосинтаксический тэг">{{ tag.name }}</span>
             {% endfor %}
             {% for tag in change.semantic_tags %}
-              <span class="badge rounded-pill {{ tag.kind }}">{{ tag.name }}</span>
+              <span class="badge rounded-pill {{ tag.kind }}" data-bs-toggle="tooltip" data-bs-title="семантический тэг">{{ tag.name }}</span>
             {% endfor %}
           </div>
           {% endif %}
@@ -122,12 +123,14 @@
         <div class="col-md-8 text-block">
           <div class="col-md-12 years">
             <i class="fa fa-fw fa-regular fa-calendar-days"></i>
-            <span class="years">{{ "%s — %s"|format(change.first_attested, change.last_attested)|safe }}</span>
+            <span class="years" data-bs-toggle="tooltip" data-bs-title="годы первого и последнего вхождений">
+              {{ "%s — %s"|format(change.first_attested, change.last_attested)|safe }}
+            </span>
             <label class="years">годы первого и последнего вхождений</label>
           </div>
           <div class="col-md-12 comment">
             <i class="fa fa-fw fa-solid fa-comment-dots"></i>
-            <span class="comment-content">{{ change.comment }}</span>
+            <span class="comment-content" data-bs-toggle="tooltip" data-bs-title="описание изменения">{{ change.comment }}</span>
             {# <i class="fa fa-fw"></i> #}
             {# <label>описание изменения</label> #}
           </div>
@@ -149,10 +152,10 @@
             <div class="col-md-12 ps-3 examples collapse all-examples-collapse"
                 id="{{ examples_id }}"
             >
-              <p class="example example-first">
+              <p class="example example-first" data-bs-toggle="tooltip" data-bs-title="первое вхождение">
                 {{ change.first_example_html }}
               </p>
-              <p class="example example-last">
+              <p class="example example-last" data-bs-toggle="tooltip" data-bs-title="последнее вхождение">
                 {{ change.last_example_html }}
               </p>
             </div>
@@ -186,25 +189,6 @@
             </span>
           </div>
         </div>
-        {# <div class="col-md-2 pl-3 changes-references">
-          <div class="col-md-12">
-            <label class="change-label">пред. <span class="arrow arrow-prev">←</span></label>
-            <span>
-            {% for prev_ch in change.previous_changes %}
-            {{ format_change(change.id1, prev_ch.id1) }}
-            {% endfor %}
-            </span>
-          </div>
-          <div class="col-md-12">
-            <label class="change-label">след. <span class="arrow arrow-next">→</span></label>
-            <span>
-            {% for next_ch in change.next_changes %}
-            {{ format_change(change.id1, next_ch.id1) }}
-            {% endfor %}
-            </span>
-          </div>
-        </div> #}
-
       </li>
     {% endfor %}
   </ol>

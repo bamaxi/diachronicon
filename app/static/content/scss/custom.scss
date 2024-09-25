@@ -6,6 +6,7 @@
 // 3. Include remainder of required Bootstrap stylesheets
 @import "variables";
 @import "mixins";
+@import "tooltip";
 
 @import "reboot";
 
@@ -39,6 +40,27 @@ body {
 /* } */
 
 
+// Tooltips
+$tooltip-color:             $black;
+$tooltip-bg:                $white;
+$tooltip-border-color:      $black;
+// $tooltip-border-radius:  $border-radius;
+// $tooltip-opacity:        .9;
+
+$placements: left, right, top, bottom;
+
+.tooltip.bordered {
+    .tooltip-inner {
+        border: 1px solid $tooltip-border-color;
+    }
+
+    @each $place in $placements {
+        &.bs-tooltip-auto[data-popper-placement^="#{$place}"] .tooltip-arrow::before {
+            #{$place}: 0px;
+            border-#{$place}-color: rgba(0, 0, 0, 0.9);
+        }
+    }
+}
 
 @import "custom_search_page";
 @import "custom_construction_page";

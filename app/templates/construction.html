@@ -214,4 +214,8 @@
       Plotly.plot('changes-chart-{{ res_id }}',changes_graph_{{ res_id }},{}, config);
   }
 </script>
+<script type="text/javascript">
+const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl, {customClass: "bordered"}))
+</script>
 {% endblock %}
