@@ -64,6 +64,22 @@ $placements: left, right, top, bottom;
     }
 }
 
+// font-awesome
+$icon-size: 1.25rem!important;
+
+.fa-fw {
+    width: $icon-size;
+    text-align: center;
+}
+
+[data-bs-toggle="collapse"] {
+    margin-left: -$icon-size;
+    
+    & [aria-expanded="true"] .fa {
+        transform: rotate(90deg);
+    }
+}
+
 @import "custom_search_page";
 @import "custom_construction_page";
 
@@ -90,33 +106,46 @@ a {
     }
 }
 
-// font-awesome
-.fa-fw {
-    width: 1.25rem!important;
-    text-align: center;
-}
+// FORMS
 
 input, select, textarea {
     max-width: $input-max-width;
 }
 
+.form-control {
+    font-size: 0.95rem;
+}
+
 
 form#search-form {
-    legend {font-size: 1.1rem;}
+    legend {font-size: 1.2rem;}
 
     .multi-inputs {
         display: flex;
+        flex-flow: row wrap;
         justify-content: space-between;
         max-width: $input-max-width;
+
+        & legend {
+            padding-left: 0.25rem;
+            font-size: 1rem;
+        }
 
         // > *:not(:last-child) {
         //     margin-right: $form-multi-inputs-gutter;
         // }
-        & >* {
+        & > .form-field-text {
             flex-basis: 49%;
-        }   
+        }
 
-        input {
+        // helper text
+        & > .form-text {
+            margin-top: -1rem;
+            // margin bottom here instead
+            margin-bottom: 1rem;
+        }
+
+        & input {
             // padding-left: 0.2rem;
             // padding-right: 0.2rem;
             // height: calc(3.5rem + 2px);
@@ -128,7 +157,7 @@ form#search-form {
             }
         }
 
-        &.num_changes input {
+        &:is(.num_changes, .duration) input {
             height: calc(3.7rem + 2px);
         }
     }

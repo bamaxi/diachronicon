@@ -711,6 +711,15 @@ num_changes_deriv = SQLNumChangesDerivation2(
         comparison_between_model = SQLBetweenComparison
     )
 )
+
+anchor_length_deriv = SQLAnchorLengthDerivation(
+    SQLValueBetweenDerivation.from_ends_keys(
+        "anchor_length__from", "anchor_length__to",
+        comparison_model = SQLComparison,
+        comparison_between_model = SQLBetweenComparison
+    )
+)
+
 # dur_deriv = ValueWithSignDerivation("duration", "duration_sign", SQLDurationComparison)
 # dur_deriv = SQLDurationDerivation2(
 #     ValueWithSignDerivation("duration", "duration_sign", SQLComparison)
@@ -722,14 +731,34 @@ dur_deriv = SQLDurationDerivation2(
         comparison_between_model = SQLBetweenComparison
     )
 )
-anchor_length_deriv = SQLAnchorLengthDerivation(
+
+first_attested_deriv = SQLDurationDerivation2(
     SQLValueBetweenDerivation.from_ends_keys(
-        "anchor_length__from", "anchor_length__to",
+        "first_attested__from", "first_attested__to",
         comparison_model = SQLComparison,
         comparison_between_model = SQLBetweenComparison
     )
 )
-deriv = {"construction": [num_changes_deriv, anchor_length_deriv], "changes": [dur_deriv]}
+
+last_attested_deriv = SQLDurationDerivation2(
+    SQLValueBetweenDerivation.from_ends_keys(
+        "last_attested__from", "last_attested__to",
+        comparison_model = SQLComparison,
+        comparison_between_model = SQLBetweenComparison
+    )
+)
+
+deriv = {
+    "construction": [
+        num_changes_deriv,
+        anchor_length_deriv
+    ],
+    "changes": [
+        dur_deriv,
+        first_attested_deriv,
+        last_attested_deriv,
+    ]}
+
 
 def default_sqlquery():
     return SQLQuery(deriv)

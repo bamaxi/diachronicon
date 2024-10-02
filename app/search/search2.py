@@ -671,7 +671,7 @@ class ConstructionForm(FlaskForm):
             # label_extra_text = Markup('<span class="symbol symbol-form symbol-logic"></span>'),
             div_extra_contents = [_meaning_datalist],
             list = _meaning_datalist_id,
-        ), description="значение конструкциии в последний период",   
+        ), description="значение конструкции в последний период",   
     )
 
     # in_rus_constructicon = BootstrapBooleanField(
@@ -805,11 +805,25 @@ class ChangeForm(FlaskForm):
         validators=[wtforms.validators.Optional(strip_whitespace=True)]
     )
 
-    first_attested = BootstrapIntegerField(
-        "Первое вхождение в таком виде", name="first_attested",
+    # first_attested = BootstrapIntegerField(
+    #     "Первое вхождение в таком виде", name="first_attested",
+    #     validators=[wtforms.validators.Optional(strip_whitespace=True)])
+    first_attested__from = BootstrapIntegerField(
+        "От (год)",
         validators=[wtforms.validators.Optional(strip_whitespace=True)])
-    last_attested = BootstrapIntegerField(
-        "Последнее вхождение в таком виде", name="last_attested",
+    first_attested__to = BootstrapIntegerField(
+        "До (год)",
+        validators=[wtforms.validators.Optional(strip_whitespace=True)])
+    
+    # last_attested = BootstrapIntegerField(
+    #     "Последнее вхождение в таком виде", name="last_attested",
+    #     validators=[wtforms.validators.Optional(strip_whitespace=True)])
+
+    last_attested__from = BootstrapIntegerField(
+        "От (год)",
+        validators=[wtforms.validators.Optional(strip_whitespace=True)])
+    last_attested__to = BootstrapIntegerField(
+        "До (год)",
         validators=[wtforms.validators.Optional(strip_whitespace=True)])
     
 

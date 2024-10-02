@@ -2,7 +2,27 @@
 
 #search-form {
     padding: 4px;
+    
+    & legend.toggle {
+        margin-left: -$icon-size; // the size of the icon
+
+        a {
+            color: inherit;
+            font-weight: inherit;
+            
+            &[aria-expanded="true"] .fa {
+                transform: rotate(90deg);
+            }
+        }
+    }
+
+    & .collapse {
+        // border-left: 1px $secondary;
+        box-shadow: -2px 0 0 #6c757d;
+        border-radius: 5px;
+    }
 }
+
 
 .form-field-text {
     @extend .form-floating;
