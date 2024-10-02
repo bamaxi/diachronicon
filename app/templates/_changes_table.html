@@ -124,7 +124,7 @@
           <div class="col-md-12 years">
             <i class="fa fa-fw fa-regular fa-calendar-days"></i>
             <span class="years" data-bs-toggle="tooltip" data-bs-title="годы первого и последнего вхождений">
-              {{ "%s — %s"|format(change.first_attested, change.last_attested)|safe }}
+              {{ "%s — %s"|format(change.first_attested_, change.last_attested_dt_aware)|safe }}
             </span>
             <label class="years">годы первого и последнего вхождений</label>
           </div>

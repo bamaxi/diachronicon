@@ -1,6 +1,7 @@
 import typing as T
 from datetime import datetime
 from itertools import chain
+import logging
 
 from sqlalchemy import (
     Column,
@@ -20,6 +21,13 @@ from sqlalchemy.orm import (
 
 from app.constants import NO_DATE
 
+
+logger = logging.getLogger(f"diachronicon.{__name__}")
+logger.addHandler(logging.StreamHandler())
+
+
+PRECISE_DATE_UNTIL_YEAR = 2005
+CURRENT_STATUS = "настоящее время"
 
 MAX_FORMULA_LEN = 200
 REPR_CHAR_LIM = 25
@@ -208,6 +216,7 @@ class Construction(ConstructionMixin, Base):
         "ConstructionVariant", back_populates="construction",
         order_by="ConstructionVariant.id",
     )
+
 
     def get_alternate_formulas(self):
         return [variant.formula for variant in self.variants
@@ -407,6 +416,45 @@ class Change(Base):
         # backref="next_changes",
         back_populates="previous_changes"
     )
+
+    @staticmethod
+    def parse_year(year: T.Union[str, int, None], left_bias=0.0) -> T.Optional[int]:
+        """Parse year string into datetime
+
+        :param year:
+        :param left_bias:
+        :return:
+        """
+        if not year or year == '-':
+            return None
+        if isinstance(year, int) or year.isnumeric():
+            return year
+        if '-' in year:
+            if year.endswith('-ые'):
+                return int(year.split('-')[0])
+
+            left, right = [int(part) for part in year.split('-')]
+            return int(left + (right-left) * (1-left_bias))
+
+        logger.debug(f"unsupported year type: {year}")
+        return None
+
+    
+    @property
+    def first_attested_(self) -> T.Union[int, str]:
+        return self.parse_year(self.first_attested) or self.first_attested
+
+    @property
+    def last_attested_(self) -> T.Union[int, str]:
+        return self.parse_year(self.last_attested) or self.last_attested
+
+    
+    @property
+    def last_attested_dt_aware(self) -> T.Union[int, str]:
+        year = self.parse_year(self.last_attested) or self.last_attested
+        if isinstance(year, int):
+            return year if year < PRECISE_DATE_UNTIL_YEAR else CURRENT_STATUS
+            
 
     def exist_constraints(self):
         return bool(self.constraints)

@@ -78,7 +78,7 @@ def prepare_graph_data(changes, skip_empty=True):
         presence = {}
 
         for field in ('first_attested', 'last_attested'):
-            year = parse_year(getattr(change, field))
+            year = Change.parse_year(getattr(change, field))
             value = datetime(year, 1, 1) if year else NO_DATE
 
             # level_data = changes_data.setdefault(change.level, {})

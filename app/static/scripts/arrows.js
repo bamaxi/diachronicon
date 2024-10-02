@@ -78,7 +78,7 @@
                 console.log(arrowProps)
     
                 arrow = arrows.arrowCreate(arrowProps)
-                ele ment = arrow.node.firstChild
+                element = arrow.node.firstChild
 
                 element.classList.add(`from-${from_node.getAttribute("data-level")}`)
                 element.classList.add(`to-${to_node.getAttribute("data-level")}`)
