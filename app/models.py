@@ -436,7 +436,7 @@ class Change(Base):
             left, right = [int(part) for part in year.split('-')]
             return int(left + (right-left) * (1-left_bias))
 
-        logger.debug(f"unsupported year type: {year}")
+        logger.debug(f"unsupported year type: `{year}`")
         return None
 
     

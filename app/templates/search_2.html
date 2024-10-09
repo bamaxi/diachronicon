@@ -1,5 +1,12 @@
 {% extends "layout.html" %}
 
+{# {% macro make_collapsible_div_attrs(class="", id="") %}
+  class="collapse{{ ' ' + class if class else ''}}"
+  {{ ' id=' + id  if id else ''}}
+
+{% endmacro %} #}
+
+
 {% block content %}
 
 <h1 class="mt-3">Поиск конструкций в Диахрониконе</h1>
@@ -44,7 +51,8 @@
         
         <fieldset name="anchor", class="col-md-3">
             <legend class="toggle">
-                <a class="collapse-toggle" data-bs-toggle="collapse" href="#anchor-extra" role="button" aria-expanded="false">
+                <a class="collapse-toggle" data-bs-toggle="collapse"
+                 data-bs-target=".anchor-extra" role="button" aria-expanded="false">
                     <i class="fa fa-fw fa-solid fa-angle-right"></i>
                     Якорь
                 </a>
@@ -52,8 +60,10 @@
             {{ _form.anchor.csrf_tag }}
 
             {{ _form.anchor.synt_function_of_anchor }}
-            <div class="collapse" id="anchor-extra">
+            <div class="collapse anchor-extra" id="anchor-extra">
                 {{ _form.anchor.anchor_schema }}
+            </div>
+            <div class="collapse anchor-extra" id="anchor-extra">
                 {{ _form.anchor.anchor_ru }}
             </div>
 
@@ -81,7 +91,8 @@
             {# {% if loop.index > 1 %}{{ style="display: none" }}{% endif %} #}
         >
             <legend class="toggle">
-                <a class="collapse-toggle" data-bs-toggle="collapse" href="#changes-{{ loop.index }}-extra"
+                <a class="collapse-toggle" data-bs-toggle="collapse"
+                   data-bs-target=".changes-{{ loop.index }}-extra"
                    role="button" aria-expanded="false">
                     <i class="fa fa-fw fa-solid fa-angle-right"></i>
                     {{ "Этап в истории конструкции" if loop.index == 1 else "и этап в истории конструкции" }}
@@ -91,17 +102,8 @@
             {{ _change.formula }}
             {# {{ _change.stage_abs }} #}
             {{ _change.level }}
-            {{ _change.type_of_change }}
 
-            <div class="collapse" id="changes-{{ loop.index }}-extra">
-                {{ _change.subtype_of_change }}            
-                <div class="multi-inputs duration" aria-describedby="changes-{{ loop.index }}-duration-help">
-                    {{ _change.duration__from }}
-                    {{ _change.duration__to }}
-                    <div class="form-text" id="changes-{{ loop.index }}-duration-help"></div>
-                </div>
-
-                <fieldset class="multi-inputs first_attested"
+            <fieldset class="multi-inputs first_attested"
                         aria-describedby="changes-{{ loop.index }}-first_attested-help"
                         aria-labelledby="changes-{{ loop.index }}-first_attested-title"
                 >
@@ -111,13 +113,29 @@
                     {# <div class="form-text" id="changes-{{ loop.index }}-first_attested-help">Первое вхождение в таком виде (год)</div> #}
                 </fieldset>
 
-                <fieldset class="multi-inputs last_attested"
-                    aria-describedby="changes-{{ loop.index }}-last_attested-help"
-                    aria-labelledby="changes-{{ loop.index }}-first_attested-title"
+            <fieldset class="multi-inputs last_attested"
+                aria-describedby="changes-{{ loop.index }}-last_attested-help"
+                aria-labelledby="changes-{{ loop.index }}-first_attested-title"
+            >
+                <legend id="changes-{{ loop.index }}-last_attested-title">Последнее вхождение в таком виде</legend>
+                {{ _change.last_attested__from }}
+                {{ _change.last_attested__to }}
+            </fieldset>
+
+            {{ _change.type_of_change }}
+
+            <div class="collapse changes-{{ loop.index }}-extra">
+                {{ _change.subtype_of_change }}
+            </div>
+            <div class="collapse changes-{{ loop.index }}-extra">
+                <fieldset class="multi-inputs duration"
+                    aria-describedby="changes-{{ loop.index }}-duration-help"
+                    aria-labelledby="changes-{{ loop.index }}-duration-title"
                 >
-                    <legend id="changes-{{ loop.index }}-last_attested-title">Последнее вхождение в таком виде</legend>
-                    {{ _change.last_attested__from }}
-                    {{ _change.last_attested__to }}
+                    <legend id="changes-{{ loop.index }}-duration-title">Длительность</legend>
+                    {{ _change.duration__from }}
+                    {{ _change.duration__to }}
+                    <div class="form-text" id="changes-{{ loop.index }}-duration-help"></div>
                 </fieldset>
             </div>
 

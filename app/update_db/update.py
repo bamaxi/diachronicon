@@ -3,6 +3,7 @@ import argparse
 from collections import defaultdict
 import logging
 from functools import wraps
+import re
 import typing as T
 from typing import (
     Type, Tuple, List, Dict, Union, Callable, Iterator,
@@ -500,12 +501,18 @@ def process_construction(
 def process_change(
     phrase_dict: Dict[str, Union[str, int]], change: Change,
     formula_parser: Callable[[str], List[Dict[str, str]]] = parse_formula,
+    year_sep_re = re.compile(r"-‐–—‒―−")
     verbose=False
 ) -> None:
     """Parse stage formula and add it to construction variants"""
     main_stage_variant = ConstructionVariant(
         construction_id=change.construction_id, is_main=True
     )
+
+    # fix inconsistent year separators
+    for year_type in ("first_attested", "last_attested"):
+        year = phrase_dict[year_type]
+        phrase_dict[year_type] = year_sep_re.sub("-", year)
 
     stage = phrase_dict["stage"]
     main_stage_variant.formula = stage

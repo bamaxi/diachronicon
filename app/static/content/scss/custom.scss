@@ -74,7 +74,7 @@ $icon-size: 1.25rem!important;
 
 [data-bs-toggle="collapse"] {
     margin-left: -$icon-size;
-    
+
     & [aria-expanded="true"] .fa {
         transform: rotate(90deg);
     }
@@ -116,52 +116,6 @@ input, select, textarea {
     font-size: 0.95rem;
 }
 
-
-form#search-form {
-    legend {font-size: 1.2rem;}
-
-    .multi-inputs {
-        display: flex;
-        flex-flow: row wrap;
-        justify-content: space-between;
-        max-width: $input-max-width;
-
-        & legend {
-            padding-left: 0.25rem;
-            font-size: 1rem;
-        }
-
-        // > *:not(:last-child) {
-        //     margin-right: $form-multi-inputs-gutter;
-        // }
-        & > .form-field-text {
-            flex-basis: 49%;
-        }
-
-        // helper text
-        & > .form-text {
-            margin-top: -1rem;
-            // margin bottom here instead
-            margin-bottom: 1rem;
-        }
-
-        & input {
-            // padding-left: 0.2rem;
-            // padding-right: 0.2rem;
-            // height: calc(3.5rem + 2px);
-
-            & +label {
-                // padding-left: 0.5rem;
-                // padding-right: 0.2rem;
-                font-size: 0.9rem;
-            }
-        }
-
-        &:is(.num_changes, .duration) input {
-            height: calc(3.7rem + 2px);
-        }
-    }
-}
 
 mark::before,
 mark::after {

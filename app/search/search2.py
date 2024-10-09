@@ -738,7 +738,7 @@ class AnchorForm(FlaskForm):
 class ChangeForm(FlaskForm):
     # number of changes
 
-    formula = BootstrapStringField(label="Формула в этот период", name="stage")
+    formula = BootstrapStringField(label="Формула на этом этапе", name="stage")
 
     _stages_datalist_id = "stage_numbers"
     _stages_datalist = DataList(
@@ -797,11 +797,11 @@ class ChangeForm(FlaskForm):
     #     validators=[wtforms.validators.Optional(strip_whitespace=True)])
     
     duration__from = BootstrapIntegerField(
-        label="Длительность (от)",
+        label="От (лет)",
         validators=[wtforms.validators.Optional(strip_whitespace=True)]
     )
     duration__to = BootstrapIntegerField(
-        label="Длительность (до)",
+        label="До (лет)",
         validators=[wtforms.validators.Optional(strip_whitespace=True)]
     )
 
