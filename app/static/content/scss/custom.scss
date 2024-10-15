@@ -72,13 +72,6 @@ $icon-size: 1.25rem!important;
     text-align: center;
 }
 
-[data-bs-toggle="collapse"] {
-    margin-left: -$icon-size;
-
-    & [aria-expanded="true"] .fa {
-        transform: rotate(90deg);
-    }
-}
 
 @import "custom_search_page";
 @import "custom_construction_page";
