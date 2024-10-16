@@ -65,7 +65,8 @@ $placements: left, right, top, bottom;
 }
 
 // font-awesome
-$icon-size: 1.25rem!important;
+$icon-size-base: 1.25rem;
+$icon-size: $icon-size-base!important;
 
 .fa-fw {
     width: $icon-size;
@@ -99,14 +100,9 @@ a {
     }
 }
 
-#typewriter-container {
-    // font-size: x-large;
-    // display: flex;
-    text-indent: 3vw hanging;
-    // padding-right: 3rem; // temporary solution for better alignment
-
-    font-weight: inherit;
-    font-style: italic;
+nav {
+    background-color: white;
+    border-bottom: 1px solid black; // var(--bs-border-color-translucent)
 }
 
 
@@ -179,20 +175,39 @@ mark::before {
         font-size: calc(1.1rem + 1vw);
     }
     mark {
+        $percent-y: 80%;
         // display: inline-block;
         // line-height: 0em;
         // padding-bottom: 0.5em;
 
         &#construction {
             // background-color: gainsboro;
-            background: linear-gradient(180deg, rgba(255,255,255,0) 60%, #FFD0AE 70%);
+            background: linear-gradient(180deg, rgba(255,255,255,0) $percent-y, #FFD0AE 70%);
         }
 
         &#history {
             // background-color: gold;
-            background: linear-gradient(180deg, rgba(255,255,255,0) 60%, gold 70%);
+            background: linear-gradient(180deg, rgba(255,255,255,0) $percent-y, gold 70%);
         }
     }   
+}
+
+#typewriter-container {
+    // font-size: x-large;
+    // display: flex;
+    text-indent: 3vw hanging;
+    // padding-right: 3rem; // temporary solution for better alignment
+
+    font-weight: inherit;
+    font-style: italic;
+
+    text-decoration: underline dotted;
+    color: var(--#{$prefix}link-color);
+
+    & i {
+        vertical-align: super;
+        font-size: 1rem;
+    }
 }
 
 

@@ -25,7 +25,8 @@ const main = async () => {
   console.log(constructions);
 
   const linked_constructions = Array.from(constructions).map(
-    construction => `<a href="/construction/${construction.construction_id}">${construction.name}</a>`
+    construction => 
+      `<a href="/construction/${construction.id}"><i class="fa-solid fa-link fa-fw"></i> ${construction.name}</a>`
   );
 
   console.log(`linked_constructions:`, linked_constructions);

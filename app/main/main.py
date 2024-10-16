@@ -162,7 +162,7 @@ def constructions_list():
 
     print(type(results))
     print(type(results[0]))
-    dict_results = [res._asdict() for res in results]
+    dict_results = [{"id": res.construction_id, "name": res.name} for res in results]
 
     return jsonify(dict_results)
 
