@@ -1,5 +1,6 @@
 ﻿import typing as T
 from datetime import datetime
+from json import dumps as json_dumps
 
 import sqlalchemy.sql.expression
 from sqlalchemy import (
@@ -17,7 +18,7 @@ from sqlalchemy.orm import (
 import wtforms
 import wtforms.validators
 from flask import current_app
-from flask import render_template, abort, request, redirect, url_for
+from flask import render_template, abort, request, redirect, url_for, jsonify
 from flask_wtf import FlaskForm
 
 from app.models import (
@@ -147,4 +148,21 @@ def about():
         title='Описание',
         year=datetime.now().year,
     )   
+
+
+@bp.route("/api/constructions")
+def constructions_list():
+    stmt = select(
+        GeneralInfo.name.distinct(),
+        GeneralInfo.construction_id
+    ).order_by(GeneralInfo.construction_id)
+
+    with current_app.engine.connect() as conn:
+        results = conn.execute(stmt).all()
+
+    print(type(results))
+    print(type(results[0]))
+    dict_results = [res._asdict() for res in results]
+
+    return jsonify(dict_results)
 

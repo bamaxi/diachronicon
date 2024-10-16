@@ -99,6 +99,17 @@ a {
     }
 }
 
+#typewriter-container {
+    // font-size: x-large;
+    // display: flex;
+    text-indent: 3vw hanging;
+    // padding-right: 3rem; // temporary solution for better alignment
+
+    font-weight: inherit;
+    font-style: italic;
+}
+
+
 // FORMS
 
 input, select, textarea {
@@ -107,6 +118,22 @@ input, select, textarea {
 
 .form-control {
     font-size: 0.95rem;
+}
+
+#search-form {
+    display: flex;
+    // flex-direction: column;
+    @extend .justify-content-center;
+
+    & .search-container {
+        display: flex;
+        @extend .justify-content-center;
+        flex-direction: column;
+    }
+
+    & .btn {
+        max-width: $input-max-width;
+    }
 }
 
 
@@ -174,33 +201,35 @@ mark::before {
 //     border:solid 1px #000;
 // }
 
-.to-hide {
-    max-height: 10000em;
-    &.hidden{
-        // max-height: 100px;
-        max-height: 30vh;
-        transition: max-height 0.5s cubic-bezier(0, 1, 0, 1);
-        & *:not(h1, h2, h3, h4, h5, h6) {
-            -webkit-mask-image: linear-gradient(to bottom, white, transparent);
-            mask-image: linear-gradient(to bottom, white, transparent);
-        }
+// .to-hide {
+//     max-height: 10000em;
+//     &.hidden{
+//         // max-height: 100px;
+//         max-height: 30vh;
+//         transition: max-height 0.5s cubic-bezier(0, 1, 0, 1);
+//         & > *:not(h1, h2, h3, h4, h5, h6) {
+//             -webkit-mask-image: linear-gradient(to bottom, white, transparent);
+//             mask-image: linear-gradient(to bottom, white, transparent);
+//         }
 
-        &:hover {
-            cursor: pointer;
-            @extend .shadow;
-        }
-    }
-    &:not(.hidden) {
-        border-color: $element-focus-color;
-        box-shadow: 0 0 0 0.3rem lightblue;
-    }
+//         &:hover {
+//             cursor: pointer;
+//             @extend .shadow;
+//         }
+//     }
+//     &:not(.hidden) {
+//         border-color: $element-focus-color;
+//         box-shadow: 0 0 0 0.3rem lightblue;
+//     }
 
-    height: auto;
-    // transition: ease-in-out all 0.4s;
-    transition: max-height 1s ease-in-out;
-    overflow: hidden;
+//     height: auto;
+//     // transition: ease-in-out all 0.4s;
+//     transition: max-height 1s ease-in-out;
+//     overflow: hidden;    
+// }
 
-    
+.card-text {
+    margin-top: 0.2rem;
 }
 
 

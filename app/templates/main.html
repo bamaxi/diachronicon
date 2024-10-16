@@ -19,12 +19,21 @@
     {# <br> #}
     <span class="main-description-text">
         описывает <mark id="construction">конструкции</mark> русского языка<br>
-        в <mark id="history">исторической</mark> перспективе.
+        в <mark id="history">исторической</mark> перспективе:
+    </span>
+    <span id="typewriter-container">
+        <span id="typewriter"></span>
     </span>
 </div>
 
 
 <div class="col-10 pt-3">
+
+    {# <div class="row py-3 px-4 justify-content-center">
+        <div class="col-8 justify-content-center" id="typewriter-container">
+            <h2 id="typewriter"></h2>
+        </div>
+    </div> #}
 
     {# <p>
     В <i>Диахрониконе </i> конструкции русского языка показаны в исторической перспективе.
@@ -34,21 +43,25 @@
     <li>Что такое конструкции?</li>
     <li>Как создаётся описание конструкций?</li>
     </ul> #}
-    <div class="container px-4">
+    <div class="container pt-4 px-4">
         <div class="row terms main-terms mb-5 mb-sm-1">
             <div class="col-6">
                 <div class="card to-hide hidden">
                     <div class="card-body">
                         <h5 class="card-title">Конструкции</h5>
-                        <p class="card-text">Конструкции &mdash; это языковые выражения,
-                        которые похожи на идиомы: их форма и значение
-                        не выводится из соответствующей формы и значения частей.
-                        Например, значение современной конструкции <em>Бог знает что</em>
-                        (=нечто неизвестное для говорящего и отрицательно им оцениваемое)
-                        не выводится тривиальным образом из элементов <em>Бог</em>,
-                        <em>знать</em> и <em>что</em>, а значение конструкции <em>пруд пруди</em>
-                        (=очень много) не выводится из компонентов <em>пруд</em> и <em>прудить</em>.
-                        </p>
+                        <div class="veil">
+                            <p class="card-text">Конструкции &mdash; это языковые выражения,
+                            которые похожи на идиомы: их форма и значение
+                            не выводится из соответствующей формы и значения частей.
+                            </p>
+                            <p class="card-text">
+                            Например, значение современной конструкции <em>Бог знает что</em>
+                            (=нечто неизвестное для говорящего и отрицательно им оцениваемое)
+                            не выводится тривиальным образом из элементов <em>Бог</em>,
+                            <em>знать</em> и <em>что</em>, а значение конструкции <em>пруд пруди</em>
+                            (=очень много) не выводится из компонентов <em>пруд</em> и <em>прудить</em>.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -56,7 +69,7 @@
             <div class="col-6">
                 <div class="card to-hide hidden">
                     <div class="card-body">
-                        <h5>Историческая перспектива</h5>
+                        <h5 class="card-title">Историческая перспектива</h5>
                         <p class="card-text">База показывает, как развивались такие конструкции.
                         На конкретных примерах можно увидеть, как с течением времени (XVI – XXI вв.)
                         композициональное (значение выводится из частей) сочетание или предложение
@@ -69,21 +82,16 @@
         </div>
     </div>
 
-    {# <div class="terms">
-        <div>Конструкция</div>
-        <div>Якорь конструкции</div>
-    </div> #}
-
-    <form class="row justify-content-center" id="search-form"
+    <form class="row py-3 px-4 justify-content-center" id="search-form"
           action="/" method="post" target="_blank"
     >
-    {{ _form.csrf_tag }}
-    <div class="col-4">
-        {# <p>Выберите конструкцию, о которой хотите узнать.</p> #}
-        {{ _form.formula() }}
-        <button class="btn btn-primary" type="submit">Показать</button>
-        <div id="form-error feedback-invalid"></div>
-    </div>
+        {{ _form.csrf_tag }}
+        <div class="col-4 search-container">
+            {# <p>Выберите конструкцию, о которой хотите узнать.</p> #}
+            {{ _form.formula() }}
+            <button class="btn btn-primary" type="submit">Показать</button>
+            <div id="form-error feedback-invalid"></div>
+        </div>
     </form>
 
     {# {% include 'main_page_simple_search_result.html' %} #}
@@ -96,5 +104,7 @@
 
 {% block scripts %}
 <script src="/static/scripts/navbar_main.js"></script>
-<script src="/static/scripts/cards.js"></script>
+{# <script src="/static/scripts/cards.js"></script> #}
+<script src="https://unpkg.com/typewriter-effect@2.21.0/dist/core.js"></script>
+<script src="/static/scripts/_typewriter.js"></script>
 {% endblock %}
