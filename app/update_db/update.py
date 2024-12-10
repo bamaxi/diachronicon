@@ -4,6 +4,7 @@ from collections import defaultdict
 import logging
 from functools import wraps
 import re
+import traceback
 import typing as T
 from typing import (
     Type, Tuple, List, Dict, Union, Callable, Iterator,
@@ -501,7 +502,7 @@ def process_construction(
 def process_change(
     phrase_dict: Dict[str, Union[str, int]], change: Change,
     formula_parser: Callable[[str], List[Dict[str, str]]] = parse_formula,
-    year_sep_re = re.compile(r"-‐–—‒―−")
+    year_sep_re = re.compile(r"-‐–—‒―−"),
     verbose=False
 ) -> None:
     """Parse stage formula and add it to construction variants"""
@@ -512,7 +513,8 @@ def process_change(
     # fix inconsistent year separators
     for year_type in ("first_attested", "last_attested"):
         year = phrase_dict[year_type]
-        phrase_dict[year_type] = year_sep_re.sub("-", year)
+        if isinstance(year, str):
+            phrase_dict[year_type] = year_sep_re.sub("-", year)
 
     stage = phrase_dict["stage"]
     main_stage_variant.formula = stage
@@ -690,7 +692,7 @@ def parse(filename: str, use_old_sheet_names=False, verbose=False):
                 data.append(values)
             
             except (ValueError, AttributeError, TypeError) as e:
-                logger.warning(f"couldn't add {phrase_dict}: {e}")
+                logger.warning(f"couldn't add {phrase_dict}: {traceback.print_exc()}")
 
     if verbose:
         for item in data:

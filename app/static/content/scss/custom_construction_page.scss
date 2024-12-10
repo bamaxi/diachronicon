@@ -372,7 +372,7 @@ ol.changes-list > li {
             display: inline-block;
             &:not(label) {
                 font-size: 2 * $base-size;
-                width: calc(100% - $index-width);
+                // width: calc(100% - $index-width);
             }
             &:is(label) {
                 font-size: x-small;

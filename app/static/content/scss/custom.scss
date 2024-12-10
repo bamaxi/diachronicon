@@ -103,6 +103,13 @@ a {
 nav {
     background-color: white;
     border-bottom: 1px solid black; // var(--bs-border-color-translucent)
+
+    .navbar-brand {
+        img {
+            margin-right: 1rem;
+        }
+    }
+    height: 80px;
 }
 
 
@@ -201,7 +208,7 @@ mark::before {
     font-weight: inherit;
     font-style: italic;
 
-    text-decoration: underline dotted;
+    // text-decoration: underline dotted;
     color: var(--#{$prefix}link-color);
 
     & i {

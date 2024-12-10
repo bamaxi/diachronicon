@@ -43,16 +43,15 @@
 
                 if (next_change === change_i + 1){
                     console.log("next change is consecutive")
-                    // directions = [DIRECTION.BOTTOM, DIRECTION.TOP]
                     directions = ['bottom', 'top'];
                     translations = [[1, 1], [1, -1]];
                 } else {
-                    // directions = [DIRECTION.LEFT, DIRECTION.LEFT]
-                    directions = ['left', 'left'];
-                    translations = [
-                        [translation_from_base_x * multiplier, 0],
-                        [translation_to_base_x * multiplier, -0.1]
-                    ];
+                    // directions = ['left', 'left'];
+                    // translations = [
+                    //     [translation_from_base_x * multiplier, 0],
+                    //     [translation_to_base_x * multiplier, -0.1]
+                    // ];
+                    continue
                 }
 
                 from_node = change
